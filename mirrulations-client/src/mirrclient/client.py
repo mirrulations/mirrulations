@@ -5,6 +5,7 @@ import sys
 from base64 import b64encode
 from json import dumps, loads
 import requests
+import boto3
 from dotenv import load_dotenv
 
 
@@ -100,6 +101,41 @@ def is_environment_variables_present():
     return (os.getenv('WORK_SERVER_HOSTNAME') is not None
             and os.getenv('WORK_SERVER_PORT') is not None
             and os.getenv('API_KEY') is not None)
+
+
+# Credientals folder is still missing such as ~/.aws/credentials
+def check_for_s3_connection():
+    """
+    Checks if a valid connection could be made to s3
+    """
+    try:
+        session = boto3.Session(profile_name="profile_name")
+        s3 = session.client("s3")
+        connection = s3.listBuckets()
+        if connection["ResponseMetaData"]["HTTPStatusCode"] == 200:
+            return True
+        else:
+            return False
+    except Exception as exception:
+        return False 
+
+
+# profile_name is located in the credentials folder
+def put_results_s3(data, bucket_name, file_name):
+    """
+    Puts the results in an s3 bucket.
+    Parameters
+    ----------
+    data : dict
+        the data to be stored
+    bucket_name : str
+        name of the bucket
+    file_name : str
+        the file name to write to
+    """
+    session = boto3.Session(profile_name="profile_name")
+    s3 = session.client("s3")
+    s3.put_object(Bucket=bucket_name, Key=file_name, Body=data)
 
 
 class Client:
