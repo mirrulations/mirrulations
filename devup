@@ -1,3 +1,14 @@
 #!/bin/bash
+while getopts 'b' OPTION; do
+    case "$OPTION" in
+        b)
+            echo running docker-compose build
+            docker-compose build
+            ;;
+        ?)
+            echo "script usage: if you want to docker build use [-b]" >&2
+            exit 1
+            ;;
+    esac
+done
 docker-compose up -d nginx redis mongo work_generator work_server dashboard client1
-
