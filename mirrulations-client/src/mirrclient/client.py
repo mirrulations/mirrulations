@@ -4,6 +4,7 @@ import os
 import sys
 from base64 import b64encode
 from json import dumps, loads
+import json
 import requests
 import boto3
 from dotenv import load_dotenv
@@ -110,19 +111,14 @@ def check_for_s3_connection():
     """
     try:
         session = boto3.Session(profile_name="profile_name")
-        s3 = session.client("s3")
-        connection = s3.listBuckets()
-        if connection["ResponseMetaData"]["HTTPStatusCode"] == 200:
-            return True
-        else:
-            return False
+        s_3 = session.client("s3")
+        connection = s_3.listBuckets()
+        return connection["ResponseMetadata"]["HTTPStatusCode"] == 200
     except Exception:
         return False
 
 
-# the file_name needs to be the absolute path to the file
-# profile_name is located in the credentials folder
-def put_results_s3(data, bucket_name, file_name):
+def put_results_s3(data, bucket_name, file_path):
     """
     Puts the results in an s3 bucket.
     Parameters
@@ -131,12 +127,13 @@ def put_results_s3(data, bucket_name, file_name):
         the data to be stored
     bucket_name : str
         name of the bucket
-    file_name : str
-        the file name to write to
+    file_path : str
+        the file name to write as
     """
     session = boto3.Session(profile_name="profile_name")
-    s3 = session.client("s3")
-    s3.put_object(Bucket=bucket_name, Key=file_name, Body=data)
+    s_3 = session.client("s3")
+    json_data = json.dumps(data)
+    s_3.put_object(Bucket=bucket_name, Key=file_path, Body=json_data)
 
 
 class Client:
