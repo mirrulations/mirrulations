@@ -116,10 +116,11 @@ def check_for_s3_connection():
             return True
         else:
             return False
-    except Exception as exception:
-        return False 
+    except Exception:
+        return False
 
 
+# the file_name needs to be the absolute path to the file
 # profile_name is located in the credentials folder
 def put_results_s3(data, bucket_name, file_name):
     """
