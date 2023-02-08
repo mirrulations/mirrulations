@@ -118,22 +118,31 @@ def check_for_s3_connection():
         return False
 
 
-def put_results_s3(data, bucket_name, file_path):
+def put_results_s3(self, job, job_result, bucket_name):
     """
-    Puts the results in an s3 bucket.
+    Puts the job results in an s3 bucket.
     Parameters
     ----------
-    data : dict
-        the data to be stored
+    job : dict
+        results of the job
+    job_result : dict
+        states of the job failed
     bucket_name : str
         name of the bucket
-    file_path : str
-        the file name to write as
     """
+    data = {
+            'job_type': job['job_type'],
+            'job_id': job['job_id'],
+            'results': job_result,
+            'reg_id': job['reg_id'],
+            'agency': job['agency']
+    }
+    # If the job is not an attachment job we need to add an output path
+    if ('errors' not in job_result) and (job['job_type'] != 'attachments'):
+        file_path = get_output_path(job_result)
     session = boto3.Session(profile_name="profile_name")
     s_3 = session.client("s3")
-    json_data = json.dumps(data)
-    s_3.put_object(Bucket=bucket_name, Key=file_path, Body=json_data)
+    s_3.put_object(Bucket=bucket_name, Key=file_path, Body=json.dumps(data))
 
 
 class Client:
