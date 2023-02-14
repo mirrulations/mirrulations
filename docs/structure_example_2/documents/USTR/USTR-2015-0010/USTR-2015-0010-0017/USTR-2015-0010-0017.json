@@ -1,0 +1,18 @@
+{"data": {"attributes": {"additionalRins": null, "address1": null, "address2": null, "agencyId": "USTR", "allowLateComments": 
+false, "authorDate": null, "authors": null, "category": null, "cfrPart": null, "city": null, "comment": null, "commentEndDate": 
+null, "commentStartDate": null, "country": null, "displayProperties": null, "docAbstract": null, "docketId": "USTR-2015-0010", 
+"documentType": "Supporting & Related Material", "effectiveDate": null, "email": null, "exhibitLocation": null, "exhibitType": 
+null, "fax": null, "field1": null, "field2": null, "fileFormats": [{"fileUrl": 
+"https://downloads.regulations.gov/USTR-2015-0010-0017/content.doc", "format": "doc", "size": 182272}, {"fileUrl": 
+"https://downloads.regulations.gov/USTR-2015-0010-0017/content.pdf", "format": "pdf", "size": 284422}], "firstName": null, 
+"frDocNum": null, "frVolNum": null, "govAgency": null, "govAgencyType": null, "implementationDate": null, "lastName": null, 
+"legacyId": null, "media": null, "modifyDate": "2015-12-10T21:24:47Z", "objectId": "0900006481d9c3c5", "ombApproval": null, 
+"openForComment": false, "organization": null, "originalDocumentId": null, "pageCount": 0, "paperLength": 0, "paperWidth": 0, 
+"phone": null, "postedDate": "2015-12-10T05:00:00Z", "postmarkDate": null, "reasonWithdrawn": null, "receiveDate": 
+"2015-12-10T05:00:00Z", "regWriterInstruction": null, "restrictReason": null, "restrictReasonType": null, "sourceCitation": 
+null, "startEndPage": null, "stateProvinceRegion": null, "subject": null, "submitterRep": null, "submitterRepAddress": null, 
+"submitterRepCityState": null, "subtype": null, "title": "Hearing Transcript - China Compliance WTO Commitments", "topics": 
+null, "trackingNbr": "1jz-8mql-m95d", "withdrawn": false, "zip": null}, "id": "USTR-2015-0010-0017", "links": {"self": 
+"https://api.regulations.gov/v4/documents/USTR-2015-0010-0017"}, "relationships": {"attachments": {"links": {"related": 
+"https://api.regulations.gov/v4/documents/USTR-2015-0010-0017/attachments", "self": 
+"https://api.regulations.gov/v4/documents/USTR-2015-0010-0017/relationships/attachments"}}}, "type": "documents"}}

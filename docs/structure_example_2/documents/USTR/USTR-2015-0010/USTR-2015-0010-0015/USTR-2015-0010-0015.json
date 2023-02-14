@@ -1,0 +1,16 @@
+{"data": {"attributes": {"additionalRins": null, "address1": null, "address2": null, "agencyId": "USTR", "allowLateComments": 
+false, "authorDate": null, "authors": null, "category": null, "cfrPart": null, "city": null, "comment": null, "commentEndDate": 
+null, "commentStartDate": null, "country": null, "displayProperties": null, "docAbstract": null, "docketId": "USTR-2015-0010", 
+"documentType": "Supporting & Related Material", "effectiveDate": null, "email": null, "exhibitLocation": null, "exhibitType": 
+null, "fax": null, "field1": null, "field2": null, "fileFormats": null, "firstName": null, "frDocNum": null, "frVolNum": null, 
+"govAgency": null, "govAgencyType": null, "implementationDate": null, "lastName": null, "legacyId": null, "media": null, 
+"modifyDate": "2015-10-09T15:59:17Z", "objectId": "0900006481cb1d8f", "ombApproval": null, "openForComment": false, 
+"organization": null, "originalDocumentId": null, "pageCount": 0, "paperLength": 0, "paperWidth": 0, "phone": null, 
+"postedDate": "2015-10-05T00:00:00Z", "postmarkDate": null, "reasonWithdrawn": "Upddate to agenda", "receiveDate": null, 
+"regWriterInstruction": null, "restrictReason": null, "restrictReasonType": null, "sourceCitation": null, "startEndPage": null, 
+"stateProvinceRegion": null, "subject": null, "submitterRep": null, "submitterRepAddress": null, "submitterRepCityState": null, 
+"subtype": null, "title": "China Public Hearing Agenda", "topics": null, "trackingNbr": null, "withdrawn": true, "zip": null}, 
+"id": "USTR-2015-0010-0015", "links": {"self": "https://api.regulations.gov/v4/documents/USTR-2015-0010-0015"}, 
+"relationships": {"attachments": {"links": {"related": 
+"https://api.regulations.gov/v4/documents/USTR-2015-0010-0015/attachments", "self": 
+"https://api.regulations.gov/v4/documents/USTR-2015-0010-0015/relationships/attachments"}}}, "type": "documents"}}
