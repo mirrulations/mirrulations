@@ -87,7 +87,8 @@ JSON for this comment was found at this file path
 
 ### Possible Fixes:
 - Have client check for the commentOnDocumentID key and if that value is `null` then check for a docketID key and add the comment to the docketID directory directly, rather than the extra None dir in between.
-
+ 
+- Create a dummy directory for the "docket" id that normally prefixes a document or a comment as the base directory, even though the docket does not actually exist
 ---
 
 ## 2. No `DocketID` associated with Document Creates `None` Directory
@@ -166,6 +167,15 @@ Here is the link to the document on regulations.gov
   }
 }
 ```
+
+
+### Possible Fixes:
+- Create a dummy directory for the "docket" id that normally prefixes a document or a comment as the base directory, even though the docket does not actually exist
+- So for this case instead of `/data/data/TRADE/None/TRADE-2015-0001-0001/TRADE-2015-0001-0001.json`
+
+We would create a directory structure like so...
+
+- `/data/data/TRADE/TRADE-2015-0001/TRADE-2015-0001-0001.json`
 
 
 
