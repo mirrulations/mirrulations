@@ -76,29 +76,6 @@ def check_for_database(workserver):
     workserver.redis.ping()
 
 
-def check_valid_request_client_id(workserver, client_id):
-    """
-    Checks if the client id is valid
-    calls the check_client_id_valid function
-
-    Parameters
-    ----------
-    workserver : WorkServer
-        the work server class
-    client_id : int
-        the client id validating
-
-    Returns
-    -------
-    True or False : bool
-        True if the client id is valid, False if not
-        False will also return an error message
-    """
-    if not check_client_id_is_valid(workserver, client_id):
-        return False, jsonify({'error': 'Invalid client ID'}), 401
-    return (True,)
-
-
 def decrement_count(workserver, job_type):
     """
     for each job type, when that type of job is taken, remove one from
@@ -143,9 +120,6 @@ def get_job(workserver):
     """
     check_for_database(workserver)
     client_id = request.args.get('client_id')
-    success, *values = check_valid_request_client_id(workserver, client_id)
-    if not success:
-        return False, values[0], values[1]
     if workserver.redis.llen('jobs_waiting_queue') == 0:
         return False, jsonify({'error': 'No jobs available'}), 403
     job = json.loads(workserver.redis.rpop('jobs_waiting_queue'))
@@ -232,9 +206,6 @@ def write_results(directory, path, data):
 def check_received_result(workserver):
     check_for_database(workserver)
     client_id = request.args.get('client_id')
-    success, *values = check_valid_request_client_id(workserver, client_id)
-    if not success:
-        return False, values[0], values[1]
     print('Work_server received job for client: ', client_id)
     return True, client_id
 
@@ -297,51 +268,6 @@ def put_attachment_results(workserver, data):
             data, f"/data/{data['agency']}/{data['reg_id']}")
     workserver.data.add_attachment(data)
     return (True,)
-
-
-def get_client_id(workserver):
-    """
-    called when a client is started and needs a client id.
-    Increments the total number of clients and gives
-    the number to the client.
-
-
-    Parameters
-    ----------
-    workserver : WorkServer
-        the work server class
-
-    Returns
-    -------
-    client_id : int
-        the client id generated for the client
-    """
-    check_for_database(workserver)
-    workserver.redis.incr('total_num_client_ids')
-    return True, int(workserver.redis.get('total_num_client_ids'))
-
-
-def check_client_id_is_valid(workserver, client_id):
-    """
-    checks that the client id is lower than the
-    total number of clients and higher than 0
-
-    Parameters
-    ----------
-    workserver : WorkServer
-        the work server class
-    client_id : int
-        the client id
-
-    Returns
-    -------
-    bool if the client id is valid
-    """
-    check_for_database(workserver)
-    num_ids = workserver.redis.get('total_num_client_ids')
-    total_ids = 0 if num_ids is None else int(num_ids)
-    client_id = int(client_id)
-    return 0 < client_id <= total_ids
 
 
 def create_server(database):
@@ -414,27 +340,6 @@ def create_server(database):
         if not success:
             return tuple(values)
         return jsonify(validator[0]), validator[1]
-
-    @workserver.app.route('/get_client_id', methods=['GET'])
-    def _get_client_id():
-        """
-        The endpoint a client calls when requesting a client ID
-
-        Returns
-        -------
-        response : json
-            if success:
-                {'client_id': client_id}, status code
-            if error:
-                {'error': 'Cannot connect to the database'}), 500
-        """
-        try:
-            success, *values = get_client_id(workserver)
-            if not success:
-                return tuple(values)
-            return jsonify({'client_id': values[0]}), 200
-        except redis.exceptions.ConnectionError:
-            return jsonify({'error': 'Cannot connect to the database'}), 500
 
     return workserver
 
