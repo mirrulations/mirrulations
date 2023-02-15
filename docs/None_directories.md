@@ -2,7 +2,7 @@
  
  There is a bug in the system that is creating `None` directories instead of Docket/Document/Comment directories which is resulting in downloaded items not being stored in an appropriate place
 
- - Through our initial investigation this problem is arising from the the client.  
+ - Through our initial investigation this problem is arising from the client.  
 
  - We found in  `client.py` that if a certain key (such as commentOnDocumentID, docketID) is found with a value of `null` the client will create a `None` directory.
 
