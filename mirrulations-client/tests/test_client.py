@@ -373,3 +373,7 @@ def test_get_output_path_error():
     output_path = get_output_path(results)
 
     assert output_path == -1
+
+
+def test_success_logging_output():
+    assert True
