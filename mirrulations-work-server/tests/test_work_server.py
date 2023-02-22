@@ -405,3 +405,65 @@ def test_success_logging_for_attachment_results(capsys, mocker, mock_server):
         '/data/4/3\n'
     ]
     assert captured.out == "".join(print_data)
+
+def test_duplicate_data_is_not_saved(mocker, mock_server):
+    mock_write_results(mocker)
+    mock_server.redis.hset('jobs_in_progress', 2, 3)
+    mock_server.redis.hset('client_jobs', 2, 1)
+    mock_server.redis.set('total_num_client_ids', 1)
+    data = dumps({
+        'job_id': 1,
+        'directory': 'dir/dir',
+        'job_type': 'dockets',
+        'results': {'data': {
+            'type': 'dockets'
+            }
+        }
+    })
+    data = dumps({
+        'job_id': 2,
+        'directory': 'dir/dir',
+        'job_type': 'dockets',
+        'results': {'data': {
+            'type': 'dockets'
+            }
+        }
+    })
+    params = {'client_id': 1}
+    mock_server.client.put('/put_results',
+                                      json=data, query_string=params)
+    mock_server.client.put('/put_results',
+                                      json=data, query_string=params)
+    assert len(mock_server.data.added) == 1 
+
+
+# def test_different_duplicate_data_is_saved(mocker, mock_server):
+#     mock_write_results(mocker)
+#     mock_server.redis.hset('jobs_in_progress', 2, 3)
+#     mock_server.redis.hset('client_jobs', 2, 1)
+#     mock_server.redis.set('total_num_client_ids', 1)
+#     data = dumps({
+#         'job_id': 1,
+#         'directory': 'dir/dir',
+#         'job_type': 'dockets',
+#         'results': {'data': {
+#             'type': 'dockets'
+#             }
+#         }
+#     })
+#     data = dumps({
+#         'job_id': 2,
+#         'directory': 'dir/dir',
+#         'job_type': 'dockets',
+#         'results': {'data': {
+#             'type': 'dockets',
+#             'extraField': "Foo"
+#             }
+#         }
+#     })
+#     params = {'client_id': 1}
+#     mock_server.client.put('/put_results',
+#                                       json=data, query_string=params)
+#     mock_server.client.put('/put_results',
+#                                       json=data, query_string=params)
+#     assert len(mock_server.data.added) == 2
