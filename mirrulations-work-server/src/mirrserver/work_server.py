@@ -196,9 +196,11 @@ def write_duplicate(path, data, n):
         with open(f'/data/{path}', 'x', encoding='utf8') as file:
             print('Writing results to disk')
             file.write(json.dumps(data))
+        return True, path.split('/')[-1]
     except FileExistsError:
         if is_duplicate(path, data) == False:
             write_duplicate(path, data, n + 1)
+        return False, ""
 
 def write_results(directory, path, data):
     """
@@ -221,12 +223,11 @@ def write_results(directory, path, data):
         with open(f'/data/{path}', 'x', encoding='utf8') as file:
             print('Writing results to disk')
             file.write(json.dumps(data))
-        print(f"Wrote job {data['directory'].split('/')[-1]},"
-          f" job_id: {data['job_id']}, to {data['directory']}")
+        return True, path.split('/')[-1]
     except FileExistsError:
         if is_duplicate(path, data) == False:
-            write_duplicate(path, data, 1)
-            
+            return write_duplicate(path, data, 1)
+        return False, ""
             
 
 
@@ -253,7 +254,10 @@ def put_results(workserver, data):
     client_id = request.args.get('client_id')
     job_id = data['job_id']
     workserver.redis.hdel('jobs_in_progress', job_id)
-    write_results(results[0], data['directory'], data['results'])
+    success, file_name = write_results(results[0], data['directory'], data['results'])
+    if success:
+        print(f"Wrote job {file_name},"
+            f" job_id: {job_id}, to {data['directory']}")
     workserver.data.add(data['results'])
     print(f'SUCCESS: client:{client_id}, job: {job_id}')
     return (True,)
