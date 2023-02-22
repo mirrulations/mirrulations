@@ -373,7 +373,6 @@ def test_success_logging_output_for_put_results(capsys, mocker, mock_server):
     captured = capsys.readouterr()
     print_msgs = [
         'Work_server received job for client:  1\n',
-        'Wrote job dir, job_id: 2, to dir/dir\n',
         'SUCCESS: client:1, job: 2\n'
     ]
     assert captured.out == "".join(print_msgs)
@@ -420,7 +419,7 @@ def test_duplicate_data_is_not_saved(mocker, mock_server):
             }
         }
     })
-    data = dumps({
+    data2 = dumps({
         'job_id': 2,
         'directory': 'dir/dir',
         'job_type': 'dockets',
@@ -433,7 +432,7 @@ def test_duplicate_data_is_not_saved(mocker, mock_server):
     mock_server.client.put('/put_results',
                                       json=data, query_string=params)
     mock_server.client.put('/put_results',
-                                      json=data, query_string=params)
+                                      json=data2, query_string=params)
     assert len(mock_server.data.added) == 1 
 
 

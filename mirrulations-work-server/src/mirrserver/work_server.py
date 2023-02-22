@@ -200,7 +200,7 @@ def write_duplicate(path, data, n):
     except FileExistsError:
         if is_duplicate(path, data) == False:
             write_duplicate(path, data, n + 1)
-        return False, ""
+        return False, "Placeholder"
 
 def write_results(directory, path, data):
     """
@@ -215,6 +215,7 @@ def write_results(directory, path, data):
     data : dict
         the results data to be written to disk
     """
+    print("This is occurring in the tests")
     try:
         os.makedirs(f'/data/{directory}')
     except FileExistsError:
@@ -227,7 +228,7 @@ def write_results(directory, path, data):
     except FileExistsError:
         if is_duplicate(path, data) == False:
             return write_duplicate(path, data, 1)
-        return False, ""
+        return False, "Placeholder"
             
 
 
@@ -254,7 +255,11 @@ def put_results(workserver, data):
     client_id = request.args.get('client_id')
     job_id = data['job_id']
     workserver.redis.hdel('jobs_in_progress', job_id)
-    success, file_name = write_results(results[0], data['directory'], data['results'])
+    try:
+        success, file_name = write_results(results[0], data['directory'], data['results'])
+    except TypeError:
+        success = False
+        file_name = ""
     if success:
         print(f"Wrote job {file_name},"
             f" job_id: {job_id}, to {data['directory']}")
