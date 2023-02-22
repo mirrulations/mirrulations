@@ -189,18 +189,20 @@ def is_duplicate(path, data):
             return True
         return False
 
-def write_duplicate(path, data, n):
+
+def write_duplicate(path, data, i):
     path_without_file_type = path.strip(".json")
-    path = f'{path_without_file_type}({n}).json'
+    path = f'{path_without_file_type}({i}).json'
     try:
         with open(f'/data/{path}', 'x', encoding='utf8') as file:
             print('Writing results to disk')
             file.write(json.dumps(data))
         return True, path.split('/')[-1]
     except FileExistsError:
-        if is_duplicate(path, data) == False:
-            write_duplicate(path, data, n + 1)
+        if is_duplicate(path, data) is False:
+            write_duplicate(path, data, i + 1)
         return False, "Placeholder"
+
 
 def write_results(directory, path, data):
     """
@@ -226,10 +228,9 @@ def write_results(directory, path, data):
             file.write(json.dumps(data))
         return True, path.split('/')[-1]
     except FileExistsError:
-        if is_duplicate(path, data) == False:
+        if is_duplicate(path, data) is False:
             return write_duplicate(path, data, 1)
         return False, "Placeholder"
-            
 
 
 def check_received_result(workserver):
@@ -239,32 +240,35 @@ def check_received_result(workserver):
     return True, client_id
 
 
+def move_job_to_invalid_jobs(workserver, data):
+    job_id = data['job_id']
+    result = workserver.redis.hget('jobs_in_progress', job_id)
+    workserver.redis.hdel('jobs_in_progress', job_id)
+    workserver.redis.hset('invalid_jobs', job_id, result)
+
+
 def put_results(workserver, data):
     success, *values = check_received_result(workserver)
     if not success:
         return success, values[0], values[1]
     if 'error' in data['results'] or 'errors' in data['results']:
-        job_id = data['job_id']
-        result = workserver.redis.hget('jobs_in_progress', job_id)
-        workserver.redis.hdel('jobs_in_progress', job_id)
-        workserver.redis.hset('invalid_jobs', job_id, result)
+        move_job_to_invalid_jobs(workserver, data)
         return (True,)
     success, *results = check_results(workserver, data, int(values[0]))
     if not success:
         return (success, *results)
     client_id = request.args.get('client_id')
-    job_id = data['job_id']
-    workserver.redis.hdel('jobs_in_progress', job_id)
+    workserver.redis.hdel('jobs_in_progress', data['job_id'])
     try:
-        success, file_name = write_results(results[0], data['directory'], data['results'])
+        success, file_name = write_results(results[0], data['directory'],
+                                           data['results'])
     except TypeError:
-        success = False
-        file_name = ""
+        success, file_name = False, ""
     if success:
         print(f"Wrote job {file_name},"
-            f" job_id: {job_id}, to {data['directory']}")
+              f" job_id: {data['job_id']}, to {data['directory']}")
     workserver.data.add(data['results'])
-    print(f'SUCCESS: client:{client_id}, job: {job_id}')
+    print(f'SUCCESS: client:{client_id}, job: {data["job_id"]}')
     return (True,)
 
 
