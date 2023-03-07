@@ -71,8 +71,6 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: always
-    volumes:
-      - ~/data/data:/data
   dashboard:
     build:
       context: .
@@ -94,6 +92,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client1.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client2:
     build:
@@ -102,6 +102,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client2.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client3:
     build:
@@ -110,6 +112,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client3.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client4:
     build:
@@ -118,6 +122,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client4.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client5:
     build:
@@ -126,6 +132,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client5.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client6:
     build:
@@ -134,6 +142,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client6.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client7:
     build:
@@ -142,6 +152,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client7.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client8:
     build:
@@ -150,6 +162,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client8.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client9:
     build:
@@ -158,6 +172,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client9.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client10:
     build:
@@ -166,6 +182,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client10.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client11:
     build:
@@ -174,6 +192,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client11.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client12:
     build:
@@ -182,6 +202,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client12.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client13:
     build:
@@ -190,6 +212,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client13.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client14:
     build:
@@ -198,6 +222,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client14.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client15:
     build:
@@ -206,6 +232,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client15.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client16:
     build:
@@ -214,6 +242,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client16.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client17:
     build:
@@ -222,6 +252,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client17.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client18:
     build:
@@ -230,6 +262,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client18.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client19:
     build:
@@ -238,6 +272,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client19.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client20:
     build:
@@ -246,6 +282,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client20.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client21:
     build:
@@ -254,6 +292,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client21.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client22:
     build:
@@ -262,6 +302,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client22.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client23:
     build:
@@ -270,6 +312,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client23.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client24:
     build:
@@ -278,6 +322,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client24.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client25:
     build:
@@ -286,6 +332,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client25.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client26:
     build:
@@ -294,6 +342,8 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client26.env
+    volumes:
+      - ~/data/data:/data
     restart: always
   client27:
     build:
@@ -302,4 +352,6 @@ services:
     depends_on:
       - work_server
     env_file: env_files/client27.env
+    volumes:
+      - ~/data/data:/data
     restart: always

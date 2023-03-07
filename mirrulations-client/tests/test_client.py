@@ -1,5 +1,6 @@
 import os
 import json
+from mirrcore.attachment_saver import AttachmentSaver
 import pytest
 from pytest import fixture, raises
 import requests_mock
@@ -22,6 +23,24 @@ def mock_env():
 @fixture(name='mock_requests')
 def fixture_mock_requests():
     return requests_mock.Mocker()
+
+
+@fixture(autouse=True)
+def mock_disk_writing(mocker):
+    """
+    Mock tests that would be writing to disk
+    """
+    # patch _write_results and AttachmentSaver.save
+    mocker.patch.object(
+        Client,
+        '_write_results',
+        return_value=None
+    )
+    mocker.patch.object(
+        AttachmentSaver,
+        'save',
+        return_value=None
+    )
 
 
 def test_check_no_env_values():
@@ -477,6 +496,7 @@ def test_success_client_logging(capsys, mock_requests):
         'Performing job\n',
         'Sending Job 1 to Work Server\n',
         'Job output path: NOAA/1/1.json\n',
+        '1: Results written to disk\n',
         'SUCCESS: https://api.regulations.gov/v4/documents/type_id complete\n'
     ]
     assert captured.out == "".join(print_data)
@@ -521,7 +541,131 @@ def test_success_attachment_logging(capsys, mock_requests):
             'Performing attachment job http://url.com\n'
             'Downloading attachments\n'
             'Sending Job 1 to Work Server\n'
+            'Attachment Job Being Saved\n'
+            'agency: foo\n'
+            'reg_id: 1\n'
+            '/data/foo/1\n'
+            '1: Attachment result(s) written to disk\n'
             'SUCCESS: http://url.com complete\n'
+        }
+
+        captured = capsys.readouterr()
+        assert captured.out == "".join(print_data)
+
+
+def test_success_no_attachment_logging(capsys, mock_requests):
+    client = Client()
+    client.api_key = 1234
+
+    with mock_requests:
+        mock_requests.get(
+            'http://work_server:8080/get_job?client_id=-1',
+            json={'job_id': '1',
+                  'url': 'http://url.com',
+                  'job_type': 'attachments',
+                  'reg_id': '1',
+                  'agency': 'foo'},
+            status_code=200
+        )
+        mock_requests.get(
+            'http://url.com?api_key=1234',
+            json={"data": []},
+            status_code=200
+        )
+
+        mock_requests.put('http://work_server:8080/put_results', text='{}')
+        client.job_operation()
+
+        print_data = {
+            'Processing job from work server\n'
+            'Regulations.gov link: https://www.regulations.gov//url.com\n'
+            'API URL: http://url.com\n'
+            'No attachments to download from http://url.com\n'
+            'Sending Job 1 to Work Server\n'
+            '1: No results found\n'
+            'SUCCESS: http://url.com complete\n'
+        }
+
+        captured = capsys.readouterr()
+        assert captured.out == "".join(print_data)
+
+
+def test_failure_job_results(capsys, mock_requests):
+    client = Client()
+    client.api_key = 1234
+
+    with mock_requests:
+        mock_requests.get(
+            'http://work_server:8080/get_job?client_id=-1',
+            json={'job_id': '1',
+                  'url': 'http://url.com',
+                  'job_type': 'documents',
+                  'reg_id': '1',
+                  'agency': 'foo'},
+            status_code=200
+        )
+        mock_requests.get(
+            'http://url.com?api_key=1234',
+            json={"error": 'foobar'},
+            status_code=200
+        )
+        mock_requests.get(
+            "https://downloads.regulations.gov",
+            json={"error": 'foobar'},
+            status_code=200
+        )
+        mock_requests.put('http://work_server:8080/put_results', text='{}')
+        client.job_operation()
+
+        print_data = {
+            'Processing job from work server\n'
+            'Regulations.gov link: https://www.regulations.gov//url.com\n'
+            'API URL: http://url.com\n'
+            'Performing job\n'
+            'Sending Job 1 to Work Server\n'
+            '1: Errors found in results\n'
+            'FAILURE: Error in http://url.com\n'
+        }
+
+        captured = capsys.readouterr()
+        assert captured.out == "".join(print_data)
+
+
+def test_failure_attachment_job_results(capsys, mock_requests):
+    client = Client()
+    client.api_key = 1234
+
+    with mock_requests:
+        mock_requests.get(
+            'http://work_server:8080/get_job?client_id=-1',
+            json={'job_id': '1',
+                  'url': 'http://url.com',
+                  'job_type': 'attachments',
+                  'reg_id': '1',
+                  'agency': 'foo'},
+            status_code=200
+        )
+        mock_requests.get(
+            'http://url.com?api_key=1234',
+            json={"error": 'foobar'},
+            status_code=200
+        )
+        mock_requests.get(
+            "https://downloads.regulations.gov",
+            json={"error": 'foobar'},
+            status_code=200
+        )
+        mock_requests.put('http://work_server:8080/put_results', text='{}')
+        client.job_operation()
+
+        print_data = {
+            'Processing job from work server\n'
+            'Regulations.gov link: https://www.regulations.gov//url.com\n'
+            'API URL: http://url.com\n'
+            'Sending Job 1 to Work Server\n'
+            'Attachment Job Being Saved\n'
+            '1: Errors found in results\n'
+            'FAILURE: Error in http://url.com\n'
         }
 
         captured = capsys.readouterr()

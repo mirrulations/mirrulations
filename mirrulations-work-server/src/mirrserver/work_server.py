@@ -1,4 +1,3 @@
-import os
 from flask import Flask, json, jsonify, request
 import redis
 from mirrcore.data_storage import DataStorage
@@ -181,28 +180,6 @@ def check_results(workserver, data, client_id):
     return (True, directory[:filename_start])
 
 
-def write_results(directory, path, data):
-    """
-    writes the results to disk. used by docket document and comment jobs
-
-    Parameters
-    ----------
-    directory : str
-        the directory to write the results to
-    path : str
-        the path to the directory
-    data : dict
-        the results data to be written to disk
-    """
-    try:
-        os.makedirs(f'/data/{directory}')
-    except FileExistsError:
-        print(f'Directory already exists in root: /data/{directory}')
-    with open(f'/data/{path}', 'w+', encoding='utf8') as file:
-        print('Writing results to disk')
-        file.write(json.dumps(data))
-
-
 def check_received_result(workserver):
     check_for_database(workserver)
     client_id = request.args.get('client_id')
@@ -226,7 +203,6 @@ def put_results(workserver, data):
     client_id = request.args.get('client_id')
     job_id = data['job_id']
     workserver.redis.hdel('jobs_in_progress', job_id)
-    write_results(results[0], data['directory'], data['results'])
     print(f"Wrote job {data['directory'].split('/')[-1]},"
           f" job_id: {job_id}, to {data['directory']}")
     workserver.data.add(data['results'])
@@ -264,8 +240,6 @@ def put_attachment_results(workserver, data):
         print('Attachment Job Being Saved')
         print('agency', data['agency'])
         print('reg_id', data['reg_id'])
-        workserver.attachment_saver.save(
-            data, f"/data/{data['agency']}/{data['reg_id']}")
     workserver.data.add_attachment(data)
     print(f"/data/{data['agency']}/{data['reg_id']}")
     return (True,)
@@ -335,6 +309,8 @@ def create_server(database):
                 MissingClientIDException) as invalid_result:
             return jsonify(invalid_result.message), invalid_result.status_code
         # Added ternary instead of if/else to please pylint too many statements
+        if data['results'] == {}:
+            return jsonify({'success': 'Job completed no attachments'}), 200
         success, *values = put_attachment_results(workserver, data) if \
             data.get('job_type') == 'attachments' else \
             put_results(workserver, data)

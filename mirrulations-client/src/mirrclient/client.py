@@ -6,6 +6,7 @@ from base64 import b64encode
 from json import dumps, loads
 import requests
 from dotenv import load_dotenv
+from mirrcore.attachment_saver import AttachmentSaver
 
 
 class NoJobsAvailableException(Exception):
@@ -190,6 +191,93 @@ class Client:
         requests.put(f'{self.url}/put_results', json=dumps(data),
                      params={'client_id': self.client_id},
                      timeout=10)
+        self._handle_results(data)
+
+        # For now, still need to send original put request for Mongo
+        # requests.put(
+        #     f'{self.url}/put_results',
+        #     json=dumps(data['job_id']),
+        #     params={'client_id': self.client_id},
+        #     timeout=10
+        # )
+
+    def _handle_results(self, data):
+        """
+        Verifies job results and deals with them appropriately.
+
+        Parameters
+        ----------
+        data : dict
+            the results from a performed job
+        """
+        if not data or not data.get('results'):
+            print(f'{data.get("job_id")}: No results found')
+            return
+        if data.get('job_type', '') == 'attachments':
+            self._put_attachment_results(data)
+        else:
+            self._put_results(data)
+
+    def _put_attachment_results(self, data):
+        """
+        Ensures data format matches what is expected for attachments
+        If results are valid, writes them to disk
+
+        Parameters
+        ----------
+        data : dict
+            the results from a performed job
+        """
+        print("Attachment Job Being Saved")
+        if any(x in data['results'] for x in ['error', 'errors']):
+            print(f"{data['job_id']}: Errors found in results")
+            return
+        print(f"agency: {data['agency']}")
+        print(f"reg_id: {data['reg_id']}")
+        AttachmentSaver().save(
+            data,
+            f"/data/{data['agency']}/{data['reg_id']}"
+        )
+        print(f"/data/{data['agency']}/{data['reg_id']}")
+        print(f"{data['job_id']}: Attachment result(s) written to disk")
+
+    def _put_results(self, data):
+        """
+        Ensures data format matches expected format
+        If results are valid, writes them to disk
+
+        Parameters
+        ----------
+        data : dict
+            the results from a performed job
+        """
+        if any(x in data['results'] for x in ['error', 'errors']):
+            print(f"{data['job_id']}: Errors found in results")
+            return
+        if not data.get('directory') or data.get('directory').rfind('/') == -1:
+            print(f"{data['job_id']}: \
+                  No directory found in results or was incorrect")
+            return
+        self._write_results(data)
+        print(f"{data['job_id']}: Results written to disk")
+
+    def _write_results(self, data):
+        """
+        writes the results to disk. used by docket document and comment jobs
+
+        Parameters
+        ----------
+        data : dict
+            the results data to be written to disk
+        """
+        dir_, filename = data['directory'].rsplit('/', 1)
+        try:
+            os.makedirs(f'/data/{dir_}')
+        except FileExistsError:
+            print(f'Directory already exists in root: /data/{dir_}')
+        with open(f'/data/{dir_}/{filename}', 'w+', encoding='utf8') as file:
+            print('Writing results to disk')
+            file.write(dumps(data['results']))
 
     def perform_job(self, job_url):
         """
@@ -242,6 +330,9 @@ class Client:
             timeout=10
         ).json()
 
+        if any(x in response_json for x in ('error', 'errors')):
+            return response_json
+
         if not self.does_attachment_exists(response_json):
             print(f"No attachments to download from {url}")
             return {}
@@ -262,19 +353,15 @@ class Client:
         -------
         True or False depending if there is an attachment available to download
         """
-        # handle KeyError
-        if attachment_json.get('data') in (None, []):
+        # handle KeyError & IndexError
+        if not attachment_json.get('data', []):
             return False
-        data = attachment_json.get('data')
-        # Handles IndexError
-        if len(data) >= 1:
-            # Check if attributes and fileFormats exists
-            if ("attributes" not in data[0]) or \
-                    ("fileFormats" not in data[0].get('attributes')):
-                return False
-            # handles NoneType in the fileFormats when null
-            if not data[0]['attributes']['fileFormats']:
-                return False
+        data = attachment_json['data'][0]
+
+        # Check if attributes and fileFormats exists
+        if not data.get('attributes', {}).get('fileFormats'):
+            return False
+
         return True
 
     def download_attachments(self, urls, file_types, job_id):
@@ -318,7 +405,10 @@ class Client:
         else:
             result = self.perform_job(job['url'])
         self.send_job(job, result)
-        print(f'SUCCESS: {job["url"]} complete')
+        if any(x in result for x in ('error', 'errors')):
+            print(f'FAILURE: Error in {job["url"]}')
+        else:
+            print(f'SUCCESS: {job["url"]} complete')
 
 
 if __name__ == '__main__':

@@ -55,9 +55,15 @@ if __name__ == '__main__':
 
         # Download dockets, documents, and comments
         # from all jobs in the job queue
+        print('Begin generate docket jobs')
         generator.download('dockets')
+        print('End generate docket jobs')
+        print('Begin generate document jobs')
         generator.download('documents')
+        print('End generate document jobs')
+        print('Begin generate comment/attachment jobs')
         generator.download('comments')
+        print('End generate comment/attachment jobs')
 
     while True:
         generate_work()
