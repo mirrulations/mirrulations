@@ -4,7 +4,9 @@ import os
 import sys
 from base64 import b64encode
 from json import dumps, loads
+import json
 import requests
+import boto3
 from dotenv import load_dotenv
 from mirrcore.attachment_saver import AttachmentSaver
 
@@ -104,6 +106,47 @@ def is_environment_variables_present():
             and os.getenv('WORK_SERVER_PORT') is not None
             and os.getenv('API_KEY') is not None
             and os.getenv('ID') is not None)
+
+
+# Credientals folder is still missing such as ~/.aws/credentials
+def check_for_s3_connection():
+    """
+    Checks if a valid connection could be made to s3
+    """
+    try:
+        session = boto3.Session(profile_name="profile_name")
+        s_3 = session.client("s3")
+        connection = s_3.listBuckets()
+        return connection["ResponseMetadata"]["HTTPStatusCode"] == 200
+    except Exception:
+        return False
+
+
+def put_results_s3(self, job, job_result, bucket_name):
+    """
+    Puts the job results in an s3 bucket.
+    Parameters
+    ----------
+    job : dict
+        results of the job
+    job_result : dict
+        states of the job failed
+    bucket_name : str
+        name of the bucket
+    """
+    data = {
+            'job_type': job['job_type'],
+            'job_id': job['job_id'],
+            'results': job_result,
+            'reg_id': job['reg_id'],
+            'agency': job['agency']
+    }
+    # If the job is not an attachment job we need to add an output path
+    if ('errors' not in job_result) and (job['job_type'] != 'attachments'):
+        file_path = get_output_path(job_result)
+    session = boto3.Session(profile_name="profile_name")
+    s_3 = session.client("s3")
+    s_3.put_object(Bucket=bucket_name, Key=file_path, Body=json.dumps(data))
 
 
 class Client:
