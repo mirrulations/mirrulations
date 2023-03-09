@@ -1,4 +1,48 @@
-# Example Structure
+# Structure Overview
+
+This structure organizes data by agency and docket id.  Within each docket, the binary data (attachments) are stored separately from the text data so that users can easily download only the text data.
+
+The structure also allows us to store the results from multiple text extraction tools.  Further, the attachments on comments and documents are stored separately.
+
+```
+data
+└── <agency>
+    └── <docket id>
+        ├── binary-<docket id>
+        │   ├── comments_attachments
+        │   │   ├── <comment id>_attachement_<counter>.<extension>
+        │   │   └── ...
+        │   ├── documents_attachments
+        │   │   ├── <document id>_attachement_<counter>.<extension>
+        │   │   └── ...
+        └── text-<docket id>
+            ├── comments
+            │   ├── <comment id>.json
+            │   └── ...
+            ├── comments_extracted_text
+            │   ├── <tool name>
+            │   |   ├── <comment id>_attachment_<counter>_extracted.txt
+            │   |   └── ...
+            |   └─ ... <other tools>
+            ├── docket
+            │   ├── <docket id>.json
+            |   └── ...
+            ├── documents
+            │   ├── <document id>.json
+            │   ├── <document id>_content.htm
+            │   └── ...
+            └── documents_extracted_text
+                ├── <tool name>
+                |   ├── <document id>_content_extracted.txt
+                |   └── ...
+                └─ ... <other tools>
+```                    
+
+# Example
+
+The USTR contains a docket id `USTR-2015-0010` that holds 1 docket, 4 documents, and 4 comments.  Each of the comments has an attachment, and each of the documents have one or more attachments.  The tools `pdfplumber` and `pypdf` were used to extract text from these attachments.
+
+This data would be stored in the structure as follows:
 
 ```
 data
