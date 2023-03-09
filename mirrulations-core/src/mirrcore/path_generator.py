@@ -134,3 +134,31 @@ class PathGenerator:
         attachment_file_name = f'{item_id}_{file_name}'
 
         return f'/data/data/{agencyId}/{docket_id}/binary-{docket_id}/comments_attachments/{attachment_file_name}'
+
+
+    def get_attachment_json_paths(self, json):
+        '''
+        Given a json, this function will return all attachment paths for 
+        n number of valid attachment download links
+        '''
+        agencyId, docket_id, item_id = self.get_attributes(json)
+
+        # contains list of paths for attachments
+        attachments = []
+
+        for attachment in json["included"]:
+            id = attachment.get("id")
+            attributes = attachment.get("attributes")
+            if (attributes.get("fileFormats") and attributes.get("fileFormats") != "null" and attributes.get("fileFormats") is not None):
+                file_format = attributes["fileFormats"][0]
+                if ("fileUrl" in file_format):
+                    print(f"valid attachment for attachment ID: {id}")
+                    attachment_name = attachment["attributes"]["fileFormats"][0]["fileUrl"].split("/")[-1]
+                    attachment_id = item_id + "_" + attachment_name
+                    attachments.append(f'data/{agencyId}/{docket_id}/binary-{docket_id}/comments_attachments/{attachment_id}')
+                else:
+                    print(f"fileUrl did not exist for attachment ID: {id}")
+            else:
+                print(f"fileFormats did not exist for attachment ID: {id}")
+
+        return attachments
