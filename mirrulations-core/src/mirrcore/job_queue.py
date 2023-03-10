@@ -30,9 +30,7 @@ class JobQueue:
             'reg_id': reg_id,
             'agency': agency
             }
-        print("adding jobs to rabbit mq")
         self.rabbitmq.add(job)
-        print("finished adding jobs to rabbit mq")
         if job_type == 'attachments':
             self.database.incr('num_jobs_attachments_waiting')
         elif job_type == 'comments':
