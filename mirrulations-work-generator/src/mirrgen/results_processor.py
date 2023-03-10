@@ -15,6 +15,7 @@ class ResultsProcessor:
                 url = item['links']['self']
                 job_type = item['type']
                 # adds current job to jobs_waiting_queue
+                print("adding job to job queue")
                 self.job_queue.add_job(url, job_type)
                 counts[job_type] += 1
                 if job_type == 'comments':
