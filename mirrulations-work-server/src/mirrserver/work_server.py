@@ -9,7 +9,7 @@ from mirrserver.exceptions import MissingClientIDException
 from mirrserver.exceptions import NoJobsException
 from mirrserver.get_client_id_validator import GetClientIDValidator
 from mirrserver.get_job_validator import GetJobValidator
-
+from mirrcore.rabbitmq import RabbitMQ
 
 class WorkServer:
     """
