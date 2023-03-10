@@ -20,6 +20,7 @@
   pip install -e mirrulations-mocks
   pip install -e mirrulations-work-generator 
   pip install -e mirrulations-work-server
+  pip install -e mirrulations-extractor
   ```
 
 ## Run Static Analysis and Tests
