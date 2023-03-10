@@ -25,15 +25,16 @@ class RabbitMQ:
         @return: None
         """
         self._ensure_channel()
-        try: 
+        try:
             self.channel.basic_publish(exchange='',
-                                    routing_key='jobs_waiting_queue',
-                                    body=json.dumps(job),
-                                    properties=pika.BasicProperties(
+                                       routing_key='jobs_waiting_queue',
+                                       body=json.dumps(job),
+                                       properties=pika.BasicProperties(
                                         delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE)
-                                    )
-        except:
-            print('Error occurred when adding a job. Sleeping...')
+                                       )
+            print("SUCCESS: Job added to rabbitmq")
+        except pika.exceptions.StreamLostError:
+            print('FAILURE: Error occurred when adding a job. Sleeping...')
             time.sleep(60 * 60 * 4)
 
     def size(self):
