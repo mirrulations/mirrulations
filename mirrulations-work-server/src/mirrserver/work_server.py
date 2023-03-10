@@ -55,6 +55,7 @@ class WorkServer:
         self.put_results_validator = PutResultsValidator()
         self.get_client_id_validator = GetClientIDValidator()
         self.get_job_validator = GetJobValidator()
+        self.rabbitmq = RabbitMQ()
 
 
 def check_for_database(workserver):
@@ -119,9 +120,15 @@ def get_job(workserver):
     """
     check_for_database(workserver)
     client_id = request.args.get('client_id')
+
     if workserver.redis.llen('jobs_waiting_queue') == 0:
         return False, jsonify({'error': 'No jobs available'}), 403
     job = json.loads(workserver.redis.rpop('jobs_waiting_queue'))
+
+    job = workserver.rabbitmq.get()
+    if job is None:
+        return False, jsonify({'error': 'No jobs available'}), 403
+
     job_id = job['job_id']
     url = job['url']
     agency = job['agency'] if job.get('agency') else "other_agency"
