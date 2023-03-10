@@ -1,4 +1,5 @@
 from mirrcore.rabbitmq import RabbitMQ
+import datetime
 
 
 class JobQueue:
@@ -6,7 +7,7 @@ class JobQueue:
     This class is an abstraction of the process of adding and
     getting jobs.  It hides the implementation details of
     how jobs are stored in a DB/memory.
-    """
+    """ 
 
     def __init__(self, database):
         self.database = database
@@ -30,7 +31,9 @@ class JobQueue:
             'reg_id': reg_id,
             'agency': agency
             }
+        print('job_queue.py: adding job to rabbitmq queue')
         self.rabbitmq.add(job)
+        print('job_queue.py: finished adding job to rabbitmq')
         if job_type == 'attachments':
             self.database.incr('num_jobs_attachments_waiting')
         elif job_type == 'comments':

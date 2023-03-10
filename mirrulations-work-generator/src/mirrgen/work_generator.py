@@ -23,11 +23,15 @@ class WorkGenerator:
         # Finds a job, from the timestamp of the last known job
         # Returns a URL for the specific element
         for result in SearchIterator(self.api, endpoint, last_timestamp):
+            print('finding jobs')
             if result == {}:
+                print("results was empty dict")
                 continue
             # If jobs are not in redis
             # add the URL to the jobs_queue (redis server)
+            print("adding jobs to queue")
             self.processor.process_results(result)
+            print("finished adding jobs to queue")
             timestamp = result['data'][-1]['attributes']['lastModifiedDate']
             self.job_queue.set_last_timestamp_string(endpoint, timestamp)
 
