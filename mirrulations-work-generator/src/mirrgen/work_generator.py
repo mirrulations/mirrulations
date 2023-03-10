@@ -2,12 +2,14 @@ import os
 import time
 import dotenv
 import redis
+import pika
 from mirrgen.search_iterator import SearchIterator
 from mirrgen.results_processor import ResultsProcessor
 from mirrcore.regulations_api import RegulationsAPI
 from mirrcore.job_queue import JobQueue
 from mirrcore.data_storage import DataStorage
 from mirrcore.redis_check import is_redis_available
+from mirrcore.rabbitmq import RabbitMQ
 
 
 class WorkGenerator:
@@ -41,11 +43,12 @@ if __name__ == '__main__':
         api = RegulationsAPI(os.getenv('API_KEY'))
 
         # Checks if redis database is available
-        database = redis.Redis('redis')
+        # database = redis.Redis('redis')
+        database = RabbitMQ
         # Sleep for 30 seconds to give time to load
-        while not is_redis_available(database):
-            print("Redis database is busy loading")
-            time.sleep(30)
+        # while not is_redis_available(database):
+        #    print("Redis database is busy loading")
+        #    time.sleep(30)
 
         job_queue = JobQueue(database)
 
