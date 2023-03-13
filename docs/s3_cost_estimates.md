@@ -36,3 +36,10 @@ Transfer-out costs $.09 per GB for the first 10 TB per month
 
 * With 8 TB of data and 30 million objects, the cost would be $772.83. 
 
+## Text Only Download
+
+Assuming text docs are ~%12 in size compared to their pdfs
+
+* We can assume there will be 1TB of text files
+* This costs about $90 to download *not compressed*
+*
