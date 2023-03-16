@@ -86,7 +86,8 @@ const updateDashboardData = () => {
             mongo,
             redis,
             work_generator,
-            work_server
+            work_server, 
+            rabbitmq
         } = jobInformation;
         updateHtmlValues('jobs-waiting', num_jobs_waiting, jobs_total);
         updateHtmlValues('jobs-done', num_jobs_done, jobs_total);
@@ -122,6 +123,7 @@ const updateDashboardData = () => {
         updateStatus('redis-status', redis);
         updateStatus('work-generator-status', work_generator);
         updateStatus('work-server-status', work_server);
+        updateStatus('rabbitmq-status', rabbitmq);
         // Counts
         updateCounts("attachments-done",num_attachments_done);
         updateCounts("comments-done",num_comments_done);
