@@ -6,7 +6,7 @@ from mirrmock.mock_redis import MockRedisWithStorage
 from mirrcore.job_queue import JobQueue
 
 
-def test_first_job_added_with_id_0(monkeypatch):
+def test_first_job_added_with_id_0():
 
     database = FakeRedis()
     queue = JobQueue(database)
@@ -62,7 +62,6 @@ def test_increment_function():
     queue = JobQueue(database)
     queue.rabbitmq = MockRabbit()
 
-    database.set('num_jobs_attachments_waiting', 0)
     database.set('num_jobs_comments_waiting', 0)
     print(database.data['num_jobs_comments_waiting'])
     database.set('num_jobs_documents_waiting', 0)
@@ -71,10 +70,7 @@ def test_increment_function():
     queue.add_job('http://a.b.c', 'comments')
     queue.add_job('http://a.b.c', 'documents')
     queue.add_job('http://a.b.c', 'dockets')
-    queue.add_job('http://a.b.c', 'attachments')
     # database increments in add_job function
     assert database.get('num_jobs_comments_waiting') == 1
     assert database.get('num_jobs_documents_waiting') == 1
     assert database.get('num_jobs_dockets_waiting') == 1
-    assert database.get('num_jobs_attachments_waiting') == 1
-

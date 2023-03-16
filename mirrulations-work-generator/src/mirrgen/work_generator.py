@@ -26,7 +26,7 @@ class WorkGenerator:
             if result == {}:
                 continue
             # If jobs are not in redis
-            # add the URL to the jobs_queue (redis server)
+            # add the URL to the jobs_queue (RabbitMQ)
             self.processor.process_results(result)
             timestamp = result['data'][-1]['attributes']['lastModifiedDate']
             self.job_queue.set_last_timestamp_string(endpoint, timestamp)
@@ -61,9 +61,9 @@ if __name__ == '__main__':
         print('Begin generate document jobs')
         generator.download('documents')
         print('End generate document jobs')
-        print('Begin generate comment/attachment jobs')
+        print('Begin generate comment jobs')
         generator.download('comments')
-        print('End generate comment/attachment jobs')
+        print('End generate comment jobs')
 
     while True:
         generate_work()
