@@ -42,4 +42,9 @@ Assuming text docs are ~%12 in size compared to their pdfs
 
 * We can assume there will be 1TB of text files
 * This costs about $90 to download *not compressed*
-*
+
+Compression should reduce this size by about by ~ 2/3.
+
+* 350 GB * $.09 = $31.50
+
+We would need to do the compression inside AWS and would cost us 
