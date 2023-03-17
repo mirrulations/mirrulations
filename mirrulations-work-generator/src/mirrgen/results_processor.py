@@ -14,20 +14,14 @@ class ResultsProcessor:
                 # sets url and job_type
                 url = item['links']['self']
                 job_type = item['type']
+                if job_type == 'comments':
+                    # updates the url and job_type
+                    url = url + '?include=attachments'
                 # adds current job to jobs_waiting_queue
                 self.job_queue.add_job(url, job_type)
                 counts[job_type] += 1
-                if job_type == 'comments':
-                    # updates the url and job_type
-                    url = url + '/attachments'
-                    # adds new attachment job to jobs_waiting_queue
-                    reg_id = item['id']
-                    agency = reg_id.split('-')[0]
-                    self.job_queue.add_job(url, 'attachments', reg_id, agency)
-                    counts['attachment'] += 1
             else:
                 counts['preexisting'] += 1
-
         print_report(counts)
 
 

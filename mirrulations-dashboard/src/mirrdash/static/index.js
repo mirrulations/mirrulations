@@ -80,7 +80,6 @@ const updateDashboardData = () => {
             num_documents_done,
             num_jobs_done, 
             num_jobs_waiting,
-            num_jobs_attachments_queued,
             num_jobs_comments_queued,
             num_jobs_dockets_queued,
             num_jobs_documents_queued,
@@ -128,7 +127,6 @@ const updateDashboardData = () => {
         updateCounts("comments-done",num_comments_done);
         updateCounts("dockets-done",num_dockets_done);
         updateCounts("documents-done",num_documents_done);
-        updateJobsQueuedByType("attachments-queued", num_jobs_attachments_queued);
         updateJobsQueuedByType("comments-queued", num_jobs_comments_queued);
         updateJobsQueuedByType("dockets-queued", num_jobs_dockets_queued);
         updateJobsQueuedByType("documents-queued", num_jobs_documents_queued);

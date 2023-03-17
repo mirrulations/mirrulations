@@ -1,13 +1,12 @@
 from flask import Flask, json, jsonify, request
 import redis
 from mirrcore.data_storage import DataStorage
-from mirrcore.attachment_saver import AttachmentSaver
+from mirrcore.rabbitmq import RabbitMQ
 from mirrserver.put_results_validator import PutResultsValidator
 from mirrserver.exceptions import InvalidResultsException
 from mirrserver.exceptions import InvalidClientIDException
 from mirrserver.exceptions import MissingClientIDException
 from mirrserver.exceptions import NoJobsException
-from mirrserver.get_client_id_validator import GetClientIDValidator
 from mirrserver.get_job_validator import GetJobValidator
 
 
@@ -25,12 +24,8 @@ class WorkServer:
         the redis server holding the jobs waiting queue and client ids
     data : DataStorage
         the data storage class that connects to mongo
-    attachment_saver : AttachmentSaver
-        the attachment saver class that saves attachments
     put_results_validator : PutResultsValidator
         the validator class for the put results endpoint
-    get_client_id_validator : GetClientIDValidator
-        the validator class for the get client id endpoint
     get_job_validator : GetJobValidator
         the validator class for the get job endpoint
 
@@ -51,10 +46,9 @@ class WorkServer:
         self.app = Flask(__name__)
         self.redis = redis_server
         self.data = DataStorage()
-        self.attachment_saver = AttachmentSaver()
         self.put_results_validator = PutResultsValidator()
-        self.get_client_id_validator = GetClientIDValidator()
         self.get_job_validator = GetJobValidator()
+        self.rabbitmq = RabbitMQ()
 
 
 def check_for_database(workserver):
@@ -119,9 +113,11 @@ def get_job(workserver):
     """
     check_for_database(workserver)
     client_id = request.args.get('client_id')
-    if workserver.redis.llen('jobs_waiting_queue') == 0:
+
+    if workserver.rabbitmq.size() == 0:
         return False, jsonify({'error': 'No jobs available'}), 403
-    job = json.loads(workserver.redis.rpop('jobs_waiting_queue'))
+    job = workserver.rabbitmq.get()
+
     job_id = job['job_id']
     url = job['url']
     agency = job['agency'] if job.get('agency') else "other_agency"
@@ -234,14 +230,14 @@ def put_attachment_results(workserver, data):
     success, *values = check_received_result(workserver)
     if not success:
         return success, values[0], values[1]
-    job_id = data['job_id']
-    workserver.redis.hdel('jobs_in_progress', job_id)
+    # Not sure if we need the following two lines
+    # since attachments aren't considered jobs?
+    # job_id = data['job_id']
+    # workserver.redis.hdel('jobs_in_progress', job_id)
     if data.get('results') is not None:
-        print('Attachment Job Being Saved')
-        print('agency', data['agency'])
-        print('reg_id', data['reg_id'])
+        print(f'Attachment from Comment {data["reg_id"]} \
+        saved to {data["attachment_path"]}')
     workserver.data.add_attachment(data)
-    print(f"/data/{data['agency']}/{data['reg_id']}")
     return (True,)
 
 

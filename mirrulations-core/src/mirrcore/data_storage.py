@@ -33,7 +33,8 @@ class DataStorage:
         #             self.attachments.insert_one(data)
         agency = data['agency']
         reg_id = data['reg_id']
-        path = agency + '/' + reg_id
-        for file in data['results']:
-            entry = {'path': path, 'file': file}
-            self.attachments.insert_one(entry)
+        # Updated this line to no longer be a for loop
+        # This was causing the large attachments downloaded counter since we 
+        # were making an entry for each key in data['results'] before
+        entry = {'path': data['attachment_path'], 'file': data['attachment_filename']}
+        self.attachments.insert_one(entry)

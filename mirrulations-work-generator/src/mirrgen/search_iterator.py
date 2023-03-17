@@ -38,7 +38,7 @@ class SearchIterator:
         if self.iteration_done:
             raise StopIteration
 
-        # If the downlaod results in an error, don't
+        # If the download results in an error, don't
         # iterate next_page.  This will cause the download
         # to be re-tried next iteration.  This could cause an
         # infinite loop, but it handles a period 500-error, which

@@ -52,7 +52,7 @@ def test_document_found_others_not(monkeypatch):
     monkeypatch.setattr(storage, 'documents', FindOnly('DOC-2020-1234'))
     monkeypatch.setattr(storage, 'comments', FindOnly('NOTHING'))
     monkeypatch.setattr(storage, 'attachments', FindOnly('NOTHING'))
-
+ 
 
     # docket does not exists
     does_not_exist(storage, 'DOCK-2020-1234')
@@ -191,7 +191,9 @@ def test_add_attachment(monkeypatch):
         },
         'agency': 'EPA',
         'reg_id': 'AAAA',
-        'results': {'file', 'file'}
+        'results': {'file', 'file'},
+        'attachment_path':"attachment_path", 
+        'attachment_filename':"attachment_filename.pdf"
     }
 
     storage.add_attachment(to_insert)
