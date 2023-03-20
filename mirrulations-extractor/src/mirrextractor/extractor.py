@@ -61,6 +61,8 @@ class Extractor:
         pdf_bytes = io.BytesIO()
         pdf.save(pdf_bytes, linearize=True)
         text = pdfminer.high_level.extract_text(pdf_bytes)
+        # Make dirs if they do not already exist
+        os.makedirs(save_path[:save_path.rfind('/')], exist_ok=True)
         # Save the extracted text to a file
         with open(save_path, "w", encoding="utf-8") as out_file:
             out_file.write(text.strip())
@@ -76,12 +78,13 @@ if __name__ == '__main__':
                 if not file.endswith('pdf'):
                     continue
                 complete_path = os.path.join(root, file)
-                output_path = PathGenerator.make_attachment_save_path(complete_path)
-                if not output_path.is_file():
+                output_path = PathGenerator\
+                    .make_attachment_save_path(complete_path)
+                if not os.path.isfile(output_path):
                     start_time = time.time()
                     Extractor.extract_text(complete_path, output_path)
                     print(f"Time taken to extract text from {complete_path}"
-                          f" is {start_time - time.time()} seconds")
+                          f" is {time.time() - start_time} seconds")
         # sleep for a hour
         current_time = now.strftime("%H:%M:%S")
         print(f"Sleeping for an hour : started at {current_time}")
