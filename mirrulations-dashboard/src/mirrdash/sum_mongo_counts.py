@@ -22,6 +22,7 @@ def get_done_counts(client, db_name):
     documents_count = get_documents_count(client, db_name)
     comments_count = get_comments_count(client, db_name)
     attachments_count = get_attachments_count(client, db_name)
+    extractions_count = get_extractions_count(client, db_name)
 
     return {
         'num_jobs_done': dockets_count + documents_count
@@ -29,7 +30,8 @@ def get_done_counts(client, db_name):
         'num_dockets_done': dockets_count,
         'num_documents_done': documents_count,
         'num_comments_done': comments_count,
-        'num_attachments_done': attachments_count
+        'num_attachments_done': attachments_count,
+        'num_extractions_done': extractions_count
     }
 
 
@@ -47,3 +49,7 @@ def get_comments_count(client, db_name):
 
 def get_attachments_count(client, db_name):
     return int(client[db_name]['attachments'].estimated_document_count())
+
+
+def get_extractions_count(client, db_name):
+    return int(client[db_name][''].estimated_document_count()) #TODO get num of extracted pdfs
