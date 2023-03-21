@@ -86,7 +86,8 @@ const updateDashboardData = () => {
             mongo,
             redis,
             work_generator,
-            work_server
+            work_server,
+            num_extractions_done
         } = jobInformation;
         updateHtmlValues('jobs-waiting', num_jobs_waiting, jobs_total);
         updateHtmlValues('jobs-done', num_jobs_done, jobs_total);
@@ -123,6 +124,7 @@ const updateDashboardData = () => {
         updateStatus('work-generator-status', work_generator);
         updateStatus('work-server-status', work_server);
         // Counts
+        updateCounts("extractions-done", num_extractions_done);
         updateCounts("attachments-done",num_attachments_done);
         updateCounts("comments-done",num_comments_done);
         updateCounts("dockets-done",num_dockets_done);
