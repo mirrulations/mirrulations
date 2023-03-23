@@ -48,7 +48,9 @@ class SearchIterator:
             result = self.api.download(self.url, self.params)
             self.next_page += 1
         except HTTPError as error:
-            print(f'FAILED: {self.url}\n{error}')
+            # Removes API KEY From Logging
+            error_without_api_key = ''.join(str(error).split("&")[:-1])
+            print(f'FAILED: {self.url}\n{error_without_api_key}')
             return {}
 
         self.iteration_done = self.check_if_done(result)
