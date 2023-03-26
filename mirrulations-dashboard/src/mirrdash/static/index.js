@@ -15,6 +15,7 @@ const updateHtmlValues = (id, value, total) => {
     document.getElementById(id+'-number').textContent = value.toLocaleString('en');
     document.getElementById(id+'-circle-percentage').textContent = `${percent}%`;
     document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
+    document.getElementById(id+'-bar-percentage').textContent = `${percent}%`;
 }
 
 
@@ -86,10 +87,13 @@ const updateDashboardData = () => {
             mongo,
             redis,
             work_generator,
-            work_server
+            work_server,
+            num_corpus_available,
+            total_corpus_num
         } = jobInformation;
         updateHtmlValues('jobs-waiting', num_jobs_waiting, jobs_total);
         updateHtmlValues('jobs-done', num_jobs_done, jobs_total);
+        updateHtmlValues('progress-to-corpus', num_corpus_available, total_corpus_num);
         updateStatus('client1-status', client1)
         updateStatus('client2-status', client2)
         updateStatus('client3-status', client3)
