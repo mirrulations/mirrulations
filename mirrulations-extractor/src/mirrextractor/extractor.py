@@ -54,12 +54,15 @@ class Extractor:
         """
         try:
             pdf = pikepdf.open(attachment_path)
-        except pikepdf.PdfError:
-            print(f"FAILURE: failed to open {attachment_path}")
+        except pikepdf.PdfError as err:
+            print(f"FAILURE: failed to open {attachment_path}\n{err}")
             return
-
         pdf_bytes = io.BytesIO()
-        pdf.save(pdf_bytes, linearize=True)
+        try:
+            pdf.save(pdf_bytes)
+        except RuntimeError as err:
+            print(f"FAILURE: failed to save {attachment_path}\n{err}")
+            return
         text = pdfminer.high_level.extract_text(pdf_bytes)
         # Make dirs if they do not already exist
         os.makedirs(save_path[:save_path.rfind('/')], exist_ok=True)

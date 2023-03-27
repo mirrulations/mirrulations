@@ -107,11 +107,15 @@ class PathGenerator:
 
         return f'/{agencyId}/{docket_id}/text-{docket_id}/docket/{docket_id}.json'
 
-
     def get_document_json_path(self, json):
         agencyId, docket_id, item_id = self.get_attributes(json)
 
         return f'/{agencyId}/{docket_id}/text-{docket_id}/documents/{item_id}.json'
+
+    def get_document_htm_path(self, json):
+        agencyId, docket_id, item_id = self.get_attributes(json)
+
+        return f'/{agencyId}/{docket_id}/text-{docket_id}/documents/{item_id}_content.htm'
 
     def get_comment_json_path(self, json):
         agencyId, docket_id, item_id = self.get_attributes(json)

@@ -1,10 +1,11 @@
 from collections import namedtuple
 from unittest.mock import Mock, MagicMock
 from pytest import fixture
-
+import pytest
 from mirrcore.job_queue import JobQueue
+from mirrcore.job_queue_exceptions import JobQueueException
 from mirrdash.dashboard_server import create_server, \
-    get_container_stats, get_container_name
+    get_container_stats, get_container_name, get_jobs_stats
 from fakeredis import FakeRedis, FakeServer
 from mirrmock.mock_data_storage import MockDataStorage
 from mirrmock.mock_document_count import create_mock_mongodb
@@ -67,9 +68,39 @@ def test_dashboard_returns_job_information(mock_server):
     assert results['num_jobs_dockets_queued'] == 1
 
 
+def test_dev_dashboard_returns_container_information(mock_server):
+    client = MagicMock()
+
+    # Mock out the docker object to return Container-like values
+    # for the list method.
+    Container = namedtuple('Container', ['name', 'status'])
+    return_value = [Container('capstone_client1_1', 'running'),
+                    Container('capstone_work_server_1', 'running')]
+    client.containers.list = Mock(return_value=return_value)
+
+    mock_server.docker = client
+    response = mock_server.client.get('/devdata')
+
+    expected = {'client1': 'running',
+                'work_server': 'running'}
+
+    assert response.status_code == 200
+    results = response.get_json()
+    assert results == expected
+
+
 def test_dashboard_returns_html(mock_server):
     add_mock_data_to_database(mock_server.job_queue)
     response = mock_server.client.get('/')
+
+    assert response.status_code == 200
+    expected = '<!DOCTYPE html>'
+    assert response.data.decode().split('\n')[0] == expected
+
+
+def test_developer_dashboard_returns_html(mock_server):
+    add_mock_data_to_database(mock_server.job_queue)
+    response = mock_server.client.get('/dev')
 
     assert response.status_code == 200
     expected = '<!DOCTYPE html>'
@@ -97,3 +128,51 @@ def test_get_container_stats():
 def test_docker_name_formatted():
     name = '_capstone2022-work_generator-1_'
     assert get_container_name(name) == 'capstone2022_work_generator_1'
+
+
+def test_get_job_stats_raises_job_queue_exception(mock_server):
+    """
+    test job_queue raises a JobQueueException
+    """
+    client = MagicMock()
+
+    Container = namedtuple('Container', ['name', 'status'])
+    return_value = [Container('capstone_client1_1', 'running'),
+                    Container('capstone_work_server_1', 'running')]
+    client.containers.list = Mock(return_value=return_value)
+
+    add_mock_data_to_database(mock_server.job_queue)
+    mock_server.docker = client
+
+    # Set up the mock job queue to raise a JobQueueException
+    # when get_job_stats is called
+    mock_server.job_queue.get_job_stats = Mock(side_effect=JobQueueException())
+    with pytest.raises(JobQueueException):
+        get_jobs_stats(mock_server.job_queue)
+
+
+def test_dashboard_handles_job_queue_exception(mock_server):
+    """
+    Test that the dashboard catches the JobQueueException raised from
+    the JobQueue. Currently raises if RabbitMQ channel connection
+    is lost
+    """
+    client = MagicMock()
+
+    Container = namedtuple('Container', ['name', 'status'])
+    return_value = [Container('capstone_client1_1', 'running'),
+                    Container('capstone_work_server_1', 'running')]
+    client.containers.list = Mock(return_value=return_value)
+
+    add_mock_data_to_database(mock_server.job_queue)
+    mock_server.docker = client
+
+    # Set up the mock job queue to raise a JobQueueException
+    # when get_job_stats is called
+    mock_server.job_queue.get_job_stats = Mock(side_effect=JobQueueException())
+
+    # Call the endpoint and catch the JobQueueException
+    response = mock_server.client.get('/data')
+    assert response.status_code == 503
+    assert response.get_json() == \
+        {'num_jobs_waiting': None}

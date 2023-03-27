@@ -1,9 +1,11 @@
 from json import dumps
 import base64
+from unittest.mock import Mock
 from pytest import fixture
 from mirrserver.work_server import create_server
 from mirrmock.mock_flask_server import mock_work_server
-from mirrmock.mock_rabbitmq import MockRabbit
+from mirrmock.mock_job_queue import MockJobQueue
+from mirrcore.job_queue_exceptions import JobQueueException
 
 
 @fixture(name='mock_server')
@@ -19,8 +21,12 @@ def test_create_mock_server(mock_server):
     assert mock_server.app is not None
 
 
-def test_new_mock_database_is_empty(mock_server):
-    assert mock_server.redis.keys() == []
+def test_new_mock_database_keys(mock_server):
+    assert mock_server.redis.keys() == [
+        b'num_jobs_comments_waiting',
+        b'num_jobs_documents_waiting',
+        b'num_jobs_dockets_waiting',
+    ]
 
 
 def test_data_entry_in_mock_database_is_correct(mock_server):
@@ -50,28 +56,26 @@ def test_get_job_without_client_id_is_unauthorized(mock_server):
 
 
 def test_get_job_has_no_available_job(mock_server):
-    mock_server.rabbitmq = MockRabbit()
+    mock_server.job_queue = MockJobQueue()
     params = {'client_id': 1}
     response = mock_server.client.get('/get_job', query_string=params)
     assert response.status_code == 403
     expected = {'error': 'No jobs available'}
     assert response.get_json() == expected
-    assert mock_server.rabbitmq.size() == 0
+    assert mock_server.job_queue.get_num_jobs() == 0
 
 
 def test_get_job_returns_single_job(mock_server):
-    # mock_server.redis.incr('total_num_client_ids')
-    mock_server.rabbitmq = MockRabbit()
+    mock_server.job_queue = MockJobQueue()
     params = {'client_id': 1}
     job = {'job_id': 1,
            'url': 'url',
            'job_type': 'docket',
            'reg_id': 3,
            'agency': 'EPA'}
-    mock_server.rabbitmq.add(job)
-    assert mock_server.rabbitmq.size() == 1
+    mock_server.job_queue.add_job(job)
+    assert mock_server.job_queue.get_num_jobs() == 1
 
-    # mock_server.redis.rpush('jobs_waiting_queue', dumps(job))
     response = mock_server.client.get('/get_job', query_string=params)
     assert response.status_code == 200
     expected = {'job_id': '1',
@@ -80,20 +84,6 @@ def test_get_job_returns_single_job(mock_server):
                 'reg_id': 3,
                 'agency': 'EPA'}
     assert response.get_json() == expected
-
-
-def test_get_waiting_job_is_now_in_progress_and_not_waiting(mock_server):
-    mock_server.rabbitmq = MockRabbit()
-    # mock_server.redis.incr('total_num_client_ids')
-    params = {'client_id': 1}
-    job = {'job_id': 3, 'url': 'url'}
-    mock_server.rabbitmq.add(job)
-    # mock_server.redis.rpush('jobs_waiting_queue', dumps(job))
-    mock_server.client.get('/get_job', query_string=params)
-    # assert mock_server.redis.llen('jobs_waiting_queue') == 0
-    # keys = mock_server.redis.hkeys('jobs_in_progress')
-    # assert mock_server.redis.hget('jobs_in_progress',
-    #                               keys[0]).decode() == 'url'
 
 
 def test_put_results_message_body_contains_no_results(mock_server):
@@ -316,19 +306,17 @@ def test_database_returns_error_when_database_does_not_exist(mock_server):
     assert response.status_code == 500
 
 
-def test_get_newer_jobs_from_job_waiting_queue(mock_server):
-    mock_server.rabbitmq = MockRabbit()
+def test_get_jobs_from_job_waiting_queue(mock_server):
+    mock_server.job_queue = MockJobQueue()
     params = {'client_id': 1}
     for i in range(2):
-        # mock_server.redis.incr('total_num_client_ids')
         job = {'job_id': i,
                'url': 'url',
                'job_type': 'docket',
                'reg_id': 3,
                'agency': 'EPA'
                }
-        # mock_server.redis.lpush('jobs_waiting_queue', dumps(job))
-        mock_server.rabbitmq.add(job)
+        mock_server.job_queue.add_job(job)
     for i in range(2):
         response = mock_server.client.get('/get_job', query_string=params)
         assert response.status_code == 200
@@ -387,3 +375,24 @@ def test_success_logging_for_no_attachment_results(capsys, mock_server):
     captured = capsys.readouterr()
     print_data = []
     assert captured.out == "".join(print_data)
+
+
+def test_work_server_catches_job_queue_exception(mock_server):
+    mock_server.job_queue = MockJobQueue()
+    params = {'client_id': 1}
+
+    job = {'job_id': '1',
+           'url': 'url',
+           'job_type': 'docket',
+           'reg_id': 3,
+           'agency': 'EPA'
+           }
+    mock_server.job_queue.add_job(job)
+
+    assert mock_server.job_queue.get_num_jobs() == 1
+
+    mock_server.job_queue.get_job = Mock(side_effect=JobQueueException())
+
+    response = mock_server.client.get('/get_job', query_string=params)
+
+    assert response.status_code == 503

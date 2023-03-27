@@ -106,3 +106,18 @@ def test_extractor_handles_mixed_text_and_images():
         text = in_file.read()
 
     assert text.strip() == 'a'
+
+
+def test_extractor_catches_runtime_error(capfd):
+    absolute_path = os.path.dirname(__file__)
+
+    save_path = os.path.join(absolute_path, SAVE_PATH)
+
+    Extractor.extract_text(
+        os.path.join(absolute_path, 'pdfs/error.pdf'),
+        save_path)
+    # extracted file should not exist
+    assert os.path.exists(save_path) is False
+    # should print error message
+    out, _ = capfd.readouterr()
+    assert "operation for stream attempted on object of type dictionary" in out

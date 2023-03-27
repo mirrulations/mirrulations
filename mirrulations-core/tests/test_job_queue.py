@@ -74,3 +74,35 @@ def test_increment_function():
     assert database.get('num_jobs_comments_waiting') == 1
     assert database.get('num_jobs_documents_waiting') == 1
     assert database.get('num_jobs_dockets_waiting') == 1
+
+
+def test_decrement_function():
+    """
+    test that jobs get decremented
+    """
+    # with mock_redis:
+    database = MockRedisWithStorage()
+    queue = JobQueue(database)
+    queue.rabbitmq = MockRabbit()
+
+    database.set('num_jobs_comments_waiting', 0)
+    database.set('num_jobs_documents_waiting', 0)
+    database.set('num_jobs_dockets_waiting', 0)
+
+    job_type = ['comments', 'documents', 'dockets']
+
+    queue.add_job('http://a.b.c', job_type=job_type[0])
+    queue.add_job('http://a.b.c', job_type=job_type[1])
+    queue.add_job('http://a.b.c', job_type=job_type[2])
+
+    assert database.get('num_jobs_comments_waiting') == 1
+    assert database.get('num_jobs_documents_waiting') == 1
+    assert database.get('num_jobs_dockets_waiting') == 1
+
+    for i in range(3):
+        queue.get_job()
+        queue.decrement_count(job_type[i])
+
+    assert database.get('num_jobs_comments_waiting') == 0
+    assert database.get('num_jobs_documents_waiting') == 0
+    assert database.get('num_jobs_dockets_waiting') == 0

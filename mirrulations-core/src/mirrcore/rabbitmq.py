@@ -1,6 +1,7 @@
-import pika
 import json
-import time
+import pika
+from mirrcore.job_queue_exceptions import JobQueueException
+
 
 class RabbitMQ:
     """
@@ -24,6 +25,7 @@ class RabbitMQ:
         @return: None
         """
         self._ensure_channel()
+        # channel cannot be ensured hasn't dropped been between these calls
         try:
             self.channel.basic_publish(exchange='',
                                        routing_key='jobs_waiting_queue',
@@ -31,30 +33,40 @@ class RabbitMQ:
                                        properties=pika.BasicProperties(
                                         delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE)
                                        )
-        except pika.exceptions.StreamLostError:
-            print('FAILURE: Error occurred when adding a job. Sleeping...')
-            time.sleep(60 * 60 * 4)
+        except pika.exceptions.StreamLostError as error:
+            print("FAILURE: RabbitMQ Channel Connection Lost")
+            raise JobQueueException from error
 
     def size(self):
         """
-        Get the number of jobs in the queue
+        Get the number of jobs in the queue.
+        Can't be sure Channel is active between ensure_channel() and queue_declare()
+        which is the reasoning for implmentation of try except
         @return: a non-negative integer
         """
         self._ensure_channel()
-        queue = self.channel.queue_declare('jobs_waiting_queue', durable=True)
-        return queue.method.message_count
+        try:
+            queue = self.channel.queue_declare('jobs_waiting_queue', durable=True)
+            return queue.method.message_count
+        except pika.exceptions.StreamLostError as error:
+            print("FAILURE: RabbitMQ Channel Connection Lost")
+            raise JobQueueException from error
 
     def get(self):
         """
         Take one job from the queue and return it
         @return: a job, or None if there are no jobs
         """
-        # Connections timeout, so we have to create a new one each time
+        # Check if channel is up, if not, create a new one
         self._ensure_channel()
-        method_frame, header_frame, body = self.channel.basic_get('jobs_waiting_queue')
-        # If there was no job available
-        if method_frame is None:
-            return None
+        try:
+            method_frame, header_frame, body = self.channel.basic_get('jobs_waiting_queue')
+            # If there was no job available
+            if method_frame is None:
+                return None
 
-        self.channel.basic_ack(method_frame.delivery_tag)
-        return json.loads(body.decode('utf-8'))
+            self.channel.basic_ack(method_frame.delivery_tag)
+            return json.loads(body.decode('utf-8'))
+        except pika.exceptions.StreamLostError as error:
+            print("FAILURE: RabbitMQ Channel Connection Lost")
+            raise JobQueueException from error
