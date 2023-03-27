@@ -89,10 +89,6 @@ p {
     width: 160px;
 }
 
-.progress-container {
-    width: 100%;
-  }
-
 .dashboard h2 {
     font-size: 32px;
     font-weight: 800;
@@ -187,20 +183,3 @@ p {
         transform: translateY(0);
     }
 }
-
-/* Progress to Corpus */
-.total-to-corpus {
-    width: 100%;
-    background: rgb(238,238,238);
-    border-radius: 16px;
-  }
-  
-  .progress-to-corpus {
-    width: 50%;
-    border-radius: 16px;
-    color: white;
-  }
-
-  .corpus-header {
-    padding-bottom: 10px;
-  }
