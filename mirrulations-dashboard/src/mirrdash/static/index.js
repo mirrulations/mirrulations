@@ -157,4 +157,3 @@ const updateDeveloperDashboardData = () => {
         updateStatus('work-server-status', work_server);
     })
     .catch((err) => console.log(err));
-} 
