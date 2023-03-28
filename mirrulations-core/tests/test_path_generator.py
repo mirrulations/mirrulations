@@ -409,6 +409,24 @@ def test_attachment_comment_paths(generator):
     assert expected_path == generator.get_attachment_json_paths(json_pls)
 
 
+def test_null_file_format_for_attachment_comment_returns_nothing(generator):
+    comment_json = {
+        "data": {
+            "id": "FDA-2017-D-2335-1566",
+            "type": "comments",
+            "attributes": {
+                "agencyId": "FDA",
+                "docketId": "FDA-2017-D-2335"
+            }
+        },
+        "included": [{
+            "attributes": {
+                "fileFormats": None  # A file format with No attachments
+            }
+        }]}
+    assert generator.get_attachment_json_paths(comment_json) == []
+
+
 def test_extractor_save_path():
     path = "/data/data/USTR/USTR-2015-0010/" + \
            "binary-USTR-2015-0010/" + \
