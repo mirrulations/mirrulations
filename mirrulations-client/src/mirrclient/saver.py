@@ -1,5 +1,6 @@
 import os
 from json import dumps, load
+import pymongo
 
 
 class Saver:
@@ -13,6 +14,13 @@ class Saver:
         Takes the content (pdf, doc, etc.) and saves the attachment to a
         given path
     """
+
+    def __init__(self):
+        database = pymongo.MongoClient('mongo', 27017)['mirrulations']
+        self.dockets = database['dockets']
+        self.documents = database['documents']
+        self.comments = database['comments']
+        self.attachments = database['attachments']
 
     def make_path(self, path):
         try:
@@ -68,3 +76,26 @@ class Saver:
     def check_for_duplicates(self, path, data, i):
         if self.is_duplicate(self.open_json_file(path), data) is False:
             self.save_duplicate_json(path, data, i)
+
+    # Mongo Saving  
+    # Just a skeleton for now still need to implement
+    def exists(self, search_element):
+        result_id = search_element['id']
+
+        return self.dockets.count_documents({'id': result_id}) > 0 or \
+            self.documents.count_documents({'id': result_id}) > 0 or \
+            self.comments.count_documents({'id': result_id}) > 0 or \
+            self.attachments.count_documents({'id': result_id}) > 0
+
+    def save_to_mongo(self, data):
+        if 'type' in data['data'].keys():
+            if data['data']['type'] == 'dockets':
+                self.dockets.insert_one(data)
+            elif data['data']['type'] == 'documents':
+                self.documents.insert_one(data)
+            elif data['data']['type'] == 'comments':
+                self.comments.insert_one(data)
+            elif data['data']['type'] == 'attachments':
+                entry = {'path': data['attachment_path'], 
+                         'file': data['attachment_filename']}
+                self.attachments.insert_one(entry)

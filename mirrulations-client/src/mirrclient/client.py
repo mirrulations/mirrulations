@@ -9,6 +9,7 @@ from mirrclient.saver import Saver
 from mirrcore.path_generator import PathGenerator
 
 
+
 class NoJobsAvailableException(Exception):
     """
     Raises an Exception when there are no jobs available in the workserver.
@@ -94,6 +95,8 @@ class Client:
         return job
 
     def send_job(self, job, job_result):
+        # The client should handle this functionality now as we try to
+        # move away from using the work server
         """
         Returns the job results to the workserver
         If there are any errors in the job_result, the data json is returned
