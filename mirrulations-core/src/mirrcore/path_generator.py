@@ -88,7 +88,6 @@ class PathGenerator:
 
             if docket_id is None:
                 docket_id = self.parse_docket_id(item_id)
-                print(f'{item_id} was parsed to get docket id: {docket_id}.')
 
         # convert None value to respective folder names
         if not is_docket_json and item_id is None:
