@@ -1,4 +1,3 @@
-
 from mirrcore.data_storage import DataStorage
 
 
@@ -36,7 +35,6 @@ def test_docket_found_others_not(monkeypatch):
     monkeypatch.setattr(storage, 'comments', FindOnly('NOTHING'))
     monkeypatch.setattr(storage, 'attachments', FindOnly('NOTHING'))
 
-
     # docket exists
     exists(storage, 'DOCK-2020-1234')
     # document does not exist
@@ -52,7 +50,6 @@ def test_document_found_others_not(monkeypatch):
     monkeypatch.setattr(storage, 'documents', FindOnly('DOC-2020-1234'))
     monkeypatch.setattr(storage, 'comments', FindOnly('NOTHING'))
     monkeypatch.setattr(storage, 'attachments', FindOnly('NOTHING'))
- 
 
     # docket does not exists
     does_not_exist(storage, 'DOCK-2020-1234')
@@ -69,7 +66,6 @@ def test_comment_found_others_not(monkeypatch):
     monkeypatch.setattr(storage, 'documents', FindOnly('NOTHING'))
     monkeypatch.setattr(storage, 'comments', FindOnly('COM-2020-1234'))
     monkeypatch.setattr(storage, 'attachments', FindOnly('NOTHING'))
-
 
     # docket does not exist
     does_not_exist(storage, 'DOCK-2020-1234')
@@ -88,7 +84,6 @@ def test_attachment_found_others_not(monkeypatch):
     monkeypatch.setattr(storage, 'documents', FindOnly('NOTHING'))
     monkeypatch.setattr(storage, 'comments', FindOnly('NOTHING'))
     monkeypatch.setattr(storage, 'attachments', FindOnly('ATTCH-2020-1234'))
-
 
     # docket does not exist
     does_not_exist(storage, 'DOCK-2020-1234')
@@ -109,7 +104,6 @@ def test_add_docket(monkeypatch):
     monkeypatch.setattr(storage, 'comments', MockDB())
     monkeypatch.setattr(storage, 'attachments', MockDB())
 
-
     to_insert = {
         'data': {
             'id': 'DOCK-2020-1234',
@@ -125,7 +119,6 @@ def test_add_docket(monkeypatch):
     assert len(storage.attachments.saved) == 0
 
 
-
 def test_add_documents(monkeypatch):
 
     storage = DataStorage()
@@ -134,7 +127,6 @@ def test_add_documents(monkeypatch):
     monkeypatch.setattr(storage, 'documents', MockDB())
     monkeypatch.setattr(storage, 'comments', MockDB())
     monkeypatch.setattr(storage, 'attachments', MockDB())
-
 
     to_insert = {
         'data': {
@@ -159,7 +151,6 @@ def test_add_comment(monkeypatch):
     monkeypatch.setattr(storage, 'comments', MockDB())
     monkeypatch.setattr(storage, 'attachments', MockDB())
 
-
     to_insert = {
         'data': {
             'id': 'COMM-2020-1234',
@@ -183,7 +174,6 @@ def test_add_attachment(monkeypatch):
     monkeypatch.setattr(storage, 'comments', MockDB())
     monkeypatch.setattr(storage, 'attachments', MockDB())
 
-
     to_insert = {
         'data': {
             'id': 'COMM-2020-1234',
@@ -191,9 +181,9 @@ def test_add_attachment(monkeypatch):
         },
         'agency': 'EPA',
         'reg_id': 'AAAA',
-        'results': {'file', 'file'},
-        'attachment_path':"attachment_path", 
-        'attachment_filename':"attachment_filename.pdf"
+        'results': {'file', 'file2'},
+        'attachment_path': "attachment_path",
+        'attachment_filename': "attachment_filename.pdf"
     }
 
     storage.add_attachment(to_insert)

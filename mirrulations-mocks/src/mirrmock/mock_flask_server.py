@@ -1,14 +1,15 @@
-from unittest.mock import MagicMock
 from fakeredis import FakeRedis, FakeServer
 from mirrmock.mock_data_storage import MockDataStorage
 
 
-class mockAttachmentSaver():
+class MockAttachmentSaver():
     def __init__(self):
         self.num_attachments = 0
         self.data = None
-    
+        self.path = None
+
     def save(self, data, path=None):
+        self.path = path
         self.num_attachments += 1
         self.data = data
 
@@ -16,7 +17,7 @@ class mockAttachmentSaver():
 def mock_work_server(create_server):
     redis_server = FakeServer()
     mock_db = FakeRedis(server=redis_server)
-    mock_saver = mockAttachmentSaver()
+    mock_saver = MockAttachmentSaver()
     server = create_server(mock_db)
     server.redis_server = redis_server
     server.app.config['TESTING'] = True

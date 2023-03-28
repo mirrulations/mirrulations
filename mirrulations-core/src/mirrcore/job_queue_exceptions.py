@@ -6,6 +6,7 @@ class JobQueueException(Exception):
     message = {'error': 'The job queue encountered an error'}
     status_code = 503
 
+
 class WorkGenException(Exception):
     """
     Raised when the job queue has an exception occur.

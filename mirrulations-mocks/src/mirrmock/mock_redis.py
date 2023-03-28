@@ -1,16 +1,18 @@
 import redis
 
+
 class BusyRedis():
     """
-    Stub for testing in place of a Redis server that is busy loading the data to memory, 
-    ping replies with true
+    Stub for testing in place of a Redis server that is busy loading the data
+    to memory, ping replies with true
     """
     def ping(self):
         raise redis.BusyLoadingError
 
+
 class ReadyRedis():
     """
-    Stub for testing in place of an active Redis server, 
+    Stub for testing in place of an active Redis server,
     ping replies with true
     """
     def ping(self):
@@ -24,7 +26,6 @@ class MockRedisWithStorage():
     def __init__(self):
         self.data = {}
 
-        
     def set(self, key, value):
         if key is None:
             self.data[key] = int(0)
@@ -39,7 +40,7 @@ class MockRedisWithStorage():
     def incr(self, key):
         try:
             self.data[key] += 1
-        except KeyError as e:
+        except KeyError:
             # self.data.set(key, 0)
             self.data[key] = 0
             self.data[key] += 1
@@ -47,7 +48,7 @@ class MockRedisWithStorage():
     def decr(self, key):
         try:
             self.data[key] -= 1
-        except KeyError as e:
+        except KeyError:
             # self.data.set(key, 0)
             self.data[key] = 0
             self.data[key] -= 1
@@ -55,6 +56,6 @@ class MockRedisWithStorage():
     def lpush(self, key, val):
         try:
             self.data[key] = [val]+self.data[key]
-        except KeyError as e:
+        except KeyError:
             self.data[key] = []
             self.data[key] = [val]+self.data[key]

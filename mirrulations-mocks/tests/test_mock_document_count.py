@@ -8,4 +8,5 @@ def test_mock_document_count():
     assert mock_db['mirrulations']['dockets'].estimated_document_count() == 1
     assert mock_db['mirrulations']['documents'].estimated_document_count() == 2
     assert mock_db['mirrulations']['comments'].estimated_document_count() == 3
-    assert mock_db['mirrulations']['attachments'].estimated_document_count() == 4
+    assert mock_db['mirrulations']['attachments'] \
+        .estimated_document_count() == 4

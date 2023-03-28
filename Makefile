@@ -9,9 +9,9 @@ test:
 	pytest;
 
 static:
-	flake8 mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-extractor;
-	pycodestyle mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-extractor;
-	pylint mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-extractor;
+	flake8 mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-extractor mirrulations-mocks mirrulations-validation mirrulations-core;
+	pycodestyle mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-extractor mirrulations-mocks mirrulations-validation mirrulations-core;
+	pylint mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-extractor mirrulations-mocks mirrulations-validation mirrulations-core;
 
 
 clean:

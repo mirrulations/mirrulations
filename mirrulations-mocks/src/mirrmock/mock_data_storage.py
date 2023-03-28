@@ -5,8 +5,9 @@ class MockDataStorage:
         self.added = []
         self.attachments_added = []
 
-    # pylint: disable=unused-argument, no-self-use
-    def exists(self, search_element):
+    def exists(self, search_element=None):
+        if search_element is not None:
+            return False
         return False
 
     def add(self, data):

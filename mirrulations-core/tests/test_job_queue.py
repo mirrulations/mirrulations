@@ -19,7 +19,7 @@ def test_first_job_added_with_id_0():
     job = queue.get_job()
     assert job['job_id'] == 1
     assert job['url'] == 'http://a.b.c'
-    
+
 
 def test_job_added_with_next_id():
     database = FakeRedis()
@@ -33,7 +33,7 @@ def test_job_added_with_next_id():
     job = queue.get_job()
     assert job['job_id'] == 43
     assert job['url'] == 'http://a.b.c'
-    
+
 
 def test_last_timestamp():
 

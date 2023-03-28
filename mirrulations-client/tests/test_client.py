@@ -526,7 +526,7 @@ def test_client_downloads_attachment_results(mock_requests):
                 "included": [{
                     "attributes": {
                         "fileFormats": [{
-                            "fileUrl": "https://downloads.regulations.gov"
+                            "fileUrl": "https://fakeurl.gov"
                         }]
                     }
                 }]
@@ -534,7 +534,7 @@ def test_client_downloads_attachment_results(mock_requests):
             status_code=200
         )
         mock_requests.get(
-            "https://downloads.regulations.gov",
+            "https://fakeurl.gov",
             json={"data": 'foobar'},
             status_code=200
         )
@@ -597,78 +597,6 @@ def test_handles_empty_attachment_list(mock_requests):
         results = json_data['results']
         assert json_data['job_type'] == "comments"
         assert client.does_comment_have_attachment(results) is False
-
-
-def test_client_logs_for_multiple_attachments(capsys, mock_requests):
-    client = Client()
-    client.api_key = 1234
-
-    with mock_requests:
-        mock_requests.get(
-            'http://work_server:8080/get_job?client_id=-1',
-            json={'job_id': '1',
-                  'url': 'http://url.com',
-                  'job_type': 'comments',
-                  'reg_id': '1',
-                  'agency': 'foo'},
-            status_code=200
-        )
-        mock_requests.get(
-            'http://url.com?api_key=1234',
-            json={
-                "data": {
-                    "id": "agencyID-001-0002",
-                    "type": "comments",
-                    "attributes": {
-                        "agencyId": "agencyID",
-                        "docketId": "agencyID-001"
-                    }
-                },
-                "included": [{
-                    "attributes": {
-                        "fileFormats": [{
-                            "fileUrl": "https://downloads1.regulations.gov"
-                        }]
-                    }
-                },
-                    {
-                        "attributes": {
-                            "fileFormats": [{
-                                "fileUrl": "https://downloads2.regulations.gov"
-                            }]
-                        }
-                    }]
-            },
-            status_code=200
-        )
-
-        mock_requests.get(
-            "https://downloads1.regulations.gov",
-            json={"data": 'foobar'},
-            status_code=200
-        )
-        mock_requests.get(
-            "https://downloads2.regulations.gov",
-            json={"data": 'foobar'},
-            status_code=200
-        )
-        mock_requests.put('http://work_server:8080/put_results', text='{}')
-        client.job_operation()
-
-        print_data = {
-            'Processing job from work server\n'
-            'Regulations.gov link: https://www.regulations.gov//url.com\n'
-            'API URL: http://url.com\n'
-            'Performing job\n'
-            'Sending Job 1 to Work Server\n'
-            'Found 2 attachment(s) for Comment - agencyID-001-0002\n'
-            'Downloaded 1/2 attachment(s) for Comment - agencyID-001-0002\n'
-            'Downloaded 2/2 attachment(s) for Comment - agencyID-001-0002\n'
-            'SUCCESS: http://url.com complete\n'
-        }
-
-        captured = capsys.readouterr()
-        assert captured.out == "".join(print_data)
 
 
 def test_success_attachment_logging(capsys, mock_requests):

@@ -5,7 +5,8 @@ import pytz
 
 class MockDataSet:
 
-    def __init__(self, num_results, job_type='dockets', start_date='2020-01-01 00:00:00'):
+    def __init__(self, num_results, job_type='dockets',
+                 start_date='2020-01-01 00:00:00'):
         utc = pytz.utc
 
         self.start = datetime.datetime.fromisoformat(start_date)\
@@ -40,11 +41,11 @@ class MockDataSet:
             'self': f'http://a.b.c/{self.counter}'
         }
         relationships = {
-                "attachments" : {
-                    "links" : {
-                    "self" : "api_attachment_url",
-                    "related" : "api_attachment_url"
-	            }
+            "attachments": {
+                "links": {
+                    "self": "api_attachment_url",
+                    "related": "api_attachment_url"
+                }
             }
         }
         return {

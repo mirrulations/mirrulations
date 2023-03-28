@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 class MockJobQueue:
 
     def __init__(self):
