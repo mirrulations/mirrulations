@@ -66,7 +66,7 @@ class Extractor:
             print(f"FAILURE: failed to save {attachment_path}\n{err}")
             return
         text = pdfminer.high_level.extract_text(pdf_bytes)
-        # write to Mongo
+        # write to database
         Extractor.add_extraction_to_database(save_path, text)
         # Make dirs if they do not already exist
         os.makedirs(save_path[:save_path.rfind('/')], exist_ok=True)
