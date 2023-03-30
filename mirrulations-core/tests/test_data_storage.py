@@ -200,11 +200,8 @@ def test_add_text_extraction(monkeypatch):
     monkeypatch.setattr(storage, 'extraction', MockDB())
 
     to_insert = {
-        'data': {
-            'id': 'COMM-2020-1234',
-            'extracted_filename': 'COMM-2020-1234_attachment_1_extracted.txt',
-            'extracted_text': 'foo'
-        },
+        'filename': 'COMM-2020-1234_attachment_1_extracted.txt',
+        'extracted_text': 'foo'
     }
 
     storage.add_extracted_text(to_insert)

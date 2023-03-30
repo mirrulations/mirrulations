@@ -1,4 +1,5 @@
 from mirrextractor.extractor import Extractor
+from mirrmock.mock_data_storage import MockDataStorage
 import pikepdf
 
 
@@ -37,10 +38,26 @@ def test_save_pdf_throws_runtime_error(mocker, capfd):
 
 
 def test_extract_pdf(mocker, capfd):
+    storage = MockDataStorage()
     mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
     mocker.patch('pikepdf.Pdf.save', return_value=None)
     mocker.patch('pdfminer.high_level.extract_text', return_value='test')
     mocker.patch('os.makedirs', return_value=None)
     mocker.patch("builtins.open", mocker.mock_open())
+
+    mocker.patch.object(Extractor, 'add_extraction_to_database',
+                        side_effect=storage.add_extraction_to_database)
+
     Extractor.extract_text('a.pdf', 'b.txt')
     assert "SUCCESS: Saved extraction at" in capfd.readouterr()[0]
+    assert len(storage.extractions) == 1
+
+
+def test_add_extraction_to_database(mocker):
+    mock_storage = mocker.Mock()
+    mocker.patch.object(Extractor, 'storage', mock_storage)
+    save_path = '/path/test.txt'
+    text = 'foo'
+    Extractor.add_extraction_to_database(save_path, text)
+    assert mock_storage.add_extracted_text.called_once_with(
+        {'filename': 'test.txt', 'extracted_text': text})

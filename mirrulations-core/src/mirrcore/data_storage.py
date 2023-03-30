@@ -35,8 +35,11 @@ class DataStorage:
     def add_extracted_text(self, data):
         """
         Add extracted text to MongoDB
+
+        data:
+            data = {
+                'filename': save_path.split("/")[-1],
+                'extracted_text': text
+            }
         """
-        entry = {
-            'filename': data['filename'],
-            'extracted_text': data['extracted_text']}
-        self.extraction.insert_one(entry)
+        self.extraction.insert_one(data)

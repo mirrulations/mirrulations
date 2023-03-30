@@ -10,6 +10,7 @@ from mirrcore.data_storage import DataStorage
 
 
 class Extractor:
+    storage = DataStorage()
     """
     Class containing methods to extract text from files.
     """
@@ -66,7 +67,7 @@ class Extractor:
             return
         text = pdfminer.high_level.extract_text(pdf_bytes)
         # write to Mongo
-        Extractor.add_to_database(save_path, text)
+        Extractor.add_extraction_to_database(save_path, text)
         # Make dirs if they do not already exist
         os.makedirs(save_path[:save_path.rfind('/')], exist_ok=True)
         # Save the extracted text to a file
@@ -75,7 +76,7 @@ class Extractor:
         print(f"SUCCESS: Saved extraction at {save_path}")
 
     @staticmethod
-    def add_to_database(save_path, text):
+    def add_extraction_to_database(save_path, text):
         """
         Add extracted text to database
 
@@ -90,12 +91,11 @@ class Extractor:
             'filename': save_path.split("/")[-1],
             'extracted_text': text
         }
-        storage.add_extracted_text(data)
+        Extractor.storage.add_extracted_text(data)
 
 
 if __name__ == '__main__':
     now = datetime.now()
-    storage = DataStorage()
     while True:
         for (root, dirs, files) in os.walk('/data'):
             for file in files:
