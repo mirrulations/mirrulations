@@ -8,6 +8,7 @@ class DataStorage:
         self.documents = database['documents']
         self.comments = database['comments']
         self.attachments = database['attachments']
+        self.extraction = database['extracted_text']
 
     def exists(self, search_element):
         result_id = search_element['id']
@@ -30,3 +31,12 @@ class DataStorage:
         entry = {'path': data['attachment_path'],
                  'file': data['attachment_filename']}
         self.attachments.insert_one(entry)
+
+    def add_extracted_text(self, data):
+        """
+        Add extracted text to MongoDB
+        """
+        entry = {
+            'filename': data['filename'],
+            'extracted_text': data['extracted_text']}
+        self.extraction.insert_one(entry)

@@ -6,6 +6,7 @@ import pdfminer
 import pdfminer.high_level
 import pikepdf
 from mirrcore.path_generator import PathGenerator
+from mirrcore.data_storage import DataStorage
 
 
 class Extractor:
@@ -64,6 +65,8 @@ class Extractor:
             print(f"FAILURE: failed to save {attachment_path}\n{err}")
             return
         text = pdfminer.high_level.extract_text(pdf_bytes)
+        # write to Mongo
+        Extractor.add_to_database(save_path, text)
         # Make dirs if they do not already exist
         os.makedirs(save_path[:save_path.rfind('/')], exist_ok=True)
         # Save the extracted text to a file
@@ -71,9 +74,28 @@ class Extractor:
             out_file.write(text.strip())
         print(f"SUCCESS: Saved extraction at {save_path}")
 
+    @staticmethod
+    def add_to_database(save_path, text):
+        """
+        Add extracted text to database
+
+        PARAMETERS
+        -----------
+        save path : str
+            Provides the filename of how it will be saved on Disk
+        extracted_text
+            The text that was extracted from the attachment
+        """
+        data = {
+            'filename': save_path.split("/")[-1],
+            'extracted_text': text
+        }
+        storage.add_extracted_text(data)
+
 
 if __name__ == '__main__':
     now = datetime.now()
+    storage = DataStorage()
     while True:
         for (root, dirs, files) in os.walk('/data'):
             for file in files:
