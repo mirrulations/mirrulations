@@ -15,7 +15,7 @@ p {
 
 header {
     text-align: right;
-    padding: 5px;
+    box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
   }
 
 button {
@@ -24,12 +24,13 @@ button {
     background: transparent;
     color: white;
     display: inline-block;
-    padding: 7.5px;
+    padding: 10px;
     transition-duration: 0.4s;
   }
   
 button:hover {
     background: #729dfc;
+    cursor: pointer;
 }
 
 /* Utilities */
@@ -83,6 +84,7 @@ button:hover {
 .info-container-data span{
     font-weight: 500;
     color: #6c757d;
+    padding-right: 10px;
 }
 
 /* Dashboard */

@@ -64,6 +64,10 @@ const updateStatus = (container, status) => {
 
 }
 
+const updateCount = (id, value) => {
+    document.getElementById(id+'-number').textContent = value.toLocaleString('en')
+}
+
 const updateJobTypeProgress = (id, value, total) => {
     let percent = (value/total) * 100;
     document.getElementById(id+'-percent').textContent = `${percent.toFixed(2)}%`;
@@ -92,12 +96,16 @@ const updateClientDashboardData = () => {
         updateHtmlValues('jobs-waiting', num_jobs_waiting, jobs_total);
         updateHtmlValues('jobs-done', num_jobs_done, jobs_total);
         updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], [232255, 1718669, 18072106, 15000000]); //TO DO: change hard coded numbers
-        // Counts
+        // Counts for Percent
         updateJobTypeProgress("dockets-done",num_dockets_done, 232255);
-        // Current estimate of number of attachments (from comments)
-        updateJobTypeProgress("attachments-done",num_attachments_done, 15000000); 
+        updateJobTypeProgress("attachments-done",num_attachments_done, 15000000); // Current estimate of number of attachments (from comments)
         updateJobTypeProgress("comments-done",num_comments_done, 1718669);
         updateJobTypeProgress("documents-done",num_documents_done, 18072106);
+        // Counts for Number
+        updateCount("dockets-done",num_dockets_done);
+        updateCount("attachments-done",num_attachments_done); // Current estimate of number of attachments (from comments)
+        updateCount("comments-done",num_comments_done);
+        updateCount("documents-done",num_documents_done);
         updateJobsQueuedByType("comments-queued", num_jobs_comments_queued);
         updateJobsQueuedByType("dockets-queued", num_jobs_dockets_queued);
         updateJobsQueuedByType("documents-queued", num_jobs_documents_queued);
