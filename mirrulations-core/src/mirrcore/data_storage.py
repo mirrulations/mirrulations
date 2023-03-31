@@ -8,7 +8,7 @@ class DataStorage:
         self.documents = database['documents']
         self.comments = database['comments']
         self.attachments = database['attachments']
-        self.extraction = database['extracted_text']
+        self.extraction = database['comments_extracted_text']
 
     def exists(self, search_element):
         result_id = search_element['id']
