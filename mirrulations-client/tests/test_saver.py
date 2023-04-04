@@ -1,7 +1,10 @@
 from json import dumps
 from unittest.mock import patch, mock_open, MagicMock
+import os
 from mirrclient.saver import Saver
 from pytest import fixture, mark
+import boto3
+from moto import mock_s3
 
 
 @fixture(name='save_duplicate_json')
@@ -142,7 +145,6 @@ def test_check_for_duplicates(capsys):
     path = 'data/USTR/file.json'
     data = {'data': 'Hello world'}
     saver = Saver()
-    saver = Saver()
     mock = mock_open(read_data=dumps(data))
     with patch('mirrclient.saver.open', mock) as mocked_file:
         saver.open_json_file(path)
@@ -151,3 +153,39 @@ def test_check_for_duplicates(capsys):
         print_data = ''
         captured = capsys.readouterr()
         assert captured.out == print_data
+
+
+@fixture(autouse=True)
+def mock_env():
+    os.environ['AWS_ACCESS_KEY'] = 'test_key'
+    os.environ['AWS_SECRET_ACCESS_KEY'] = 'test_secret_key'
+
+
+@mock_s3
+def test_save_valid_json_to_s3():
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="test-mirrulations1")
+    saver = Saver()
+    test_path = "testpath"
+    test_json = {
+        "data": {"attributes": 0}
+    }
+    saver.save_json_to_s3("test-mirrulations1", test_path, test_json)
+    body = conn.Object("test-mirrulations1", "testpath").get()["Body"] \
+                                                        .read() \
+                                                        .decode("utf-8")
+    assert body == '{"data": {"attributes": 0}}'
+
+
+@mock_s3
+def test_save_valid_attachment_to_s3():
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="test-mirrulations1")
+    saver = Saver()
+    test_binary_data = b"\x17"
+    test_path = "testpath"
+    saver.save_binary_to_s3("test-mirrulations1", test_path, test_binary_data)
+    body = conn.Object("test-mirrulations1", "testpath").get()["Body"] \
+                                                        .read() \
+                                                        .decode("utf-8")
+    assert body == '\x17'

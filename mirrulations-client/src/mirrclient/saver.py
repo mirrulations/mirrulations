@@ -1,5 +1,6 @@
 import os
 from json import dumps, load
+from mirrcore.amazon_s3 import AmazonS3
 
 
 class Saver:
@@ -68,3 +69,21 @@ class Saver:
     def check_for_duplicates(self, path, data, i):
         if self.is_duplicate(self.open_json_file(path), data) is False:
             self.save_duplicate_json(path, data, i)
+
+    def save_json_to_s3(self, bucket, path, data):
+        s_3 = AmazonS3()
+        s_3.put_text_s3(
+            bucket,
+            path,
+            data
+            )
+        print(f"SUCCESS: Wrote json to S3: {path}")
+
+    def save_binary_to_s3(self, bucket, path, data):
+        s_3 = AmazonS3()
+        s_3.put_binary_s3(
+            bucket,
+            path,
+            data
+            )
+        print(f"SUCCESS: Wrote binary to S3: {path}")

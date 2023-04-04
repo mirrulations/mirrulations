@@ -62,6 +62,7 @@ class Client:
         self.client_id = os.getenv('ID')
         self.path_generator = PathGenerator()
         self.saver = Saver()
+        self.bucket_name = "mirrulations"
 
         hostname = os.getenv('WORK_SERVER_HOSTNAME')
         port = os.getenv('WORK_SERVER_PORT')
@@ -153,6 +154,9 @@ class Client:
         dir_, filename = data['directory'].rsplit('/', 1)
         self.saver.make_path(dir_)
         self.saver.save_json(f'/data{dir_}/{filename}', data)
+        self.saver.save_json_to_s3(bucket=self.bucket_name,
+                                   path=f'data{dir_}/{filename}',
+                                   data=data)
         print(f"{data['job_id']}: Results written to disk")
 
     def perform_job(self, job_url):
@@ -236,6 +240,9 @@ class Client:
         dir_, filename = path.rsplit('/', 1)
         self.saver.make_path(dir_)
         self.saver.save_attachment(f'/data{dir_}/{filename}', response.content)
+        self.saver.save_binary_to_s3(bucket=self.bucket_name,
+                                     path=f'data{dir_}/{filename}',
+                                     data=response.content)
         print(f"SAVED attachment - {url} to path: ", path)
         filename = path.split('/')[-1]
         data = self.add_attachment_information_to_data(data, path, filename)
