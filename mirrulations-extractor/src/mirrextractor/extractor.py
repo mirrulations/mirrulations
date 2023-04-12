@@ -5,7 +5,9 @@ import io
 import pdfminer
 import pdfminer.high_level
 import pikepdf
+import redis
 from mirrcore.path_generator import PathGenerator
+from mirrcore.jobs_statistics import JobStatistics
 
 
 class Extractor:
@@ -75,9 +77,15 @@ class Extractor:
         with open(save_path, "w", encoding="utf-8") as out_file:
             out_file.write(text.strip())
         print(f"SUCCESS: Saved extraction at {save_path}")
+        try:
+            job_stat.increase_extractions_done()
+        except redis.ConnectionError as error:
+            print(f"Coudn't increase extraction cache number due to: {error}")
 
 
 if __name__ == '__main__':
+    r = redis.Redis('redis')
+    job_stat = JobStatistics(r)
     now = datetime.now()
     while True:
         for (root, dirs, files) in os.walk('/data'):
