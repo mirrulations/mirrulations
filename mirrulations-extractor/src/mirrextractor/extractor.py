@@ -5,9 +5,7 @@ import io
 import pdfminer
 import pdfminer.high_level
 import pikepdf
-import redis
 from mirrcore.path_generator import PathGenerator
-from mirrcore.jobs_statistics import JobStatistics
 
 
 class Extractor:
