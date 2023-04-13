@@ -92,6 +92,7 @@ const updateClientDashboardData = () => {
             num_comments_done,
             num_dockets_done,
             num_documents_done,
+            num_extractions_done,
             num_jobs_done, 
             num_jobs_waiting,
             num_jobs_comments_queued,
@@ -106,12 +107,14 @@ const updateClientDashboardData = () => {
         updateJobTypeProgress("attachments-done",num_attachments_done, 15000000); 
         updateJobTypeProgress("comments-done",num_comments_done, 18072106);
         updateJobTypeProgress("documents-done",num_documents_done, 1718669);
+        updateJobTypeProgress("extractions-done", num_extractions_done, num_attachments_done)
         // Counts for numbers
         updateCount("dockets-done",num_dockets_done);
         // Current estimate of number of attachments (from comments)
         updateCount("attachments-done",num_attachments_done); 
         updateCount("comments-done",num_comments_done);
         updateCount("documents-done",num_documents_done);
+        updateCount("extractions-done", num_extractions_done)
         updateJobsQueuedByType("comments-queued", num_jobs_comments_queued);
         updateJobsQueuedByType("dockets-queued", num_jobs_dockets_queued);
         updateJobsQueuedByType("documents-queued", num_jobs_documents_queued);
