@@ -1,4 +1,5 @@
 from mirrextractor.extractor import Extractor
+from mirrmock .mock_job_statistics import MockJobStatistics
 import pikepdf
 
 
@@ -50,5 +51,8 @@ def test_extract_pdf(mocker, capfd):
     mocker.patch('pdfminer.high_level.extract_text', return_value='test')
     mocker.patch('os.makedirs', return_value=None)
     mocker.patch("builtins.open", mocker.mock_open())
+    job_stat = MockJobStatistics()
+    Extractor.job_stat = job_stat
     Extractor.extract_text('a.pdf', 'b.txt')
     assert "SUCCESS: Saved extraction at" in capfd.readouterr()[0]
+    assert len(job_stat.get_jobs_done()['extractions']) == 1
