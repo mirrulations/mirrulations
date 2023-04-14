@@ -43,8 +43,8 @@ def test_put_json_to_bucket():
     response = s3_bucket.put_json_s3("test-mirrulations1",
                                      test_path, test_data)
     body = conn.Object("test-mirrulations1", "data/test.json").get()["Body"] \
-                                                         .read() \
-                                                         .decode("utf-8")
+                                                              .read() \
+                                                              .decode("utf-8")
     assert body == '{"data": "test"}'
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200
 
@@ -72,7 +72,7 @@ def test_put_text_to_bucket():
     response = s3_bucket.put_text_s3("test-mirrulations1",
                                      test_path, test_data)
     body = conn.Object("test-mirrulations1", "data/test.txt").get()["Body"] \
-                                                         .read() \
-                                                         .decode("utf-8")
+                                                             .read() \
+                                                             .decode("utf-8")
     assert body == 'text'
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200

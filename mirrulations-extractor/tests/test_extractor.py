@@ -45,6 +45,7 @@ def test_text_extraction_throws_error(mocker, capfd):
     Extractor.extract_text('a.pdf', 'b.txt')
     assert "FAILURE: failed to extract text from" in capfd.readouterr()[0]
 
+
 @mock_s3
 def test_extract_pdf(mocker, capfd):
     conn = boto3.resource("s3", region_name="us-east-1")

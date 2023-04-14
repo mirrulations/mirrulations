@@ -190,6 +190,7 @@ def test_save_valid_attachment_to_s3():
                                                         .decode("utf-8")
     assert body == '\x17'
 
+
 @mock_s3
 def test_save_text_to_s3():
     conn = boto3.resource("s3", region_name="us-east-1")

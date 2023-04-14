@@ -41,10 +41,9 @@ class AmazonS3:
             Bucket=bucket_name,
             Key=path,
             Body=data)
-    
+
     def put_text_s3(self, bucket_name, path, data):
         return self.s3_client.put_object(
             Bucket=bucket_name,
             Key=path,
             Body=data)
-    
