@@ -189,3 +189,16 @@ def test_save_valid_attachment_to_s3():
                                                         .read() \
                                                         .decode("utf-8")
     assert body == '\x17'
+
+@mock_s3
+def test_save_text_to_s3():
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="test-mirrulations1")
+    saver = Saver()
+    test_text_data = 'text'
+    test_path = "testpath"
+    saver.save_text_to_s3("test-mirrulations1", test_path, test_text_data)
+    body = conn.Object("test-mirrulations1", "testpath").get()["Body"] \
+                                                        .read() \
+                                                        .decode("utf-8")
+    assert body == 'text'

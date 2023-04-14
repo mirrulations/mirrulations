@@ -29,7 +29,7 @@ class AmazonS3:
         return (self.access_key is not None and
                 self.secret_access_key is not None)
 
-    def put_text_s3(self, bucket_name, path, data):
+    def put_json_s3(self, bucket_name, path, data):
         return self.s3_client.put_object(
             Bucket=bucket_name,
             Key=path,
@@ -41,3 +41,10 @@ class AmazonS3:
             Bucket=bucket_name,
             Key=path,
             Body=data)
+    
+    def put_text_s3(self, bucket_name, path, data):
+        return self.s3_client.put_object(
+            Bucket=bucket_name,
+            Key=path,
+            Body=data)
+    

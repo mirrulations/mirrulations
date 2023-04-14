@@ -33,16 +33,16 @@ def test_get_s3_client_no_env_variables_present():
 
 
 @mock_s3
-def test_put_text_to_bucket():
+def test_put_json_to_bucket():
     conn = create_mock_mirrulations_bucket()
     s3_bucket = AmazonS3()
     test_data = {
         "data": "test"
     }
-    test_path = "data/test"
-    response = s3_bucket.put_text_s3("test-mirrulations1",
+    test_path = "data/test.json"
+    response = s3_bucket.put_json_s3("test-mirrulations1",
                                      test_path, test_data)
-    body = conn.Object("test-mirrulations1", "data/test").get()["Body"] \
+    body = conn.Object("test-mirrulations1", "data/test.json").get()["Body"] \
                                                          .read() \
                                                          .decode("utf-8")
     assert body == '{"data": "test"}'
@@ -54,10 +54,25 @@ def test_put_binary_to_bucket():
     conn = create_mock_mirrulations_bucket()
     s3_bucket = AmazonS3()
     test_data = b'\x17'
-    test_path = "data/test"
+    test_path = "data/test.pdf"
     response = s3_bucket.put_binary_s3("test-mirrulations1",
                                        test_path, test_data)
     body = conn.Object("test-mirrulations1",
-                       "data/test").get()["Body"].read().decode("utf-8")
+                       "data/test.pdf").get()["Body"].read().decode("utf-8")
     assert body == '\x17'
+    assert response["ResponseMetadata"]['HTTPStatusCode'] == 200
+
+
+@mock_s3
+def test_put_text_to_bucket():
+    conn = create_mock_mirrulations_bucket()
+    s3_bucket = AmazonS3()
+    test_data = "text"
+    test_path = "data/test.txt"
+    response = s3_bucket.put_text_s3("test-mirrulations1",
+                                     test_path, test_data)
+    body = conn.Object("test-mirrulations1", "data/test.txt").get()["Body"] \
+                                                         .read() \
+                                                         .decode("utf-8")
+    assert body == 'text'
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200

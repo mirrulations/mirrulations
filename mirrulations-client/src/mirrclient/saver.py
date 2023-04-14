@@ -72,7 +72,7 @@ class Saver:
 
     def save_json_to_s3(self, bucket, path, data):
         s_3 = AmazonS3()
-        s_3.put_text_s3(
+        s_3.put_json_s3(
             bucket,
             path,
             data)
@@ -85,3 +85,11 @@ class Saver:
             path,
             data)
         print(f"SUCCESS: Wrote binary to S3: {path}")
+
+    def save_text_to_s3(self, bucket, path, data):
+        s_3 = AmazonS3()
+        s_3.put_text_s3(
+            bucket,
+            path,
+            data)
+        print(f"SUCCESS: Wrote text to S3: {path}")
