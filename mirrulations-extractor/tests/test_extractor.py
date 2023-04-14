@@ -1,5 +1,7 @@
 from mirrextractor.extractor import Extractor
 import pikepdf
+from moto import mock_s3
+import boto3
 
 
 def mock_pdf_extraction(mocker):
@@ -43,8 +45,10 @@ def test_text_extraction_throws_error(mocker, capfd):
     Extractor.extract_text('a.pdf', 'b.txt')
     assert "FAILURE: failed to extract text from" in capfd.readouterr()[0]
 
-
+@mock_s3
 def test_extract_pdf(mocker, capfd):
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="mirrulations")
     mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
     mocker.patch('pikepdf.Pdf.save', return_value=None)
     mocker.patch('pdfminer.high_level.extract_text', return_value='test')
