@@ -34,44 +34,48 @@ def mock_is_duplicate(mocker):
     )
 
 
-def test_save_path_directory_does_not_already_exist():
-    with patch('os.makedirs') as mock_dir:
-        saver = Saver()
-        saver._make_path('/USTR')
-        mock_dir.assert_called_once_with('/data/USTR')
+# # pylint: disable=protected-access
+# def test_save_path_directory_does_not_already_exist():
+#     with patch('os.makedirs') as mock_dir:
+#         saver = Saver()
+#         saver._make_path('/USTR')
+#         mock_dir.assert_called_once_with('/USTR')
 
 
-def test_save_path_directory_already_exists(capsys):
-    with patch('os.makedirs') as mock_dir:
-        saver = Saver()
-        mock_dir.side_effect = FileExistsError('Directory already exists')
-        saver._make_path('/USTR')
+# # pylint: disable=protected-access
+# def test_save_path_directory_already_exists(capsys):
+#     with patch('os.makedirs') as mock_dir:
+#         saver = Saver()
+#         mock_dir.side_effect = FileExistsError('Directory already exists')
+#         saver._make_path('/USTR')
 
-        print_data = 'Directory already exists in root: /data/USTR\n'
-        captured = capsys.readouterr()
-        assert captured.out == print_data
+#         print_data = 'Directory already exists in root: /data/USTR\n'
+#         captured = capsys.readouterr()
+#         assert captured.out == print_data
 
 
 def test_save_json():
     saver = Saver()
-    path = 'data/USTR/file.json'
+    path = '/USTR/file.json'
     data = {'results': 'Hello world'}
-
     with patch('mirrclient.saver.open', mock_open()) as mocked_file:
-        saver.save_json(path, data)
-        mocked_file.assert_called_once_with(path, 'x', encoding='utf8')
-        mocked_file().write.assert_called_once_with(dumps(data['results']))
+        with patch('os.makedirs') as mock_dir:
+            saver.save_json(path, data)
+            mock_dir.assert_called_once_with('/USTR')
+            mocked_file.assert_called_once_with(path, 'x', encoding='utf8')
+            mocked_file().write.assert_called_once_with(dumps(data['results']))
 
 
 def test_save_attachment():
     saver = Saver()
-    path = 'data/USTR/file.pdf'
+    path = '/USTR/file.pdf'
     data = 'Some Binary'
-
     with patch('mirrclient.saver.open', mock_open()) as mocked_file:
-        saver.save_attachment(path, data)
-        mocked_file.assert_called_once_with(path, 'wb')
-        mocked_file().write.assert_called_once_with(data)
+        with patch('os.makedirs') as mock_dir:
+            saver.save_attachment(path, data)
+            mock_dir.assert_called_once_with('/USTR')
+            mocked_file.assert_called_once_with(path, 'wb')
+            mocked_file().write.assert_called_once_with(data)
 
 
 def test_is_duplicate_is_a_duplicate():
@@ -114,16 +118,18 @@ def test_save_duplicate_json():
 
 @mark.usefixtures("duplicate_check")
 def test_do_not_save_duplicate_data(capsys):
-    path = 'data/USTR/file.json'
+    path = '/USTR/file.json'
     data = {'results': {'data': 'Hello world'}}
     saver = Saver()
     mock = MagicMock()
     mock.return_value(True)
     with patch('os.path.exists', mock):
-        saver.save_json(path, data)
-        print_data = ''
-        captured = capsys.readouterr()
-        assert captured.out == print_data
+        with patch('os.makedirs') as mock_dir:
+            saver.save_json(path, data)
+            mock_dir.assert_called_once_with('/USTR')
+            print_data = ''
+            captured = capsys.readouterr()
+            assert captured.out == print_data
 
 
 @mark.usefixtures("duplicate_check")

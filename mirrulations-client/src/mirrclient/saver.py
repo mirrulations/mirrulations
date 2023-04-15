@@ -17,7 +17,7 @@ class Saver:
 
     def _make_path(self, path):
         try:
-            os.makedirs(f'/data{path}')
+            os.makedirs(f'{path}')
         except FileExistsError:
             print(f'Directory already exists in root: /data{path}')
 
@@ -35,6 +35,8 @@ class Saver:
         data : dict
             the results data to be written to disk
         """
+        _dir = path.rsplit('/', 1)[0]
+        self._make_path(_dir)
         data = data['results']
         if os.path.exists(path) is False:
             self.save_to_disk(path, data)
@@ -51,6 +53,8 @@ class Saver:
             self.check_for_duplicates(path, data, i + 1)
 
     def save_attachment(self, path, data):
+        _dir = path.rsplit('/', 1)[0]
+        self._make_path(_dir)
         with open(path, "wb") as file:
             file.write(data)
             file.close()
