@@ -15,7 +15,7 @@ class Saver:
         given path
     """
 
-    def make_path(self, path):
+    def _make_path(self, path):
         try:
             os.makedirs(f'/data{path}')
         except FileExistsError:

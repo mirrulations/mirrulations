@@ -37,7 +37,7 @@ def mock_is_duplicate(mocker):
 def test_save_path_directory_does_not_already_exist():
     with patch('os.makedirs') as mock_dir:
         saver = Saver()
-        saver.make_path('/USTR')
+        saver._make_path('/USTR')
         mock_dir.assert_called_once_with('/data/USTR')
 
 
@@ -45,7 +45,7 @@ def test_save_path_directory_already_exists(capsys):
     with patch('os.makedirs') as mock_dir:
         saver = Saver()
         mock_dir.side_effect = FileExistsError('Directory already exists')
-        saver.make_path('/USTR')
+        saver._make_path('/USTR')
 
         print_data = 'Directory already exists in root: /data/USTR\n'
         captured = capsys.readouterr()

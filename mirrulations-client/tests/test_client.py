@@ -229,8 +229,9 @@ def test_get_document_htm_returns_none():
 
 @responses.activate
 def test_client_downloads_document_htm(capsys, mocker):
-    mocker.patch('mirrclient.saver.Saver.make_path', return_value=None)
+    mocker.patch('mirrclient.saver.Saver._make_path', return_value=None)
     mocker.patch('mirrclient.saver.Saver.save_attachment', return_value=None)
+    mocker.patch('mirrclient.saver.Saver.save_binary_to_s3', return_value=None)
     mock_redis = ReadyRedis()
     client = Client(mock_redis, MockJobQueue())
     client.api_key = 1234
@@ -331,7 +332,7 @@ def test_handles_none_in_comment_file_formats(path_generator):
 
 @responses.activate
 def test_client_downloads_attachment_results(mocker, capsys):
-    mocker.patch('mirrclient.saver.Saver.make_path', return_value=None)
+    mocker.patch('mirrclient.saver.Saver._make_path', return_value=None)
     mocker.patch('mirrclient.saver.Saver.save_attachment', return_value=None)
     mock_redis = ReadyRedis()
     client = Client(mock_redis, MockJobQueue())

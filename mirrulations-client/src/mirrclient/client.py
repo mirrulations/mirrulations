@@ -188,7 +188,7 @@ class Client:
             the results from a performed job
         """
         dir_, filename = data['directory'].rsplit('/', 1)
-        self.saver.make_path(dir_)
+        self.saver._make_path(dir_)
         self.saver.save_json(f'/data{dir_}/{filename}', data)
         self.saver.save_json_to_s3(bucket="mirrulations",
                                    path=f'{dir_[1:]}/{filename}',
@@ -271,7 +271,7 @@ class Client:
         '''
         response = requests.get(url, timeout=10)
         dir_, filename = path.rsplit('/', 1)
-        self.saver.make_path(dir_)
+        self.saver._make_path(dir_)
         self.saver.save_attachment(f'/data{dir_}/{filename}', response.content)
         self.saver.save_binary_to_s3(bucket="mirrulations",
                                      path=f'{dir_[1:]}/{filename}',
@@ -306,9 +306,12 @@ class Client:
         if url is not None:
             response = requests.get(url, timeout=10)
             dir_, filename = path.rsplit('/', 1)
-            self.saver.make_path(dir_)
+            self.saver._make_path(dir_)
             self.saver.save_attachment(f'/data{dir_}/{filename}',
                                        response.content)
+            self.saver.save_binary_to_s3(bucket="mirrulations",
+                                         path=f'{dir_[1:]}/{filename}',
+                                         data=response.content)
             print(f"SAVED document HTM - {url} to path: ", path)
             self.cache.increase_jobs_done('attachment')
 
