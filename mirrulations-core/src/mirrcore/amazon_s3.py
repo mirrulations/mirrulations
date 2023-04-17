@@ -2,19 +2,19 @@ import os
 import json
 from dotenv import load_dotenv
 import boto3
+from botocore.exceptions import NoCredentialsError
 
 
 class AmazonS3:
 
     def __init__(self):
-        self.get_credentials()
         self.access_key = None
         self.secret_access_key = None
         self.s3_client = self.get_s3_client()
 
     def get_s3_client(self):
         if self.get_credentials() is False:
-            print("No credentials provided, Unable to connect to S3")
+            raise NoCredentialsError()
         return boto3.client(
                 's3',
                 region_name='us-east-1',

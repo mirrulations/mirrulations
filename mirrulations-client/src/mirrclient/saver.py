@@ -1,6 +1,7 @@
 import os
 from json import dumps, load
 from mirrcore.amazon_s3 import AmazonS3
+from botocore.exceptions import NoCredentialsError
 
 
 class Saver:
@@ -75,25 +76,35 @@ class Saver:
             self.save_duplicate_json(path, data, i)
 
     def save_json_to_s3(self, bucket, path, data):
-        s_3 = AmazonS3()
-        s_3.put_json_s3(
-            bucket,
-            path,
-            data["results"])
-        print(f"SUCCESS: Wrote json to S3: {path}")
+        try:
+            s_3 = AmazonS3()
+            s_3.put_text_s3(bucket,
+                            path,
+                            data["results"])
+            print(f"SUCCESS: Wrote json to S3: {path}")
+        except NoCredentialsError as error:
+            print(error)
+            return
 
     def save_binary_to_s3(self, bucket, path, data):
-        s_3 = AmazonS3()
-        s_3.put_binary_s3(
-            bucket,
-            path,
-            data)
-        print(f"SUCCESS: Wrote binary to S3: {path}")
+        try:
+            s_3 = AmazonS3()
+            s_3.put_binary_s3(bucket,
+                              path,
+                              data)
+            print(f"SUCCESS: Wrote binary to S3: {path}")
+        except NoCredentialsError as error:
+            print(error)
+            return
 
     def save_text_to_s3(self, bucket, path, data):
-        s_3 = AmazonS3()
-        s_3.put_text_s3(
-            bucket,
-            path,
-            data)
-        print(f"SUCCESS: Wrote text to S3: {path}")
+        try:
+            s_3 = AmazonS3()
+            s_3.put_text_s3(
+                bucket,
+                path,
+                data)
+            print(f"SUCCESS: Wrote text to S3: {path}")
+        except NoCredentialsError as error:
+            print(error)
+            return

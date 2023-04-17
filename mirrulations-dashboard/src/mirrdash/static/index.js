@@ -86,9 +86,11 @@ const updateClientDashboardData = () => {
         const {
             jobs_total,
             num_attachments_done,
+            num_pdf_attachments_done,
             num_comments_done,
             num_dockets_done,
             num_documents_done,
+            num_extractions_done,
             num_jobs_done, 
             num_jobs_waiting,
             num_jobs_comments_queued,
@@ -107,6 +109,7 @@ const updateClientDashboardData = () => {
         updateJobTypeProgress("dockets-done", num_dockets_done, regulations_total_dockets);
         updateJobTypeProgress("documents-done",num_documents_done, regulations_total_documents);
         updateJobTypeProgress("comments-done",num_comments_done, regulations_total_comments);
+        updateJobTypeProgress("pdf-extractions-done", num_extractions_done, num_pdf_attachments_done)
         // Current estimate of number of attachments (from comments)
         const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
         updateJobTypeProgress("attachments-done",num_attachments_done, regulations_total_attachments); 
@@ -114,7 +117,9 @@ const updateClientDashboardData = () => {
         updateCount("dockets-done",num_dockets_done);
         updateCount("documents-done",num_documents_done);
         updateCount("comments-done",num_comments_done);
-        updateCount("attachments-done",num_attachments_done); 
+        updateCount("attachments-done",num_attachments_done);
+        updateCount("pdf-attachments-done", num_pdf_attachments_done)
+        updateCount("pdf-extractions-done", num_extractions_done) 
         updateJobsQueuedByType("comments-queued", num_jobs_comments_queued);
         updateJobsQueuedByType("dockets-queued", num_jobs_dockets_queued);
         updateJobsQueuedByType("documents-queued", num_jobs_documents_queued);

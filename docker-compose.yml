@@ -56,8 +56,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      mongo:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     env_file: env_files/work_gen.env
@@ -93,8 +91,6 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock'
     depends_on:
       redis:
-        condition: service_healthy
-      mongo:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy

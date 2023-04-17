@@ -5,14 +5,26 @@ import io
 import pdfminer
 import pdfminer.high_level
 import pikepdf
+import redis
 from mirrcore.path_generator import PathGenerator
 from mirrclient.saver import Saver
+from mirrcore.jobs_statistics import JobStatistics
 
 
 class Extractor:
     """
     Class containing methods to extract text from files.
     """
+    @staticmethod
+    def init_job_stat():
+        """
+        Sets up the JobStatistics class. job_stat gets used to increase cache
+        of number of extractions when an extraction is successful
+        """
+        redis_server = redis.Redis('redis')
+        job_stat = JobStatistics(redis_server)
+        Extractor.job_stat = job_stat
+
     @staticmethod
     def extract_text(attachment_path, save_path):
         """
@@ -39,7 +51,7 @@ class Extractor:
                   attachment_path)
 
     @staticmethod
-    def _extract_pdf(attachment_path, save_path):
+    def _extract_pdf(attachment_path, save_path):  # pylint: disable=R0915
         """
         This method takes a complete path to a pdf and stores
         the extracted text in the save_path.
@@ -80,9 +92,14 @@ class Extractor:
                                 data=text.strip())
 
         print(f"SUCCESS: Saved extraction at {save_path}")
+        try:
+            Extractor.job_stat.increase_extractions_done()
+        except redis.ConnectionError as error:
+            print(f"Coudn't increase extraction cache number due to: {error}")
 
 
 if __name__ == '__main__':
+    Extractor.init_job_stat()
     now = datetime.now()
     while True:
         for (root, dirs, files) in os.walk('/data'):

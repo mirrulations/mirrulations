@@ -354,20 +354,26 @@ def test_client_downloads_attachment_results(mocker, capsys):
                 "included": [{
                     "attributes": {
                         "fileFormats": [{
-                            "fileUrl": ("http://downloads.regulations."
-                                        "gov/FDA-2016-D-2335/"
-                                        "attachment_1.pdf")
+                                 "fileUrl": ("http://downloads.regulations."
+                                             "gov/FDA-2016-D-2335/"
+                                             "attachment_1.pdf")
                         }]
                     }
                 }]
-    }
+            }
     responses.add(responses.GET, 'http://regulations.gov/comments',
                   json=test_json, status=200)
     responses.add(responses.GET,
                   ('http://downloads.regulations.gov/\
                    FDA-2016-D-2335/attachment_1.pdf'),
                   json='\bx17', status=200)
+
     client.job_operation()
+    job_stat_results = client.cache.get_jobs_done()
+    assert job_stat_results['num_comments_done'] == 1
+    assert job_stat_results['num_attachments_done'] == 1
+    assert job_stat_results['num_pdf_attachments_done'] == 1
+
     captured = capsys.readouterr()
     print_data = [
         'Processing job from RabbitMQ.\n',
@@ -414,6 +420,46 @@ def test_does_comment_have_attachment_with_empty_attachment_list():
                 }
             }
     assert client._does_comment_have_attachment(test_json) is False
+
+
+@responses.activate
+def test_two_attachments_in_comment(mocker):
+    mocker.patch('mirrclient.saver.Saver._make_path', return_value=None)
+    mocker.patch('mirrclient.saver.Saver.save_attachment', return_value=None)
+    client = Client(ReadyRedis(), MockJobQueue())
+    client.api_key = 1234
+
+    client.job_queue.add_job({'job_id': 1,
+                              'url': 'http://regulations.gov/job',
+                              "job_type": "comments"})
+
+    test_json = {
+            "data": {
+                "id": "agencyID-001-0002",
+                "type": "comments",
+                "attributes": {
+                    "agencyId": "agencyID",
+                    "docketId": "agencyID-001"
+                }
+            },
+            "included": [{
+                "attributes": {
+                    "fileFormats": [{
+                        "fileUrl": "https://downloads.regulations.gov/.pdf"
+                    }, {
+                        "fileUrl": "https://downloads.regulations.gov/.doc"
+                    }]
+                }
+            }]
+        }
+    responses.add(responses.GET, 'http://regulations.gov/job',
+                  json=test_json, status=200)
+
+    client.job_operation()
+    results = client.cache.get_jobs_done()
+    assert results['num_comments_done'] == 1
+    assert results['num_attachments_done'] == 2
+    assert results['num_pdf_attachments_done'] == 1
 
 
 # Exception Tests

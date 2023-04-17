@@ -2,7 +2,9 @@ import os
 import boto3
 from moto import mock_s3
 from pytest import fixture
+import pytest
 from mirrcore.amazon_s3 import AmazonS3
+from botocore.exceptions import NoCredentialsError
 
 
 def create_mock_mirrulations_bucket():
@@ -29,7 +31,8 @@ def test_get_s3_client():
 def test_get_s3_client_no_env_variables_present():
     del os.environ['AWS_ACCESS_KEY']
     del os.environ['AWS_SECRET_ACCESS_KEY']
-    assert AmazonS3().get_credentials() is False
+    with pytest.raises(NoCredentialsError):
+        AmazonS3().get_s3_client()
 
 
 @mock_s3
