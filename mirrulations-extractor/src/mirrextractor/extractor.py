@@ -7,8 +7,8 @@ import pdfminer.high_level
 import pikepdf
 import redis
 from mirrcore.path_generator import PathGenerator
-from mirrclient.saver import Saver
 from mirrcore.jobs_statistics import JobStatistics
+from mirrclient.saver import Saver
 
 
 class Extractor:

@@ -6,6 +6,7 @@ from moto import mock_s3
 import boto3
 import redis
 
+
 def mock_pdf_extraction(mocker):
     mocker.patch.object(
         Extractor,
@@ -51,6 +52,7 @@ def test_text_extraction_throws_error(mocker, capfd):
 def test_init_job_statistics(mocker):
     mocker.patch('redis.Redis', return_value=MockRedisWithStorage())
     Extractor.init_job_stat()
+
 
 @mock_s3
 def test_redis_connection_error(mocker, capfd):
