@@ -174,13 +174,12 @@ def test_save_valid_json_to_s3():
     saver = Saver()
     test_path = "testpath"
     test_json = {
-        "data": {"attributes": 0}
+        "results": "test"
     }
     saver.save_json_to_s3("test-mirrulations1", test_path, test_json)
     body = conn.Object("test-mirrulations1", "testpath").get()["Body"] \
-                                                        .read() \
-                                                        .decode("utf-8")
-    assert body == '{"data": {"attributes": 0}}'
+        .read().decode("utf-8").strip('/"')
+    assert body == test_json["results"]
 
 
 @mock_s3
