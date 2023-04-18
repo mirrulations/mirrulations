@@ -62,3 +62,19 @@ class DiskSaver():
     def check_for_duplicates(self, path, data, i):
         if self.is_duplicate(self.open_json_file(path), data) is False:
             self.save_duplicate_json(path, data, i)
+    
+    def get_extracted_text_attachment_dir(self, path):
+        # remove file name from path
+        path = path.rsplit("/", 1)[0]
+        return path.replace('comments_extracted_text/pdfminer',
+                                'comments_attachments/').replace('text', 'binary')
+    
+    def update_metadata_for_extraction(self, path):
+        # comments_extracted_text structure 
+        # data/data/EPA/EPA-HQ-OA-2003-0001/text-EPA-HQ-OA-2003-0001/comments_extracted_text/pdfminer
+        # Attachments directory for given comment
+        # data/data/EPA/EPA-HQ-OA-2003-0001/binary-EPA-HQ-OA-2003-0001/comments_attachments
+        
+        attachment_path = self.get_extracted_text_attachment_dir(path)
+        
+

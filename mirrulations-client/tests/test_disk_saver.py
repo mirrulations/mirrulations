@@ -154,3 +154,11 @@ def test_check_for_duplicates(capsys):
         print_data = ''
         captured = capsys.readouterr()
         assert captured.out == print_data
+
+
+def test_get_extracted_text_attachment_path():
+    saver = DiskSaver()
+    extracted_text_path = "/EPA/EPA-2003-0001/text-EPA-2003-0001/comments_extracted_text/pdfminer/EPA-2003-0001-0002_attachment_1_extracted.txt"
+    attachment_path = "/EPA/EPA-2003-0001/binary-EPA-2003-0001/comments_attachments/"
+    
+    assert attachment_path == saver.get_extracted_text_attachment_dir(extracted_text_path)
