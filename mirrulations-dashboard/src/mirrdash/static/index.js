@@ -35,11 +35,12 @@ const updateHtmlValues = (jobsWaiting, jobsDone) => {
 }
 
 /**
- * Calculates the progression towards corpus
+ * Calculates the progression towards corpus and updates the percentage, rate, and eta
  * @param jobTypeCountsDone : array of number of jobs for each job type (dockets, documents, comments, attachments) completed
  * @param totalCorpus : amount of jobs available from Regulations (dockets, documents, comments)
+ * @param jobsLastHour : the number of jobs completed last hour
  */
-const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus) => {
+const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus, jobsLastHour) => {
     let currentProgress = 0
     for (let i = 0; i < jobTypeCountsDone.length; i++) {
         currentProgress += jobTypeCountsDone[i]
@@ -50,8 +51,17 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus) => {
 
     // Set the width of the progress bar to the calculated percentage
     progressBar.style.width = `${percent}%`;
-}
 
+    // set the rate of jobs per hour
+    document.getElementById('jobs-per-hour').textContent = `${jobsLastHour} jobs per hour`;
+
+    // calculate the eta
+    let jobsLeft = totalCorpus - currentProgress;
+    let daysTilCorpus = Math.ceil(Math.ceil(jobsLeft / jobsLastHour) / 24);
+    let date = new Date();
+    date.setDate(date.getDate() + daysTilCorpus);
+    document.getElementById('corpus-eta-date').textContent = `ETA: ${date.toLocaleDateString()}`;
+}
 
 const updateStatus = (container, status) => {
         let status_span = document.getElementById(container)
@@ -104,7 +114,7 @@ const updateClientDashboardData = () => {
         let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments
 
         updateHtmlValues(num_jobs_waiting, num_jobs_done);
-        updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals)
+        updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals, 850); // change the hard coded jobsLastHour
         // Counts for percents
         updateJobTypeProgress("dockets-done", num_dockets_done, regulations_total_dockets);
         updateJobTypeProgress("documents-done",num_documents_done, regulations_total_documents);
@@ -112,7 +122,7 @@ const updateClientDashboardData = () => {
         updateJobTypeProgress("pdf-extractions-done", num_extractions_done, num_pdf_attachments_done)
         // Current estimate of number of attachments (from comments)
         const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
-        updateJobTypeProgress("attachments-done",num_attachments_done, regulations_total_attachments); 
+        updateJobTypeProgress("attachments-done", num_attachments_done, regulations_total_attachments); 
         // Counts for numbers
         updateCount("dockets-done",num_dockets_done);
         updateCount("documents-done",num_documents_done);
