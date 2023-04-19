@@ -5,36 +5,34 @@ from collections import Counter
 import json
 from dotenv import load_dotenv
 from mirrgen.search_iterator import SearchIterator
-# from mirrcore.redis_check import load_redis
 from mirrcore.regulations_api import RegulationsAPI
-from mirrcore.data_storage import DataStorage
+from mirrcore.path_generator import PathGenerator
 
 
 class Validator:
 
-    def __init__(self, api, datastorage):
+    def __init__(self, api, path_gen):
         self.api = api
-        self.datastorage = datastorage
+        self.path_gen = path_gen
         self.unfound_jobs = {}
 
     def download(self, endpoint):
         beginning_timestamp = '1990-01-01 00:00:00'
-        collection_size = self.datastorage.get_collection_size(endpoint)
         counter = Counter()
         for result in SearchIterator(self.api, endpoint, beginning_timestamp):
             if result == {}:
                 continue
             for res in result['data']:
-                if not self.datastorage.exists(res):
+                job_path = self.path_gen.get_path({'data': res})
+                if_path_exist = os.path.exists(('/data/data'+job_path).strip())
+                if not if_path_exist:
                     print(f"{res['id']} not in database, writing to file")
                     write_unfound_jobs(res, self.unfound_jobs)
                     time.sleep(3.6)
                     counter['Not_in_db'] += 1
                 counter['Total_validated'] += 1
             print(f'Jobs not found in database: {counter["Not_in_db"]} \n \
-            Total jobs validated: {counter["Total_validated"]} \n \
-            Percentage of jobs validated: \
-                {counter["Total_validated"] / collection_size * 100}%')
+            Total jobs validated: {counter["Total_validated"]}')
 
 
 def write_unfound_jobs(res, unfound_jobs):
@@ -44,13 +42,13 @@ def write_unfound_jobs(res, unfound_jobs):
         if not check_for_missing_jobs(res):
             unfound_jobs[f"missing_{res['type']}"].append(
                         res['links']['self'])
-    with open("/data/unfound_jobs.json", "w+",
+    with open("/data/validator/unfound_jobs.json", "w+",
               encoding="utf-8") as outfile:
         json.dump(unfound_jobs, outfile, indent=4)
 
 
 def check_for_missing_jobs(res):
-    with open("/data/unfound_jobs.json", "r",
+    with open("/data/validator/unfound_jobs.json", "r",
               encoding="utf-8") as outfile:
         lines = outfile.readlines()
         for line in lines:
@@ -66,10 +64,11 @@ def generate_work(collection=None):
 
     # Get API key
     load_dotenv()
-    api = RegulationsAPI(os.getenv("API_KEY"))
+    api_key = os.getenv("API_KEY")
+    api = RegulationsAPI(api_key)
+    path_gen = PathGenerator()
     # Download using validator
-    storage = DataStorage()
-    generator = Validator(api, storage)
+    generator = Validator(api, path_gen)
     if not collection:
         generator.download('dockets')
         generator.download('documents')

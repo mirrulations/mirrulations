@@ -67,21 +67,23 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      mongo:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     env_file: env_files/validator.env
     restart: always
     volumes:
-      - "~/data/validator:/data"
+      - "~/data:/data"
   extractor:
     build:
       context: .
       dockerfile: mirrulations-extractor/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: always
     volumes:
       - "~/data/data:/data"
+    env_file: env_files/extractor.env
   dashboard:
     build:
       context: .

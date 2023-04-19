@@ -3,6 +3,8 @@ from mirrmock.mock_redis import MockRedisWithStorage
 from mirrcore.jobs_statistics import JobStatistics
 import pikepdf
 import redis
+import boto3
+from moto import mock_s3
 
 
 def mock_pdf_extraction(mocker):
@@ -52,7 +54,10 @@ def test_init_job_statistics(mocker):
     Extractor.init_job_stat()
 
 
+@mock_s3
 def test_redis_connection_error(mocker, capfd):
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="mirrulations")
     mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
     mocker.patch('pikepdf.Pdf.save', return_value=None)
     mocker.patch('pdfminer.high_level.extract_text', return_value='test')
@@ -68,7 +73,10 @@ def test_redis_connection_error(mocker, capfd):
     assert job_stat.get_jobs_done()['num_extractions_done'] == 0
 
 
+@mock_s3
 def test_extract_pdf(mocker, capfd):
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="mirrulations")
     mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
     mocker.patch('pikepdf.Pdf.save', return_value=None)
     mocker.patch('pdfminer.high_level.extract_text', return_value='test')

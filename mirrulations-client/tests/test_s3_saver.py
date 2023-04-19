@@ -59,7 +59,7 @@ def test_try_saving_binary_without_credentials(capsys):
 
 
 @mock_s3
-def test_put_text_to_bucket():
+def test_save_json_to_bucket():
     conn = create_mock_mirrulations_bucket()
     s3_bucket = S3Saver(bucket_name="test-mirrulations1")
     test_data = {
@@ -75,7 +75,7 @@ def test_put_text_to_bucket():
 
 
 @mock_s3
-def test_put_binary_to_bucket():
+def test_save_binary_to_bucket():
     conn = create_mock_mirrulations_bucket()
     s3_bucket = S3Saver(bucket_name="test-mirrulations1")
     test_data = b'\x17'
@@ -84,6 +84,19 @@ def test_put_binary_to_bucket():
     body = conn.Object("test-mirrulations1",
                        "data/test.binary").get()["Body"].read().decode("utf-8")
     assert body == '\x17'
+    assert response["ResponseMetadata"]['HTTPStatusCode'] == 200
+
+
+@mock_s3
+def test_save_text_to_bucket():
+    conn = create_mock_mirrulations_bucket()
+    s3_bucket = S3Saver(bucket_name="test-mirrulations1")
+    test_data = "test"
+    test_path = "data/test.txt"
+    response = s3_bucket.save_text(test_path, test_data)
+    body = conn.Object("test-mirrulations1",
+                       "data/test.txt").get()["Body"].read().decode("utf-8")
+    assert body == 'test'
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200
 
 
@@ -99,5 +112,13 @@ def test_save_binary_to_s3_no_credentials_returns_false(capsys):
     del os.environ['AWS_ACCESS_KEY']
     del os.environ['AWS_SECRET_ACCESS_KEY']
     assert S3Saver().save_binary("test", "test") is False
+    assert capsys.readouterr().out == "No AWS credentials provided, "\
+                                      "Unable to write to S3.\n"
+
+
+def test_save_text_to_s3_no_credentials_returns_false(capsys):
+    del os.environ['AWS_ACCESS_KEY']
+    del os.environ['AWS_SECRET_ACCESS_KEY']
+    assert S3Saver().save_text("test", "test") is False
     assert capsys.readouterr().out == "No AWS credentials provided, "\
                                       "Unable to write to S3.\n"
