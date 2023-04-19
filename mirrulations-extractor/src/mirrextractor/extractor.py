@@ -8,6 +8,7 @@ import pikepdf
 import redis
 from mirrcore.path_generator import PathGenerator
 from mirrcore.jobs_statistics import JobStatistics
+from mirrclient.disk_saver import DiskSaver
 
 
 class Extractor:
@@ -87,6 +88,8 @@ class Extractor:
         with open(save_path, "w", encoding="utf-8") as out_file:
             out_file.write(text.strip())
         print(f"SUCCESS: Saved extraction at {save_path}")
+        
+        DiskSaver().save_extraction_meta(save_path)
         try:
             Extractor.job_stat.increase_extractions_done()
         except redis.ConnectionError as error:

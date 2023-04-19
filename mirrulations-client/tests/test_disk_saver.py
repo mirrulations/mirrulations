@@ -162,3 +162,11 @@ def test_get_extracted_text_attachment_path():
     attachment_path = "/EPA/EPA-2003-0001/binary-EPA-2003-0001/comments_attachments/"
     
     assert attachment_path == saver.get_extracted_text_attachment_dir(extracted_text_path)
+
+
+def test_update_metadata():
+    test_extracted_txt_path = "/EPA/EPA-2003-0001/text-EPA-2003-0001/comments_extracted_text/pdfminer/EPA-2003-0001-0002_attachment_1_extracted.txt"
+    with patch('os.listdir') as mocked_attachmentdir:
+        mocked_attachmentdir.return_value = ['1.pdf', '2.pdf', '3.pdf', "1_attachment_1_extracted.txt", "2_attachment_1_extracted.txt", "3_attachment_1_extracted.txt"]
+        saver = DiskSaver()
+        print(saver.update_metadata_for_extraction(test_extracted_txt_path))

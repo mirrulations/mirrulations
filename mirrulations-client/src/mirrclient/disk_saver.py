@@ -68,13 +68,33 @@ class DiskSaver():
         path = path.rsplit("/", 1)[0]
         return path.replace('comments_extracted_text/pdfminer',
                                 'comments_attachments/').replace('text', 'binary')
-    
-    def update_metadata_for_extraction(self, path):
+
+
+    def generate_metadata_for_extraction(self, path):
         # comments_extracted_text structure 
-        # data/data/EPA/EPA-HQ-OA-2003-0001/text-EPA-HQ-OA-2003-0001/comments_extracted_text/pdfminer
+        # data/data/EPA/EPA-HQ-OA-2003-0001/text-EPA-HQ-OA-2003-0001/comments_extracted_text/pdfminer/
         # Attachments directory for given comment
         # data/data/EPA/EPA-HQ-OA-2003-0001/binary-EPA-HQ-OA-2003-0001/comments_attachments
         
-        attachment_path = self.get_extracted_text_attachment_dir(path)
-        
+        extracted_txt_dir = path.rsplit("/", 1)[0]
+        comment_id = path.rsplit("/", 1)[1].split("_attachment")[0]
 
+        attachment_path = self.get_extracted_text_attachment_dir(path)
+        pdf_files = [file for file in os.listdir(attachment_path) if ".pdf" in file]
+        print(pdf_files)
+        extracted_txt_files = [file for file in os.listdir(path.rsplit("/", 1)[0]) if ".txt" in file]
+        print(extracted_txt_files)
+        meta = {
+            "CommentID": comment_id,
+            "ExtractedPDFSCompleted" : len(extracted_txt_files), 
+            "TotalPDFs": len(pdf_files), 
+            "FailedExtractions": len(pdf_files) - len(extracted_txt_files)
+        }
+        return meta
+    
+    def save_extraction_meta(self, path):
+        meta = self.generate_metadata_for_extraction()
+        meta_save_dir = path.rsplit("/", 1)[0]
+        with open(f"{meta_save_dir}/meta.json", 'x', encoding='utf8') as file:
+            file.write(dumps(meta))
+            print(f'Wrote Extraction Metadata to Disk: {meta_save_dir}')
