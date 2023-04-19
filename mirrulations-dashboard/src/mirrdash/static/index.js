@@ -53,7 +53,7 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus, jobsLastHour) 
     progressBar.style.width = `${percent}%`;
 
     // set the rate of jobs per hour
-    document.getElementById('jobs-per-hour').textContent = `${jobsLastHour} jobs per hour`;
+    document.getElementById('jobs-per-hour').textContent = `${jobsLastHour.toLocaleString('en')} jobs per hour`;
 
     // calculate the eta
     let jobsLeft = totalCorpus - currentProgress;
@@ -86,7 +86,7 @@ const updateJobTypeProgress = (id, value, total) => {
 }
 
 const updateJobsQueuedByType = (id, value) => {
-    document.getElementById(id+'-number').textContent = value;
+    document.getElementById(id+'-number').textContent = value.toLocaleString('en');
 }
 
 const updateClientDashboardData = () => {
