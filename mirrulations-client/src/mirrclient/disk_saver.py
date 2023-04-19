@@ -70,39 +70,42 @@ class DiskSaver():
     def check_for_duplicates(self, path, data, i):
         if self.is_duplicate(self.open_json_file(path), data) is False:
             self.save_duplicate_json(path, data, i)
-    
-    def get_extracted_text_attachment_dir(self, path):
+
+    def get_extracted_text_attachments_dir(self, path):
         # remove file name from path
         path = path.rsplit("/", 1)[0]
         return path.replace('comments_extracted_text/pdfminer',
-                                'comments_attachments/').replace('text', 'binary')
-
+                            'comments_attachments/').replace('text', 'binary')
 
     def generate_metadata_for_extraction(self, path):
-        # comments_extracted_text structure 
+        # comments_extracted_text structure
         # data/data/EPA/EPA-HQ-OA-2003-0001/text-EPA-HQ-OA-2003-0001/comments_extracted_text/pdfminer/
         # Attachments directory for given comment
         # data/data/EPA/EPA-HQ-OA-2003-0001/binary-EPA-HQ-OA-2003-0001/comments_attachments
-        
-        extracted_txt_dir = path.rsplit("/", 1)[0]
-        comment_id = path.rsplit("/", 1)[1].split("_attachment")[0]
 
-        attachment_path = self.get_extracted_text_attachment_dir(path)
-        pdf_files = [file for file in os.listdir(attachment_path) if ".pdf" in file]
-        print(pdf_files)
-        extracted_txt_files = [file for file in os.listdir(path.rsplit("/", 1)[0]) if ".txt" in file]
-        print(extracted_txt_files)
+        docket_id = path.rsplit("/comments_extracted_text", 1)[0]\
+            .split("text-")[-1]
+
+        attachments_dir = self.get_extracted_text_attachments_dir(path)
+        extracted_dir = path.rsplit("/", 1)[0]
+        pdf_files = [f for f in os.listdir(attachments_dir) if ".pdf" in f]
+        extracted_txt_files = [file for file in os.listdir(extracted_dir)\
+                               if ".txt" in file]
         meta = {
-            "CommentID": comment_id,
-            "ExtractedPDFSCompleted" : len(extracted_txt_files), 
+            "DocketID": docket_id,
+            "ExtractedPDFSCompleted": \
+                len(extracted_txt_files), 
             "TotalPDFs": len(pdf_files), 
-            "FailedExtractions": len(pdf_files) - len(extracted_txt_files)
+            "Failed/IncompleteExtractions": \
+                len(pdf_files) - len(extracted_txt_files),
+            "PercentComplete": \
+                len(extracted_txt_files)/len(pdf_files) * 100
         }
         return meta
     
     def save_extraction_meta(self, path):
-        meta = self.generate_metadata_for_extraction()
-        meta_save_dir = path.rsplit("/", 1)[0]
-        with open(f"{meta_save_dir}/meta.json", 'x', encoding='utf8') as file:
+        meta = self.generate_metadata_for_extraction(path)
+        meta_save_dir = f'{path.rsplit("/", 1)[0]}/meta.json'
+        with open(f"{meta_save_dir}", 'w', encoding='utf8') as file:
             file.write(dumps(meta))
             print(f'Wrote Extraction Metadata to Disk: {meta_save_dir}')

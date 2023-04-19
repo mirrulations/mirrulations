@@ -88,8 +88,7 @@ class Extractor:
         saver = Saver([DiskSaver(), S3Saver("mirrulations")])
         saver.save_text(save_path, text.strip())
         print(f"SUCCESS: Saved extraction at {save_path}")
-        
-        DiskSaver().save_extraction_meta(save_path)
+
         try:
             Extractor.job_stat.increase_extractions_done()
         except redis.ConnectionError as error:
