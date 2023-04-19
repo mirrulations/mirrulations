@@ -48,7 +48,7 @@ def test_saving_to_s3():
 
 
 @mock_s3
-def test_saver_saves_text_to_multiple_places():
+def test_saver_saves_json_to_multiple_places():
     conn = boto3.resource("s3", region_name="us-east-1")
     conn.create_bucket(Bucket="test-mirrulations1")
     test_path = '/USTR/file.json'
@@ -91,3 +91,26 @@ def test_saver_saves_binary_to_multiple_places():
                                "/USTR/file.pdf").get()["Body"].read()\
                 .decode("utf-8")
             assert body == '\x17'
+
+
+@mock_s3
+def test_saver_saves_text_to_multiple_places():
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="test-mirrulations1")
+    test_path = '/USTR/file.txt'
+    test_data = 'test'
+
+    with patch('mirrclient.disk_saver.open', mock_open()) as mocked_file:
+        with patch('os.makedirs') as mock_dir:
+            saver = Saver(savers=[
+                DiskSaver(),
+                S3Saver(bucket_name="test-mirrulations1")])
+            saver.save_text(test_path, test_data)
+            mock_dir.assert_called_once_with('/USTR')
+            mocked_file.assert_called_once_with(test_path, 'w',
+                                                encoding="utf-8")
+            mocked_file().write.assert_called_once_with(test_data)
+            body = conn.Object("test-mirrulations1",
+                               "/USTR/file.txt").get()["Body"].read()\
+                .decode("utf-8")
+            assert body == test_data

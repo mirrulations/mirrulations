@@ -73,6 +73,18 @@ def test_save_binary():
             mocked_file().write.assert_called_once_with(data)
 
 
+def test_save_text():
+    saver = DiskSaver()
+    path = '/USTR/file.txt'
+    data = 'text'
+    with patch('mirrclient.disk_saver.open', mock_open()) as mocked_file:
+        with patch('os.makedirs') as mock_dir:
+            saver.save_text(path, data)
+            mock_dir.assert_called_once_with('/USTR')
+            mocked_file.assert_called_once_with(path, 'w', encoding="utf-8")
+            mocked_file().write.assert_called_once_with(data)
+
+
 def test_is_duplicate_is_a_duplicate():
     existing = {'is_duplicate': True}
     new = {'is_duplicate': True}

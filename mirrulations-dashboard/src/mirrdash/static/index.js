@@ -160,10 +160,8 @@ const updateDeveloperDashboardData = () => {
             client24,
             client25,
             nginx,
-            mongo,
             redis,
             work_generator,
-            work_server, 
             rabbitmq
         } = jobInformation;
 
@@ -193,10 +191,8 @@ const updateDeveloperDashboardData = () => {
         updateStatus('client24-status', client24)
         updateStatus('client25-status', client25)
         updateStatus('nginx-status', nginx)
-        updateStatus('mongo-status', mongo)
         updateStatus('redis-status', redis);
         updateStatus('work-generator-status', work_generator);
-        updateStatus('work-server-status', work_server);
         updateStatus('rabbitmq-status', rabbitmq);
     })
     .catch((err) => console.log(err));

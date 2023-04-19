@@ -8,6 +8,8 @@ import pikepdf
 import redis
 from mirrcore.path_generator import PathGenerator
 from mirrcore.jobs_statistics import JobStatistics
+from mirrclient.saver import Saver
+from mirrclient.s3_saver import S3Saver
 from mirrclient.disk_saver import DiskSaver
 
 
@@ -82,11 +84,9 @@ class Extractor:
             print("FAILURE: failed to extract "
                   f"text from {attachment_path}\n{err}")
             return
-        # Make dirs if they do not already exist
-        os.makedirs(save_path[:save_path.rfind('/')], exist_ok=True)
         # Save the extracted text to a file
-        with open(save_path, "w", encoding="utf-8") as out_file:
-            out_file.write(text.strip())
+        saver = Saver([DiskSaver(), S3Saver("mirrulations")])
+        saver.save_text(save_path, text.strip())
         print(f"SUCCESS: Saved extraction at {save_path}")
         
         DiskSaver().save_extraction_meta(save_path)

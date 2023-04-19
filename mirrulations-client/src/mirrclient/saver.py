@@ -49,3 +49,19 @@ class Saver:
         """
         for saver in self.savers:
             saver.save_binary(path, binary)
+
+    def save_text(self, path, text):
+        """
+        Iterates over the instance variable savers list
+        and calls the corresponding subclass save_text() method.
+
+        Parameters
+        ----------
+        path : str
+            A string denoting where the binary file should be saved to.
+
+        text : str
+            The extracted text to be saved
+        """
+        for saver in self.savers:
+            saver.save_text(path, text)
