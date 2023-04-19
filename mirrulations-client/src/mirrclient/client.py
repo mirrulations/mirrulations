@@ -230,6 +230,7 @@ class Client:
         '''
 
         path_list = self.path_generator.get_attachment_json_paths(comment_json)
+        self._make_extraction_meta(path_list)
         counter = 0
         comment_id_str = f"Comment - {comment_json['data']['id']}"
         print(f"Found {len(path_list)} attachment(s) for {comment_id_str}")
@@ -246,6 +247,23 @@ class Client:
                     counter += 1
                     self.cache.increase_jobs_done('attachment',
                                                   url.endswith('.pdf'))
+
+    def _make_extraction_meta(self, attachment_paths):
+        meta_save_path = PathGenerator.make_attachment_save_path(attachment_paths[0]).rsplit("/", 1)[0]
+        meta = {
+            "extraction_status": {}
+        }
+        for path in attachment_paths:
+            file_name = path.rsplit("/", 1)[1]
+            meta["extraction_status"][file_name] = "Not Attempted"
+        # Use Saver to save meta json to Disk and S3
+            # Possible file names: extraction-metadata.json ??
+
+        # write meta to meta_save_path
+
+        # Future: Loop over again and add to extraction queue
+
+
 
     def _download_single_attachment(self, url, path):
         '''
