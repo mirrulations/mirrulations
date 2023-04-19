@@ -114,7 +114,7 @@ const updateClientDashboardData = () => {
         let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments
 
         updateHtmlValues(num_jobs_waiting, num_jobs_done);
-        updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals, 850); // change the hard coded jobsLastHour
+        updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals, 21250); // change the hard coded jobsLastHour
         // Counts for percents
         updateJobTypeProgress("dockets-done", num_dockets_done, regulations_total_dockets);
         updateJobTypeProgress("documents-done",num_documents_done, regulations_total_documents);
