@@ -89,20 +89,20 @@ class DiskSaver():
         attachments_dir = self.get_extracted_text_attachments_dir(path)
         extracted_dir = path.rsplit("/", 1)[0]
         pdf_files = [f for f in os.listdir(attachments_dir) if ".pdf" in f]
-        extracted_txt_files = [file for file in os.listdir(extracted_dir)\
+        extracted_txt_files = [file for file in os.listdir(extracted_dir)
                                if ".txt" in file]
         meta = {
             "DocketID": docket_id,
-            "ExtractedPDFSCompleted": \
-                len(extracted_txt_files), 
-            "TotalPDFs": len(pdf_files), 
-            "Failed/IncompleteExtractions": \
+            "ExtractedPDFSCompleted":
+                len(extracted_txt_files),
+            "TotalPDFs": len(pdf_files),
+            "Failed/IncompleteExtractions":
                 len(pdf_files) - len(extracted_txt_files),
-            "PercentComplete": \
+            "PercentComplete":
                 len(extracted_txt_files)/len(pdf_files) * 100
         }
         return meta
-    
+
     def save_extraction_meta(self, path):
         meta = self.generate_metadata_for_extraction(path)
         meta_save_dir = f'{path.rsplit("/", 1)[0]}/meta.json'
