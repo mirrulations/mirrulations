@@ -1,6 +1,6 @@
 import os
-import boto3
 import json
+import boto3
 from moto import mock_s3
 from pytest import fixture
 from mirrclient.s3_saver import S3Saver

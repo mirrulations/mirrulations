@@ -250,9 +250,10 @@ class Client:
                                                   url.endswith('.pdf'))
 
     def _make_extraction_meta(self, attachment_paths):
-        if len(attachment_paths) ==0:
-            return
-        meta_save_dir = PathGenerator.make_attachment_save_path(attachment_paths[0]).rsplit("/", 1)[0]
+        if len(attachment_paths) == 0:
+            return False
+        meta_save_dir = PathGenerator.\
+            make_attachment_save_path(attachment_paths[0]).rsplit("/", 1)[0]
         meta = {
             "extraction_status": {}
         }
@@ -262,16 +263,13 @@ class Client:
         meta_save_path = f"{meta_save_dir}/extraction-metadata.json"
         self.saver.save_json(meta_save_path, meta)
         return meta_save_path, meta
-        # self.saver.save_json(meta_save_path, meta)
 
         # Use Saver to save meta json to Disk and S3
-            # Possible file names: extraction-metadata.json ??
+        # Possible file names: extraction-metadata.json ??
 
         # write meta to meta_save_path
 
         # Future: Loop over again and add to extraction queue
-
-
 
     def _download_single_attachment(self, url, path):
         '''
