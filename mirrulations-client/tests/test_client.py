@@ -347,6 +347,12 @@ def test_client_downloads_attachment_results(mocker, capsys):
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
                  return_value=None)
+    mocker.patch('mirrclient.disk_saver.DiskSaver.save_to_disk',
+                 return_value=None)
+    mocker.patch('mirrclient.s3_saver.S3Saver.save_binary',
+                 return_value=None)
+    mocker.patch('mirrclient.s3_saver.S3Saver.save_json',
+                 return_value=None)
     mock_redis = ReadyRedis()
     client = Client(mock_redis, MockJobQueue())
     client.api_key = 1234
@@ -441,6 +447,12 @@ def test_two_attachments_in_comment(mocker):
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
                  return_value=None)
+    mocker.patch('mirrclient.disk_saver.DiskSaver.save_to_disk',
+                 return_value=None)
+    mocker.patch('mirrclient.s3_saver.S3Saver.save_binary',
+                 return_value=None)
+    mocker.patch('mirrclient.s3_saver.S3Saver.save_json',
+                 return_value=None)
     client = Client(ReadyRedis(), MockJobQueue())
     client.api_key = 1234
 
@@ -513,3 +525,34 @@ def test_client_handles_api_timeout():
         client.job_operation()
 
     assert mock_redis.get('invalid_jobs') == [1, 'http://regulations.gov/job']
+
+
+def test_make_extraction_meta(mocker):
+    mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
+                 return_value=None)
+    mocker.patch('mirrclient.saver.Saver.save_json',
+                 return_value=None)
+    mocker.patch('mirrclient.disk_saver.DiskSaver.save_to_disk',
+                 return_value=None)
+    test_attachment_paths = [
+        "testagency/docketid/comments_attachments/test1.pdf", 
+        "testagency/docketid/comments_attachments/test2.pdf", 
+        "testagency/docketid/comments_attachments/test3.pdf", 
+        "testagency/docketid/comments_attachments/test4.pdf"
+    ]
+    mock_redis = ReadyRedis()
+    client = Client(mock_redis, MockJobQueue())
+    client.api_key = 1234
+    expected_meta = {
+        "extraction_status":{
+            "test1.pdf":"Not Attempted", 
+            "test2.pdf":"Not Attempted", 
+            "test3.pdf":"Not Attempted", 
+            "test4.pdf":"Not Attempted" 
+        }
+    }
+    expected_meta_save_path = 'testagency/docketid/comments_extracted_text/pdfminer/extraction-metadata.json'
+    actual_meta_path, actual_meta = client._make_extraction_meta(test_attachment_paths)
+    assert expected_meta_save_path == actual_meta_path
+    assert  expected_meta == actual_meta
+

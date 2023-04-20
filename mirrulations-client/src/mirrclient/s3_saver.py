@@ -85,7 +85,7 @@ class S3Saver():
         response = self.s3_client.put_object(
             Bucket=self.bucket_name,
             Key=path,
-            Body=json.dumps(data["results"])
+            Body=json.dumps(data)
             )
         print(f"Wrote json to S3: {path}")
         return response

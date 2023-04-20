@@ -4,6 +4,7 @@ import os
 from pytest import fixture
 from moto import mock_s3
 import boto3
+import json
 from mirrclient.saver import Saver
 from mirrclient.s3_saver import S3Saver
 from mirrclient.disk_saver import DiskSaver
@@ -27,7 +28,7 @@ def test_saving_to_disk():
             mocked_file.assert_called_once_with(test_path, 'x',
                                                 encoding='utf8')
             mocked_file().write.assert_called_once_with(
-                dumps(test_data['results']))
+                dumps(test_data))
 
 
 @mock_s3
@@ -44,7 +45,7 @@ def test_saving_to_s3():
     body = conn.Object("test-mirrulations1",
                        "data/test.json").get()["Body"].read()\
         .decode("utf-8").strip('/"')
-    assert body == test_data["results"]
+    assert json.loads(body) == test_data
 
 
 @mock_s3
@@ -64,11 +65,12 @@ def test_saver_saves_text_to_multiple_places():
             mocked_file.assert_called_once_with(test_path, 'x',
                                                 encoding='utf8')
             mocked_file().write.assert_called_once_with(
-                dumps(test_data['results']))
+                dumps(test_data))
             body = conn.Object("test-mirrulations1",
                                "/USTR/file.json").get()["Body"].read()\
                 .decode("utf-8").strip('/"')
-            assert body == test_data["results"]
+            print(body)
+            assert json.loads(body) == test_data
 
 
 @mock_s3

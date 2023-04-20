@@ -58,7 +58,7 @@ def test_save_json():
             saver.save_json(path, data)
             mock_dir.assert_called_once_with('/USTR')
             mocked_file.assert_called_once_with(path, 'x', encoding='utf8')
-            mocked_file().write.assert_called_once_with(dumps(data['results']))
+            mocked_file().write.assert_called_once_with(dumps(data))
 
 
 def test_save_binary():

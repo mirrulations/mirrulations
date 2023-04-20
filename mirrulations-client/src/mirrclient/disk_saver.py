@@ -25,7 +25,6 @@ class DiskSaver():
         """
         _dir = path.rsplit('/', 1)[0]
         self.make_path(_dir)
-        data = data['results']
         if os.path.exists(path) is False:
             self.save_to_disk(path, data)
         else:

@@ -189,7 +189,7 @@ class Client:
             the results from a performed job
         """
         dir_, filename = data['directory'].rsplit('/', 1)
-        self.saver.save_json(f'/data{dir_}/{filename}', data)
+        self.saver.save_json(f'/data{dir_}/{filename}', data["results"])
 
     def _perform_job(self, job_url):
         """
@@ -231,6 +231,7 @@ class Client:
 
         path_list = self.path_generator.get_attachment_json_paths(comment_json)
         self._make_extraction_meta(path_list)
+
         counter = 0
         comment_id_str = f"Comment - {comment_json['data']['id']}"
         print(f"Found {len(path_list)} attachment(s) for {comment_id_str}")
@@ -249,13 +250,20 @@ class Client:
                                                   url.endswith('.pdf'))
 
     def _make_extraction_meta(self, attachment_paths):
-        meta_save_path = PathGenerator.make_attachment_save_path(attachment_paths[0]).rsplit("/", 1)[0]
+        if len(attachment_paths) ==0:
+            return
+        meta_save_dir = PathGenerator.make_attachment_save_path(attachment_paths[0]).rsplit("/", 1)[0]
         meta = {
             "extraction_status": {}
         }
         for path in attachment_paths:
             file_name = path.rsplit("/", 1)[1]
             meta["extraction_status"][file_name] = "Not Attempted"
+        meta_save_path = f"{meta_save_dir}/extraction-metadata.json"
+        self.saver.save_json(meta_save_path, meta)
+        return meta_save_path, meta
+        # self.saver.save_json(meta_save_path, meta)
+
         # Use Saver to save meta json to Disk and S3
             # Possible file names: extraction-metadata.json ??
 
