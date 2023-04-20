@@ -9,10 +9,6 @@ body {
     font-family: 'Avenir', 'Helvetica', 'Arial', 'sans-serif';
 }
 
-p {
-    margin: 10px 0;
-}
-
 header {
     text-align: right;
     box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
@@ -44,55 +40,47 @@ button:hover {
 
 .container-section {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: stretch;
     flex-wrap: wrap;
 }
 
 .card {
-    position: relative;
     display: flex;
     background-color: #fff;
     color: #333;
     border-radius: 1rem;
     box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
-    padding: 30px;
+    padding: 15px;
     margin: 10px;
-    align-items: center;
+    /* align-items: baseline; */
     justify-content: center;
     text-align: center;
+    flex-grow: 1;
 }
 
-.card.header-card {
-    border-radius: 2rem;
-    padding: 10px 18px;
-    align-items: center;
-    justify-content: center;
-}
-
-.header-card .info-container {
-    display: flex;
-    align-items: center;
+.info-container {
     text-align: left;
-    margin-right: 2rem;
+    display: grid;
 }
 
-.info-container-data {
-    padding-left: 18px;
+.data-container {
+  display: block;
+  padding: 5px;
 }
 
-.info-container-data span{
+.data-container span{
+    display: inline;
     font-weight: 500;
     color: #6c757d;
+}
+
+.data-container-heading {
+    display: inline-flex;
     padding-right: 5px;
+    font-weight: bold;
 }
 
 /* Dashboard */
-.dashboard {
-    margin-bottom: 50px;
-    align-items: center;
-}
-
 .dashboard-heading {
     text-align: center;
     margin: 50px auto;
@@ -105,37 +93,9 @@ button:hover {
     color: #4C84FF;
 }
 
-.info-container {
-    margin-right: 68px;
-    width: 160px;
-}
-
 .progress-container {
     width: 100%;
 }
-
-.dashboard h2 {
-    font-size: 32px;
-    font-weight: 800;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.dashboard p {
-    font-size: 22px;
-    color: #6c757d;
-    font-weight: 300;
-}
-
-.dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    margin-left: 16px;
-    border-radius: 50%;
-}
-
 
 /* Colors */
 .blue {
@@ -161,52 +121,6 @@ button:hover {
 .red {
     background-color: #F0404C;
     stroke: #F0404C
-}
-
-
-/* Circular Chart */
-.circular-chart {
-    display: block;
-    margin: 10px auto;
-    width: 200px;
-    height: 200px;
-  }
-
-  .circle-back {
-    fill: none;
-    stroke-width: 1.5;
-
-    stroke: rgb(238,238,238);
-  }
-  
-  .circle-front {
-    fill: none;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    animation: progress 2s ease-out forwards;
-    stroke-dasharray: 0 100;
-  }
-
-  .circle-percentage {
-    text-anchor: middle;
-    font-size: 0.4rem;
-    fill: #6c757d;
-    opacity: 0;
-    transform: translateY(30%);
-    animation: display 2s ease-out forwards;
-  }
-
-  @keyframes progress {
-    0% {
-      stroke-dasharray: 0 100;
-    }
-  }
-
-@keyframes display {
-    to { 
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* Progress to Corpus */

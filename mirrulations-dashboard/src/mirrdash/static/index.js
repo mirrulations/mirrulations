@@ -14,26 +14,6 @@ window.addEventListener('load', function init() {
     }
 })
 
-const updateHtmlValues = (jobsWaiting, jobsDone) => {
-    if (jobsWaiting === null || jobsDone === null) {
-        // Handle the case where value or total is null,
-        // indicating Job Queue Error from dashboard
-        document.getElementById(id+'-number').textContent = "Error";
-    }
-    else {
-        let ids = ['jobs-waiting', 'jobs-done'];
-        let numerators = [jobsWaiting, jobsDone];
-        let totalJobs = jobsWaiting + jobsDone;
-
-        for (let [i, id] of ids.entries()) {
-            let percent = (numerators[i]/totalJobs) * 100;
-            document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
-            document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
-            document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
-        }
-    }
-}
-
 /**
  * Calculates the progression towards corpus
  * @param jobTypeCountsDone : array of number of jobs for each job type (dockets, documents, comments, attachments) completed
@@ -76,7 +56,7 @@ const updateJobTypeProgress = (id, value, total) => {
 }
 
 const updateJobsQueuedByType = (id, value) => {
-    document.getElementById(id+'-number').textContent = value;
+    document.getElementById(id+'-number').textContent = value.toLocaleString('en');
 }
 
 const updateClientDashboardData = () => {
@@ -84,15 +64,12 @@ const updateClientDashboardData = () => {
     .then(response => response.json())
     .then(jobInformation => {
         const {
-            jobs_total,
             num_attachments_done,
             num_pdf_attachments_done,
             num_comments_done,
             num_dockets_done,
             num_documents_done,
             num_extractions_done,
-            num_jobs_done, 
-            num_jobs_waiting,
             num_jobs_comments_queued,
             num_jobs_dockets_queued,
             num_jobs_documents_queued,
@@ -103,7 +80,6 @@ const updateClientDashboardData = () => {
 
         let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments;
 
-        updateHtmlValues(num_jobs_waiting, num_jobs_done);
         updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals);
         // Counts for percents
         updateJobTypeProgress("dockets-done", num_dockets_done, regulations_total_dockets);

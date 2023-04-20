@@ -21,7 +21,7 @@
                 <div class="progress-section">
                     <div class="card">
                         <div class="progress-container">
-                            <h3 class="corpus-header">Progress to Corpus</h3>
+                            <h3 class="corpus-header">Approximated Progress to Corpus</h3>
                             <div class="total-to-corpus">
                                 <div class="progress-bar-to-corpus blue" value="0">.</div>
                             </div>
@@ -32,141 +32,66 @@
                 <div class="container-section">
                     <div class="card">
                         <div class="info-container">
-                            <h2>
-                                <span id="jobs-waiting-number">0</span>
-                                <span class="dot green"></span>
-                            </h2>
-                            <p>Jobs Waiting</p>
-                        </div>
-                        <svg viewBox="0 0 36 36" class="circular-chart">
-                            <path class="circle-back" d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="circle-front green" id="jobs-waiting-circle-front" d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <text x="18" y="20.35" class="circle-percentage"
-                                id='jobs-waiting-circle-percentage'>0%</text>
-                        </svg>
+                            <h3>Jobs Queued</h3>
+                            <div class="data-container">
+                                <div class="data-container-heading">Dockets:</div>
+                                <span id="dockets-queued-number">0</span>
+                            </div>
+                            <div class="data-container">
+                                <div class="data-container-heading">Documents:</div>
+                                <span id="documents-queued-number">0</span>
+                            </div>
+                            <div class="data-container">
+                                <div class="data-container-heading">Comments:</div>
+                                <span id="comments-queued-number">0</span>
+                            </div>
+                            <div class="data-container">
+                                <div class="data-container-heading">PDF Attachments:</div>
+                                <span id="pdf-attachments-done-number">0</span>
+                            </div>
+                        </div> 
                     </div>
                     <div class="card">
                         <div class="info-container">
-                            <h2>
-                                <span id="jobs-done-number">0</span>
-                                <span class="dot red"></span>
-                            </h2>
-                            <p>Jobs Done</p>
-                        </div>
-                        <svg viewBox="0 0 36 36" class="circular-chart">
-                            <path class="circle-back" d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="circle-front red" id="jobs-done-circle-front" d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <text x="18" y="20.35" class="circle-percentage" id='jobs-done-circle-percentage'>0%</text>
-                        </svg>
-                    </div>
-                </div>
-                <div class="container-section">
-                    <div class="card header-card">
-                        <div class="info-container">
-                            <div class="info-container-data">
-                                <h3>Dockets</h3>
-                                <caption>Downloaded:</caption>
-                                <br>
-                                <span id="dockets-done-number">0</span>
-                                <br>
+                            <h3>Jobs Finished</h3>
+                            <div class="data-container">
+                                <div class="data-container-heading">Dockets Downloaded:</div>
                                 <span id="dockets-done-percent">0</span>
                                 <br>
+                                <span id="dockets-done-number">0</span>
                                 <caption>Out of:</caption>
                                 <span id="regulations-total-dockets-number">0</span>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card header-card">
-                        <div class="info-container">
-                            <div class="info-container-data">
-                                <h3>Documents</h3>
-                                <caption>Downloaded:</caption>
-                                <br>
-                                <span id="documents-done-number">0</span>
-                                <br>
+                            <div class="data-container">
+                                <div class="data-container-heading">Documents Downloaded:</div>
                                 <span id="documents-done-percent">0</span>
                                 <br>
+                                <span id="documents-done-number">0</span>
                                 <caption>Out of:</caption>
                                 <span id="regulations-total-documents-number">0</span>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card header-card">
-                        <div class="info-container">
-                            <div class="info-container-data">
-                                <h3>Comments</h3>
-                                <caption>Downloaded:</caption>
-                                <br>
-                                <span id="comments-done-number">0</span>
-                                <br>
+                            <div class="data-container">
+                                <div class="data-container-heading">Comments Downloaded:</div>
                                 <span id="comments-done-percent">0</span>
                                 <br>
+                                <span id="comments-done-number">0</span>
                                 <caption>Out of:</caption>
                                 <span id="regulations-total-comments-number">0</span>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card header-card">
-                        <div class="info-container">
-                            <div class="info-container-data">
-                                <h3>Attachments</h3>
-                                <caption>Downloaded:</caption>
-                                <br>
-                                <span id="attachments-done-number">0</span>
-                                <br>
+                            <div class="data-container">
+                                <div class="data-container-heading">Attachments Downloaded:</div>
                                 <span id="attachments-done-percent">0</span>
                                 <br>
+                                <span id="attachments-done-number">0</span>
                                 <caption>Out Of:</caption>
                                 <span id="regulations-total-attachments-number">0</span>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card header-card">
-                        <div class="info-container">
-                            <div class="info-container-data">
-                                <h3>Dockets Queued</h3>
-                                <span id="dockets-queued-number">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card header-card">
-                        <div class="info-container">
-                            <div class="info-container-data">
-                                <h3>Documents Queued</h3>
-                                <span id="documents-queued-number">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card header-card">
-                        <div class="info-container">
-                            <div class="info-container-data">
-                                <h3>Comments Queued</h3>
-                                <span id="comments-queued-number">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card header-card">
-                        <div class="info-container">
-                            <div class="info-container-data">
-                                <h3>PDF Attachments</h3>
-                                <span id="pdf-attachments-done-number">0</span>
-                            </div>
-                        </div>
-                        <div class="card header-card">
-                            <div class="info-container">
-                                <div class="info-container-data">
-                                    <h3>PDF's Extracted</h3>
-                                    <span id="pdf-extractions-done-percent">0</span>
-                                    <span id="pdf-extractions-done-number">0</span>
-                                </div>
+                            <div class="data-container">
+                                <div class="data-container-heading">PDF's Extracted:</div>
+                                <span id="pdf-extractions-done-percent">0</span>
+                                <br>
+                                <span id="pdf-extractions-done-number">0</span>
+                                <Caption>Extracted</Caption>
                             </div>
                         </div>
                     </div>
