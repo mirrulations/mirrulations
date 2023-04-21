@@ -1,6 +1,7 @@
 import boto3
 from datetime import datetime, timedelta
 
+
 class BucketSize:
 
     def get_bucket_size(bucket_name: str, region: str):
