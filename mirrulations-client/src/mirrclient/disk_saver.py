@@ -25,7 +25,6 @@ class DiskSaver():
         """
         _dir = path.rsplit('/', 1)[0]
         self.make_path(_dir)
-        data = data['results']
         if os.path.exists(path) is False:
             self.save_to_disk(path, data)
         else:
@@ -70,3 +69,18 @@ class DiskSaver():
     def check_for_duplicates(self, path, data, i):
         if self.is_duplicate(self.open_json_file(path), data) is False:
             self.save_duplicate_json(path, data, i)
+
+    def save_meta(self, path, meta):
+        _dir = path.rsplit('/', 1)[0]
+        self.make_path(_dir)
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as file:
+                previous_meta = load(file)
+            os.remove(path)
+            for key in previous_meta["extraction_status"]:
+                meta['extraction_status'][key] = "Not Attempted"
+            print("extraction-metadata.json file exists. Updating this file")
+        with open(path, "w", encoding="utf-8") as file:
+            # First comment will trigger this
+            file.write(dumps(meta))
+            print(f'Wrote Extraction Metadata to Disk: {path}')

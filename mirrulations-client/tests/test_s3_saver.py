@@ -1,4 +1,5 @@
 import os
+import json
 import boto3
 from moto import mock_s3
 from pytest import fixture
@@ -63,14 +64,14 @@ def test_save_json_to_bucket():
     conn = create_mock_mirrulations_bucket()
     s3_bucket = S3Saver(bucket_name="test-mirrulations1")
     test_data = {
-        "results": 'test'
+        "results": "test"
     }
     test_path = "data/test.json"
     response = s3_bucket.save_json(test_path, test_data)
     body = conn.Object("test-mirrulations1",
                        "data/test.json").get()["Body"].read()\
-        .decode("utf-8").strip('/"')
-    assert body == test_data["results"]
+        .decode("utf-8").strip("/'")
+    assert json.loads(body) == test_data
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200
 
 
