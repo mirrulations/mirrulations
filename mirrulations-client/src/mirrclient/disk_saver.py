@@ -68,7 +68,6 @@ class DiskSaver():
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as file:
                 previous_meta = load(file)
-            os.remove(path)
             for key in previous_meta["extraction_status"]:
                 meta['extraction_status'][key] = "Not Attempted"
             print("extraction-metadata.json file exists. Updating this file")
