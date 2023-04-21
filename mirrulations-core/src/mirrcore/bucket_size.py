@@ -1,9 +1,17 @@
 import boto3
 from datetime import datetime, timedelta
 
+
 class BucketSize:
+    """A class which handles getting the size of the bucket
+    ...
+    Methods
+    -------
+    get_bucket_size()
+    """
 
     def get_bucket_size():
+        """Returns the size of the bucket in bytes"""
         bucket_name = 'mirrulations'
         now = datetime.utcnow()
         start_time = now - timedelta(days=1)
