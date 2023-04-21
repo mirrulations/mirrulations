@@ -4,6 +4,9 @@ from json import dumps, load
 
 class DiskSaver():
 
+    def __init__(self, increase_cache_callback=None) -> None:
+        self.increase_cache_var = increase_cache_callback
+
     def make_path(self, _dir):
         try:
             os.makedirs(_dir)
@@ -23,11 +26,14 @@ class DiskSaver():
         data : dict
             the results data to be written to disk
         """
+        results = data
         _dir = path.rsplit('/', 1)[0]
         self.make_path(_dir)
         data = data['results']
         if os.path.exists(path) is False:
             self.save_to_disk(path, data)
+            # cache should only increase with a completely new job
+            self.increase_cache_var(results)
         else:
             self.check_for_duplicates(path, data, 1)
 

@@ -61,7 +61,7 @@ class Client:
         self.api_key = os.getenv('API_KEY')
         self.client_id = os.getenv('ID')
         self.path_generator = PathGenerator()
-        self.saver = Saver(savers=[DiskSaver(),
+        self.saver = Saver(savers=[DiskSaver(self._increase_job_type_done),
                                    S3Saver(bucket_name="mirrulations")])
         self.redis = redis_server
         self.job_queue = job_queue
@@ -109,6 +109,16 @@ class Client:
         job_type = split_url[-2][:-1]  # Removes plural from job type
         type_id = split_url[-1]
         return f'{job_type}/{type_id}'
+
+    def _increase_job_type_done(self, data):
+        """
+        Called in DiskSaver()
+
+        callback method that occurs when new data is written to disk.
+        So redis cache varaibles do not increment when duplciate data
+        comes through
+        """
+        self.cache.increase_jobs_done(data['job_type'])
 
     def _get_job(self):
         """
@@ -164,7 +174,6 @@ class Client:
         }
         print(f'Downloading Job {job["job_id"]}')
         data['directory'] = self.path_generator.get_path(job_result)
-        self.cache.increase_jobs_done(data['job_type'])
 
         self._put_results(data)
 
@@ -209,7 +218,6 @@ class Client:
         try:
             delimiter = '&' if '?' in job_url else '?'
             url = f'{job_url}{delimiter}api_key={self.api_key}'
-
             return requests.get(url, timeout=10)
         except requests.exceptions.ReadTimeout as exc:
             raise APITimeoutException from exc

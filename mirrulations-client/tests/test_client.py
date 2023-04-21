@@ -1,5 +1,6 @@
 # pylint: disable=W0212
 import os
+from unittest.mock import patch
 import responses
 from pytest import fixture
 import pytest
@@ -381,11 +382,14 @@ def test_client_downloads_attachment_results(mocker, capsys):
                    FDA-2016-D-2335/attachment_1.pdf'),
                   json='\bx17', status=200)
 
-    client.job_operation()
-    job_stat_results = client.cache.get_jobs_done()
-    assert job_stat_results['num_comments_done'] == 1
-    assert job_stat_results['num_attachments_done'] == 1
-    assert job_stat_results['num_pdf_attachments_done'] == 1
+    expected_job_data = {'job_type': 'comments'}
+    with patch.object(Client, '_put_results', side_effect=client.
+                      _increase_job_type_done(expected_job_data)):
+        client.job_operation()
+        job_stat_results = client.cache.get_jobs_done()
+        assert job_stat_results['num_comments_done'] == 1
+        assert job_stat_results['num_attachments_done'] == 1
+        assert job_stat_results['num_pdf_attachments_done'] == 1
 
     captured = capsys.readouterr()
     print_data = [
@@ -467,14 +471,19 @@ def test_two_attachments_in_comment(mocker):
                 }
             }]
         }
+
+    expected_job_data = {'job_type': 'comments'}
+
     responses.add(responses.GET, 'http://regulations.gov/job',
                   json=test_json, status=200)
 
-    client.job_operation()
-    results = client.cache.get_jobs_done()
-    assert results['num_comments_done'] == 1
-    assert results['num_attachments_done'] == 2
-    assert results['num_pdf_attachments_done'] == 1
+    with patch.object(Client, '_put_results', side_effect=client.
+                      _increase_job_type_done(expected_job_data)):
+        client.job_operation()
+        results = client.cache.get_jobs_done()
+        assert results['num_comments_done'] == 1
+        assert results['num_attachments_done'] == 2
+        assert results['num_pdf_attachments_done'] == 1
 
 
 # Exception Tests
@@ -513,3 +522,47 @@ def test_client_handles_api_timeout():
         client.job_operation()
 
     assert mock_redis.get('invalid_jobs') == [1, 'http://regulations.gov/job']
+
+
+@responses.activate
+def test_job_stats_does_not_increase_with_duplicate_data():
+    client = Client(ReadyRedis(), MockJobQueue())
+    client.api_key = 1234
+
+    client.job_queue.add_job({'job_id': 1,
+                             'url': 'http://regulations.gov/job1',
+                              "job_type": "dockets"})
+
+    client.job_queue.add_job({'job_id': 2,
+                             'url': 'http://regulations.gov/job2',
+                              "job_type": "dockets"})
+    test_json = {
+                "data": {
+                    "id": "agencyID-001-0002",
+                    "type": "dockets",
+                    "attributes": {
+                        "agencyId": "agencyID",
+                        "docketId": "agencyID-001"
+                    }
+                }
+            }
+    expected_job_data = {'job_type': 'dockets'}
+
+    # mocks out what would occur during _put_results
+    with patch.object(Client, '_put_results', side_effect=client.
+                      _increase_job_type_done(expected_job_data)):
+        assert client.job_queue.get_num_jobs() == 2
+        # first job
+        responses.add(responses.GET, 'http://regulations.gov/job1',
+                      json=test_json, status=200)
+        client.job_operation()
+        assert client.job_queue.get_num_jobs() == 1
+
+        # second job
+        responses.add(responses.GET, 'http://regulations.gov/job2',
+                      json=test_json, status=200)
+        client.job_operation()
+        assert client.job_queue.get_num_jobs() == 0
+
+    results = client.cache.get_jobs_done()
+    assert results['num_dockets_done'] == 1

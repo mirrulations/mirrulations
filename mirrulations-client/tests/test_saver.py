@@ -1,5 +1,5 @@
 from json import dumps
-from unittest.mock import patch, mock_open
+from unittest.mock import patch, mock_open, MagicMock
 import os
 from pytest import fixture
 from moto import mock_s3
@@ -15,13 +15,15 @@ def mock_env():
     os.environ['AWS_SECRET_ACCESS_KEY'] = 'test_secret_key'
 
 
-def test_saving_to_disk():
+def test_saving_to_disk(mocker):
     test_path = '/USTR/file.json'
     test_data = {'results': 'Hello world'}
 
     with patch('mirrclient.disk_saver.open', mock_open()) as mocked_file:
         with patch('os.makedirs') as mock_dir:
-            saver = Saver(savers=[DiskSaver()])
+            disk_saver = DiskSaver()
+            saver = Saver(savers=[disk_saver])
+            mocker.patch.object(disk_saver, 'increase_cache_var', MagicMock())
             saver.save_json(test_path, test_data)
             mock_dir.assert_called_once_with('/USTR')
             mocked_file.assert_called_once_with(test_path, 'x',
@@ -48,7 +50,7 @@ def test_saving_to_s3():
 
 
 @mock_s3
-def test_saver_saves_text_to_multiple_places():
+def test_saver_saves_text_to_multiple_places(mocker):
     conn = boto3.resource("s3", region_name="us-east-1")
     conn.create_bucket(Bucket="test-mirrulations1")
     test_path = '/USTR/file.json'
@@ -56,9 +58,11 @@ def test_saver_saves_text_to_multiple_places():
 
     with patch('mirrclient.disk_saver.open', mock_open()) as mocked_file:
         with patch('os.makedirs') as mock_dir:
+            disk_saver = DiskSaver()
             saver = Saver(savers=[
-                DiskSaver(),
+                disk_saver,
                 S3Saver(bucket_name="test-mirrulations1")])
+            mocker.patch.object(disk_saver, 'increase_cache_var', MagicMock())
             saver.save_json(test_path, test_data)
             mock_dir.assert_called_once_with('/USTR')
             mocked_file.assert_called_once_with(test_path, 'x',

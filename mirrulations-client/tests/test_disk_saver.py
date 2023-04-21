@@ -49,10 +49,11 @@ def test_save_path_directory_already_exists(capsys):
         assert captured.out == print_data
 
 
-def test_save_json():
+def test_save_json(mocker):
     saver = DiskSaver()
     path = '/USTR/file.json'
     data = {'results': 'Hello world'}
+    mocker.patch.object(saver, 'increase_cache_var', MagicMock())
     with patch('mirrclient.disk_saver.open', mock_open()) as mocked_file:
         with patch('os.makedirs') as mock_dir:
             saver.save_json(path, data)
