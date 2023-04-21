@@ -1,6 +1,7 @@
 from json import load
 import os
 
+
 class Saver:
     """
     A class which encapsulates the saving for the Client
@@ -74,7 +75,7 @@ class Saver:
         """
         If an existing metadata file exists,
         the new meta is updated with the previous
-        meta's extraction status. 
+        meta's extraction status.
         Parameters
         ----------
         path : str

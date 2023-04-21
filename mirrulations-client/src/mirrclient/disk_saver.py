@@ -71,5 +71,3 @@ class DiskSaver():
             # First comment will trigger this
             file.write(dumps(meta))
             print(f'Wrote Extraction Metadata to Disk: {path}')
-
-    

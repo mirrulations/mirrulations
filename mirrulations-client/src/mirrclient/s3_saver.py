@@ -115,7 +115,7 @@ class S3Saver():
             Body=binary)
         print(f"Wrote binary to S3: {path}")
         return response
-    
+
     def save_meta(self, path, meta):
         """
         Saves metadata (json) file to Amazon S3 bucket
@@ -132,7 +132,3 @@ class S3Saver():
         """
         Saver.update_meta(path, meta)
         self.save_json(path, meta)
-        
-
-        
-
