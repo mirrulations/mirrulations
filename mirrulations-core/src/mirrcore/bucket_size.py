@@ -8,9 +8,16 @@ start_time = end_time - timedelta(days=1)
 
 
 class BucketSize:
+    """A class which handles getting the size of the bucket
+    ...
+    Methods
+    -------
+    get_bucket_size()
+    """
 
     @staticmethod
     def get_bucket_size():
+        """Returns the size of the bucket in bytes"""
         client = BucketSize.get_client()
         result = client.get_metric_statistics(
             Namespace="AWS/S3",
