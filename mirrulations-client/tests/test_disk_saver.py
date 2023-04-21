@@ -154,3 +154,61 @@ def test_check_for_duplicates(capsys):
         print_data = ''
         captured = capsys.readouterr()
         assert captured.out == print_data
+
+
+def test_save_meta():
+    saver = DiskSaver()
+    test_meta_path = 'pdfminer/extraction-metadata.json'
+    test_meta = {
+        "extraction_status": {
+            "test_1.pdf": "Not Attempted",
+            "test_2.pdf": "Not Attempted",
+        }
+        }
+    with patch('mirrclient.disk_saver.open', mock_open()) as mocked_file:
+        with patch('os.makedirs') as mock_dir:
+            saver.save_meta(test_meta_path, test_meta)
+            mock_dir.assert_called_once_with('pdfminer')
+            mocked_file.assert_called_once_with(test_meta_path,
+                                                'w', encoding='utf-8')
+            mocked_file().write.assert_called_once_with(dumps(test_meta))
+
+
+def test_save_meta_where_meta_exists_already(mocker):
+    saver = DiskSaver()
+    test_meta_path = 'pdfminer/extraction-metadata.json'
+    test_meta = {
+        "extraction_status": {
+            "test_1.pdf": "Not Attempted",
+            "test_2.pdf": "Not Attempted",
+        }
+    }
+    new_meta = {
+        "extraction_status": {
+            "test_3.pdf": "Not Attempted",
+        }
+    }
+
+    combined_meta = {
+        "extraction_status": {
+            "test_3.pdf": "Not Attempted",
+            "test_1.pdf": "Not Attempted",
+            "test_2.pdf": "Not Attempted"
+        }
+    }
+    with patch('mirrclient.disk_saver.open', mock_open()) as mocked_file:
+        with patch('os.makedirs') as mock_dir:
+            saver.save_meta(test_meta_path, test_meta)
+            mock_dir.assert_called_once_with('pdfminer')
+            mocked_file.assert_called_once_with(test_meta_path,
+                                                'w', encoding='utf-8')
+            mocked_file().write.assert_called_once_with(dumps(test_meta))
+
+    with patch('mirrclient.disk_saver.open',
+               mock_open(read_data=dumps(test_meta))) as mocked_file:
+        with patch('os.makedirs') as mock_dir:
+            mocker.patch('os.path.exists', return_value=True)
+            mocker.patch('json.load', return_value=test_meta)
+            mocker.patch('os.remove')
+            saver.save_meta(test_meta_path, new_meta)
+            mocked_file().write.assert_called_once_with(dumps(combined_meta))
