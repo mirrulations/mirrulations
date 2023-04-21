@@ -9,6 +9,7 @@ from mirrcore.job_queue_exceptions import JobQueueException
 from mirrcore.redis_check import load_redis
 from mirrcore.data_counts import DataCounts
 from mirrcore.jobs_statistics import JobStatistics
+from mirrcore.bucket_size import BucketSize
 
 
 class WorkGenerator:
@@ -54,6 +55,9 @@ if __name__ == '__main__':
         # entries in Regulations.gov
         regulations_data_counts = DataCounts(api_key).get_counts()
         job_stats.set_regulations_data(regulations_data_counts)
+
+        bucket_size = BucketSize.get_bucket_size()
+        print('BUCKET SIZE', bucket_size)
 
         # Download dockets, documents, and comments
         # from all jobs in the job queue
