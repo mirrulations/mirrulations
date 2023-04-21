@@ -1,3 +1,6 @@
+from json import load
+import os
+
 class Saver:
     """
     A class which encapsulates the saving for the Client
@@ -49,3 +52,39 @@ class Saver:
         """
         for saver in self.savers:
             saver.save_binary(path, binary)
+
+    def save_meta(self, path, meta):
+        """
+        Iterates over the instance variable savers list
+        and calls the corresponding subclass save_binary() method.
+
+        Parameters
+        ----------
+        path : str
+            A string denoting where the metadata file should be saved to.
+
+         meta: dict
+            The metadata (json) to be saved
+        """
+        for saver in self.savers:
+            saver.save_meta(path, meta)
+
+    @staticmethod
+    def update_meta(path, meta):
+        """
+        If an existing metadata file exists,
+        the new meta is updated with the previous
+        meta's extraction status. 
+        Parameters
+        ----------
+        path : str
+            The path to the metadata file
+        meta : dict
+            The new metadata to be written/combined
+        """
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as file:
+                previous_meta = load(file)
+            for key in previous_meta["extraction_status"]:
+                meta['extraction_status'][key] = "Not Attempted"
+            print("extraction-metadata.json file exists. Updating this file")
