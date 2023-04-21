@@ -1,6 +1,7 @@
 import os
 import json
 from dotenv import load_dotenv
+from mirrclient.saver import Saver
 import boto3
 
 
@@ -114,3 +115,24 @@ class S3Saver():
             Body=binary)
         print(f"Wrote binary to S3: {path}")
         return response
+    
+    def save_meta(self, path, meta):
+        """
+        Saves metadata (json) file to Amazon S3 bucket
+        Bucket Structure: /AGENCYID/path/to/item
+
+        Parameters
+        -------
+        path : str
+            Where to save the data to in the S3 bucket
+
+        meta : dict
+            The json contents representing the
+            metadata that will be written
+        """
+        Saver.update_meta(path, meta)
+        self.save_json(path, meta)
+        
+
+        
+
