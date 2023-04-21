@@ -40,8 +40,20 @@ button:hover {
 
 .container-section {
     display: flex;
-    justify-content: stretch;
+    justify-content: center;
+    align-items: center;
     flex-wrap: wrap;
+}
+
+.card-corpus-stats {
+    background-color: #fff;
+    color: #333;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin: 10px;
+    justify-content: center;
+    text-align: center;
 }
 
 .card {
@@ -52,10 +64,8 @@ button:hover {
     box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
     padding: 15px;
     margin: 10px;
-    /* align-items: baseline; */
     justify-content: center;
     text-align: center;
-    flex-grow: 1;
 }
 
 .info-container {
@@ -95,6 +105,16 @@ button:hover {
     margin-right: 2rem;
 }
 
+.info-container-data {
+    padding-left: 18px;
+}
+
+.info-container-data span{
+    font-weight: 500;
+    color: #6c757d;
+    padding-right: 5px;
+}
+
 /* Dashboard */
 .dashboard-heading {
     text-align: center;
@@ -106,10 +126,6 @@ button:hover {
     letter-spacing: 1px;
     font-weight: 400;
     color: #4C84FF;
-}
-
-.progress-container {
-    width: 100%;
 }
 
 /* Colors */
@@ -139,6 +155,11 @@ button:hover {
 }
 
 /* Progress to Corpus */
+.progress-container {
+    width: 100%;
+    padding-bottom: 15px;
+}
+
 .total-to-corpus {
     width: 100%;
     background: rgb(238,238,238);
@@ -156,11 +177,23 @@ button:hover {
     padding-bottom: 10px;
   }
 
-  .progress-percentage-to-corpus {
-    padding-top: 5px;
-    padding-left: 5px;
-    text-align: left;
+  .corpus-progress {
+    position: absolute;
   }
+
+.left {
+  padding-top: 5px;
+  padding-left: 5px;
+}
+.center {
+  left: 44%;
+  padding-top: 5px;
+}
+
+.right {
+  padding-top: 5px;
+  padding-right: 5px;
+}
 
   @keyframes onReload {
     0% {

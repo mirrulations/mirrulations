@@ -55,8 +55,8 @@ const updateJobTypeProgress = (id, value, total) => {
     document.getElementById(id+'-percent').textContent = `${percent.toFixed(2)}%`;
 }
 
-const updateJobsQueuedByType = (id, value) => {
-    document.getElementById(id+'-number').textContent = value.toLocaleString('en');
+const updateJobsQueued = (id, value) => {
+    document.getElementById(id+'-number').textContent = `${value.toLocaleString('en')} Jobs Queued`;
 }
 
 const updateClientDashboardData = () => {
@@ -100,7 +100,7 @@ const updateClientDashboardData = () => {
         updateCount("regulations-total-documents", regulations_total_documents);
         updateCount("regulations-total-comments", regulations_total_comments);
         updateCount("regulations-total-attachments", regulations_total_attachments);
-        updateJobsQueuedByType("jobs-queued", num_jobs_waiting);
+        updateJobsQueued("jobs-queued", num_jobs_waiting);
         
     })
     .catch((err) => console.log(err));
