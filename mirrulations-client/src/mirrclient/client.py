@@ -230,11 +230,13 @@ class Client:
         '''
 
         path_list = self.path_generator.get_attachment_json_paths(comment_json)
-        self._make_extraction_meta(path_list)
-
         counter = 0
         comment_id_str = f"Comment - {comment_json['data']['id']}"
         print(f"Found {len(path_list)} attachment(s) for {comment_id_str}")
+
+        if len(path_list) > 0:
+            self._make_extraction_meta(path_list)
+
         for included in comment_json["included"]:
             if (included["attributes"]["fileFormats"] and
                     included["attributes"]["fileFormats"]
@@ -250,8 +252,24 @@ class Client:
                                                   url.endswith('.pdf'))
 
     def _make_extraction_meta(self, attachment_paths):
-        if len(attachment_paths) == 0:
-            return False
+        """
+        This method creates the initial meta data json for
+            attachments for a given comment
+        The metadata is a json with all of the extraction_statuses
+            initialized at "Not Attempted"
+
+        Ex:
+        {
+            extraction_status:
+            {
+                "path_to_attachment" : "Not Attempted"
+            }
+        }
+        extraction-metadata.json
+        Will be saved in the comments_extracted/pdfminer/
+        directory for now.
+
+        """
         meta_save_dir = PathGenerator.\
             make_attachment_save_path(attachment_paths[0]).rsplit("/", 1)[0]
         meta = {
@@ -260,15 +278,13 @@ class Client:
         for path in attachment_paths:
             file_name = path.rsplit("/", 1)[1]
             meta["extraction_status"][file_name] = "Not Attempted"
-        meta_save_path = f"{meta_save_dir}/extraction-metadata.json"
-        self.saver.save_json(meta_save_path, meta)
+        meta_save_path = f"/data{meta_save_dir}/extraction-metadata.json"
+
+        DiskSaver().save_meta(f"{meta_save_path}", meta)
         return meta_save_path, meta
 
         # Use Saver to save meta json to Disk and S3
-        # Possible file names: extraction-metadata.json ??
-
-        # write meta to meta_save_path
-
+        # Possible file names: extraction-metadata.json
         # Future: Loop over again and add to extraction queue
 
     def _download_single_attachment(self, url, path):

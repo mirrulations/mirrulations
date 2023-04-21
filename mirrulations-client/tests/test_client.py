@@ -351,7 +351,7 @@ def test_client_downloads_attachment_results(mocker, capsys):
                  return_value=None)
     mocker.patch('mirrclient.s3_saver.S3Saver.save_binary',
                  return_value=None)
-    mocker.patch('mirrclient.s3_saver.S3Saver.save_json',
+    mocker.patch('mirrclient.disk_saver.DiskSaver.save_meta',
                  return_value=None)
     mock_redis = ReadyRedis()
     client = Client(mock_redis, MockJobQueue())
@@ -451,6 +451,8 @@ def test_two_attachments_in_comment(mocker):
                  return_value=None)
     mocker.patch('mirrclient.s3_saver.S3Saver.save_json',
                  return_value=None)
+    mocker.patch('mirrclient.disk_saver.DiskSaver.save_meta',
+                 return_value=None)
     client = Client(ReadyRedis(), MockJobQueue())
     client.api_key = 1234
 
@@ -528,15 +530,15 @@ def test_client_handles_api_timeout():
 def test_make_extraction_meta(mocker):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
-    mocker.patch('mirrclient.saver.Saver.save_json',
+    mocker.patch('mirrclient.disk_saver.DiskSaver.save_meta',
                  return_value=None)
-    mocker.patch('mirrclient.disk_saver.DiskSaver.save_to_disk',
-                 return_value=None)
+    # mocker.patch('mirrclient.disk_saver.DiskSaver.open',
+    #              return_value=None)
     test_attachment_paths = [
-        "testagency/docketid/comments_attachments/test1.pdf",
-        "testagency/docketid/comments_attachments/test2.pdf",
-        "testagency/docketid/comments_attachments/test3.pdf",
-        "testagency/docketid/comments_attachments/test4.pdf"
+        "/testagency/docketid/comments_attachments/test1.pdf",
+        "/testagency/docketid/comments_attachments/test2.pdf",
+        "/testagency/docketid/comments_attachments/test3.pdf",
+        "/testagency/docketid/comments_attachments/test4.pdf"
     ]
     mock_redis = ReadyRedis()
     client = Client(mock_redis, MockJobQueue())
@@ -550,7 +552,7 @@ def test_make_extraction_meta(mocker):
         }
     }
     expected_meta_save_path = \
-        'testagency/docketid/comments_extracted_text' +\
+        '/data/testagency/docketid/comments_extracted_text' +\
         '/pdfminer/extraction-metadata.json'
     actual_meta_path, actual_meta = \
         client._make_extraction_meta(test_attachment_paths)
