@@ -95,15 +95,11 @@ const updateClientDashboardData = () => {
         updateCount("documents-done",num_documents_done);
         updateCount("comments-done",num_comments_done);
         updateCount("attachments-done",num_attachments_done);
-        //updateCount("pdf-attachments-done", num_pdf_attachments_done);
         updateCount("pdf-extractions-done", num_extractions_done);
         updateCount("regulations-total-dockets", regulations_total_dockets);
         updateCount("regulations-total-documents", regulations_total_documents);
         updateCount("regulations-total-comments", regulations_total_comments);
         updateCount("regulations-total-attachments", regulations_total_attachments);
-        // updateJobsQueuedByType("comments-queued", num_jobs_comments_queued);
-        // updateJobsQueuedByType("dockets-queued", num_jobs_dockets_queued);
-        // updateJobsQueuedByType("documents-queued", num_jobs_documents_queued);
         updateJobsQueuedByType("jobs-queued", num_jobs_waiting);
         
     })
