@@ -1,5 +1,6 @@
 import os
 from json import dumps, load
+from mirrclient.saver import Saver
 
 
 class DiskSaver():
@@ -65,13 +66,10 @@ class DiskSaver():
     def save_meta(self, path, meta):
         _dir = path.rsplit('/', 1)[0]
         self.make_path(_dir)
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as file:
-                previous_meta = load(file)
-            for key in previous_meta["extraction_status"]:
-                meta['extraction_status'][key] = "Not Attempted"
-            print("extraction-metadata.json file exists. Updating this file")
+        Saver.update_meta(path, meta)
         with open(path, "w", encoding="utf-8") as file:
             # First comment will trigger this
             file.write(dumps(meta))
             print(f'Wrote Extraction Metadata to Disk: {path}')
+
+    
