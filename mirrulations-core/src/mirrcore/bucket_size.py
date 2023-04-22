@@ -27,7 +27,7 @@ class BucketSize:
         # when client cannot establish connection to cloudwatch due to no AWS
         # credentials, return
         if not client:
-            return
+            return None
         result = client.get_metric_statistics(
             Namespace="AWS/S3",
             Dimensions=[{"Name": "BucketName", "Value": "mirrulations"},
@@ -58,7 +58,7 @@ class BucketSize:
 
         if access_key == '' or secret_access_key == '':
             print("No AWS credentials provided, Can't connect to cloudwatch")
-            return
+            return None
         return boto3.client(
                     "cloudwatch",
                     region_name='us-east-1',
