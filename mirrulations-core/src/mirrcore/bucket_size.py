@@ -23,7 +23,11 @@ class BucketSize:
     @staticmethod
     def get_bucket_size():
         """Returns the size of the bucket in gigabytes"""
-        client = BucketSize.get_client()
+        client = BucketSize.get_cloudwatch_client()
+        # when client cannot establish connection to cloudwatch due to no AWS
+        # credentials, return
+        if not client:
+            return
         result = client.get_metric_statistics(
             Namespace="AWS/S3",
             Dimensions=[{"Name": "BucketName", "Value": "mirrulations"},
@@ -44,15 +48,17 @@ class BucketSize:
         return bucket_size_gb
 
     @staticmethod
-    def get_client():
+    def get_cloudwatch_client():
         """
         Returns a cloudwatch client connection
+
+        Or None if AWS credentials are missing from env
         """
         access_key, secret_access_key = BucketSize.get_credentials()
 
-        if access_key is None or secret_access_key is None:
-            print("No AWS credentials provided, Unable to write to S3.")
-            return False
+        if access_key == '' or secret_access_key == '':
+            print("No AWS credentials provided, Can't connect to cloudwatch")
+            return
         return boto3.client(
                     "cloudwatch",
                     region_name='us-east-1',
