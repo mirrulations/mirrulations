@@ -35,7 +35,9 @@ def write_files(api_key, env_path, total_clients, aws_access_key, aws_secret_acc
     # Write work generator file
     with open("{}work_gen.env".format(env_path), 'w') as file:
         file.write("API_KEY={}".format(api_key) + "\n")
-        file.write("PYTHONUNBUFFERED=TRUE")
+        file.write("PYTHONUNBUFFERED=TRUE\n")
+        file.write(f"AWS_ACCESS_KEY={aws_access_key}\n")
+        file.write(f"AWS_SECRET_ACCESS_KEY={aws_secret_access_key}")
 
     # Write dashboard file
     with open("{}dashboard.env".format(env_path), 'w') as file:
