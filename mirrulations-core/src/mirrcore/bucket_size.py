@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 import os
+import math
 import boto3
 from dotenv import load_dotenv
-import math
 
 end_time = datetime.utcnow()
 start_time = end_time - timedelta(days=2)
@@ -39,7 +39,7 @@ class BucketSize:
         bucket_size_bytes = result['Datapoints'][0]["Average"]
 
         # Convert the size from bytes to GB
-        bucket_size_gb = math.ceil(bucket_size_bytes / (1024 ** 3))
+        bucket_size_gb = math.ceil(bucket_size_bytes / (1000 ** 3))
 
         return bucket_size_gb
 
