@@ -56,8 +56,7 @@ if __name__ == '__main__':
         regulations_data_counts = DataCounts(api_key).get_counts()
         job_stats.set_regulations_data(regulations_data_counts)
 
-        bucket_size = BucketSize.get_bucket_size()
-        print('BUCKET SIZE', bucket_size)
+        print('BUCKET SIZE', BucketSize.get_bucket_size())
 
         # Download dockets, documents, and comments
         # from all jobs in the job queue
