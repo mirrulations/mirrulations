@@ -2,13 +2,18 @@ from datetime import datetime, timedelta
 import os
 import boto3
 from dotenv import load_dotenv
+import math
 
 end_time = datetime.utcnow()
-start_time = end_time - timedelta(days=1)
+start_time = end_time - timedelta(days=2)
 
 
 class BucketSize:
-    """A class which handles getting the size of the bucket
+    """
+    A class which handles getting the size of the mirrulations bucket
+    on S3
+
+    Uses cloudwatch client
     ...
     Methods
     -------
@@ -17,7 +22,7 @@ class BucketSize:
 
     @staticmethod
     def get_bucket_size():
-        """Returns the size of the bucket in bytes"""
+        """Returns the size of the bucket in gigabytes"""
         client = BucketSize.get_client()
         result = client.get_metric_statistics(
             Namespace="AWS/S3",
@@ -26,26 +31,22 @@ class BucketSize:
             MetricName="BucketSizeBytes",
             StartTime=start_time,
             EndTime=datetime.utcnow(),
-            Period=3600,
+            Period=86400,  # 1 day in seconds
             Statistics=['Average'],
             Unit='Bytes'
         )
-
-        print(result)
-
         # Extract the bucket size from the client metric data
         bucket_size_bytes = result['Datapoints'][0]["Average"]
 
         # Convert the size from bytes to GB
-        bucket_size_gb = bucket_size_bytes / (1024 ** 3)
-        print(bucket_size_gb)
+        bucket_size_gb = math.ceil(bucket_size_bytes / (1024 ** 3))
 
         return bucket_size_gb
 
     @staticmethod
     def get_client():
         """
-        Returns S3 client connection using aws credentials
+        Returns a cloudwatch client connection
         """
         access_key, secret_access_key = BucketSize.get_credentials()
 
