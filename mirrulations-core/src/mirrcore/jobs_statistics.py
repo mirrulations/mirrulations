@@ -9,6 +9,8 @@ REGULATIONS_TOTAL_DOCKETS = 'regulations_total_dockets'
 REGULATIONS_TOTAL_DOCUMENTS = 'regulations_total_documents'
 REGULATIONS_TOTAL_COMMENTS = 'regulations_total_comments'
 
+BUCKET_SIZE = 'mirrulations_bucket_size'
+
 
 class JobStatistics:
 
@@ -100,3 +102,19 @@ class JobStatistics:
             REGULATIONS_TOTAL_DOCUMENTS: documents_total,
             REGULATIONS_TOTAL_COMMENTS: comments_total
         }
+
+    def set_bucket_size(self, bucket_size):
+        """
+        Sets the bucket size (in gb) to the redis cache variable
+
+        This method is to be called from the work_generator
+        """
+        self.cache.set(BUCKET_SIZE, bucket_size)
+
+    def get_bucket_size(self):
+        """
+        Gets the cache variable storing the size of the mirrulations bucket
+
+        Dashboard_server calls this method to update dashboard display
+        """
+        return int(self.cache.get(BUCKET_SIZE))
