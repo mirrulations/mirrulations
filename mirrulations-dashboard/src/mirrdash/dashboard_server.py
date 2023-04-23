@@ -73,15 +73,19 @@ def create_server(job_queue, docker_server, cache):
         """ returns data as json and request status code """
         try:
             data = get_jobs_stats(dashboard.job_queue)
-            # Get the number of jobs done from the mongo db
-            # and add it to the data
+            # Get the number of jobs done and add it to the data
             jobs_done_info = dashboard.cache.get_jobs_done()
+            # get cache data that stores regulations data counts
             regulations_jobs_info = dashboard.cache.get_data_totals()
+            # get cache data storing size of the mirrulations bucket
+            bucket_size = dashboard.cache.get_bucket_size()
 
             data.update(**jobs_done_info, **regulations_jobs_info)
 
             # Add this value to the total jobs
             data['jobs_total'] += jobs_done_info['num_jobs_done']
+            # add bucket size to data
+            data['mirrulations_bucket_size'] = bucket_size
         except (JobQueueException, redis.ConnectionError) as error:
             print(f"FAILURE: Encountered JobQueueException from {error}")
             # Index.js expects some values to update. by providing None or
