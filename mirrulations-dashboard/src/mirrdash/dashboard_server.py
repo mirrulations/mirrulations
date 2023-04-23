@@ -14,7 +14,7 @@ from mirrcore.job_queue import JobQueue
 from mirrcore.job_queue_exceptions import JobQueueException
 from mirrcore.jobs_statistics import JobStatistics
 from dotenv import load_dotenv
-from redis import Redis
+import redis
 import docker
 
 
@@ -73,22 +73,21 @@ def create_server(job_queue, docker_server, cache):
         """ returns data as json and request status code """
         try:
             data = get_jobs_stats(dashboard.job_queue)
-        except JobQueueException as error:
+            # Get the number of jobs done from the mongo db
+            # and add it to the data
+            jobs_done_info = dashboard.cache.get_jobs_done()
+            regulations_jobs_info = dashboard.cache.get_data_totals()
+
+            data.update(**jobs_done_info, **regulations_jobs_info)
+
+            # Add this value to the total jobs
+            data['jobs_total'] += jobs_done_info['num_jobs_done']
+        except (JobQueueException, redis.ConnectionError) as error:
             print(f"FAILURE: Encountered JobQueueException from {error}")
             # Index.js expects some values to update. by providing None or
             # 'null' to num_jobs_waiting (supposed to be an int), dashboard
             # javascript will recognize something went wrong and reflect status
-            return {'num_jobs_waiting': None}, error.status_code
-
-        # Get the number of jobs done from the mongo db
-        # and add it to the data
-        jobs_done_info = dashboard.cache.get_jobs_done()
-        regulations_jobs_info = dashboard.cache.get_data_totals()
-
-        data.update(**jobs_done_info, **regulations_jobs_info)
-
-        # Add this value to the total jobs
-        data['jobs_total'] += jobs_done_info['num_jobs_done']
+            return {'num_jobs_waiting': None}
 
         return jsonify(data), 200
 
@@ -106,7 +105,7 @@ def create_server(job_queue, docker_server, cache):
 
 if __name__ == '__main__':
     load_dotenv()
-    redis = Redis(os.getenv('REDIS_HOSTNAME'))
+    redis = redis.Redis(os.getenv('REDIS_HOSTNAME'))
     the_job_queue = JobQueue(redis)
     server = create_server(the_job_queue,
                            docker.from_env(),
