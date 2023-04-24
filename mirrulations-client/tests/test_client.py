@@ -18,8 +18,6 @@ BASE_URL = 'http://work_server:8080'
 
 @fixture(autouse=True)
 def mock_env():
-    os.environ['WORK_SERVER_HOSTNAME'] = 'work_server'
-    os.environ['WORK_SERVER_PORT'] = '8080'
     os.environ['API_KEY'] = 'TESTING_KEY'
     os.environ['ID'] = '-1'
     os.environ['AWS_ACCESS_KEY'] = 'test_key'
@@ -56,21 +54,7 @@ def mock_disk_writing(mocker):
 
 def test_check_no_env_values():
     # Need to delete env variables set by mock_env fixture
-    del os.environ['WORK_SERVER_HOSTNAME']
-    del os.environ['WORK_SERVER_PORT']
     del os.environ['API_KEY']
-    assert is_environment_variables_present() is False
-
-
-def test_check_no_hostname():
-    # Need to delete hostname env variable set by mock_env fixture
-    del os.environ['WORK_SERVER_HOSTNAME']
-    assert is_environment_variables_present() is False
-
-
-def test_check_no_server_port():
-    # Need to delete server port env variable set by mock_env fixture
-    del os.environ['WORK_SERVER_PORT']
     assert is_environment_variables_present() is False
 
 

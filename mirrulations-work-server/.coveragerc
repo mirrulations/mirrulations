@@ -1,6 +1,0 @@
-[report]
-omit =
-    *wsgi.py
-exclude_lines =
-    pragma: no cover
-    if __name__ == .__main__.:

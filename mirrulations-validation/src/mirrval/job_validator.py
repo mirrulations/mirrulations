@@ -31,8 +31,8 @@ class Validator:
                     time.sleep(3.6)
                     counter['Not_in_db'] += 1
                 counter['Total_validated'] += 1
-            print(f'Jobs not found in database: {counter["Not_in_db"]} \n \
-            Total jobs validated: {counter["Total_validated"]}')
+            print(f'Jobs not found in database: {counter["Not_in_db"]}')
+            print(f'Total jobs validated: {counter["Total_validated"]}')
 
 
 def write_unfound_jobs(res, unfound_jobs):

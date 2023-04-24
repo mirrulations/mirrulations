@@ -35,20 +35,6 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-  mongo:
-    build:
-      context: .
-      dockerfile: mirrulations-mongo/Dockerfile
-    volumes:
-      - "~/data/db:/data/db"
-    ports:
-      - "27017:27017"
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh mongo:27017/test --quiet
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 45s
   work_generator:
     build:
       context: .
@@ -72,7 +58,8 @@ services:
     env_file: env_files/validator.env
     restart: always
     volumes:
-      - "~/data:/data"
+      - "~/data/validator:/data/validator"
+      - "~/data/data:/data/data"
   extractor:
     build:
       context: .
@@ -83,7 +70,6 @@ services:
     restart: always
     volumes:
       - "~/data/data:/data"
-    env_file: env_files/extractor.env
   dashboard:
     build:
       context: .

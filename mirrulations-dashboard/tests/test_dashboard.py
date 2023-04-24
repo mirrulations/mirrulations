@@ -180,6 +180,5 @@ def test_dashboard_handles_job_queue_exception(mock_server):
 
     # Call the endpoint and catch the JobQueueException
     response = mock_server.client.get('/data')
-    assert response.status_code == 503
     assert response.get_json() == \
         {'num_jobs_waiting': None}

@@ -25,9 +25,7 @@ def is_environment_variables_present():
     -------
     Boolean
     """
-    return (os.getenv('WORK_SERVER_HOSTNAME') is not None
-            and os.getenv('WORK_SERVER_PORT') is not None
-            and os.getenv('API_KEY') is not None
+    return (os.getenv('API_KEY') is not None
             and os.getenv('ID') is not None)
 
 

@@ -3,6 +3,7 @@
 const BASE_URL = window.location.href;
 const RADIUS = 80;
 const NUMBER_ANIMATION_STEP = 4;
+let unknown = false;
 
 window.addEventListener('load', function init() {
     if (window.location.pathname === '/') {
@@ -25,13 +26,16 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus) => {
         currentProgress += jobTypeCountsDone[i];
     }
     let percent = (currentProgress/totalCorpus) * 100;
-    document.getElementById('progress-to-corpus-bar-percentage').textContent = `${percent.toFixed(2)}%`;
+    if (!unknown) {
+        document.getElementById('progress-to-corpus-bar-percentage').textContent = `${percent.toFixed(2)}%`;
+    } else {
+        document.getElementById('progress-to-corpus-bar-percentage').textContent = `Unknown`
+    }
     const progressBar = document.querySelector('.progress-bar-to-corpus');
 
     // Set the width of the progress bar to the calculated percentage
     progressBar.style.width = `${percent}%`;
 }
-
 
 const updateStatus = (container, status) => {
         let status_span = document.getElementById(container)
@@ -46,13 +50,25 @@ const updateStatus = (container, status) => {
 
 }
 
-const updateCount = (id, value) => {
-    document.getElementById(id+'-number').textContent = value.toLocaleString('en');
+const updateJobTypeProgress = (id, value, total) => {
+    if (!unknown) {
+        let percent = (value/total) * 100;
+        document.getElementById(id+'-percent').textContent = `${percent.toFixed(2)}%`;
+    } else {
+        document.getElementById(id+'-percent').textContent = "Unknown";
+    }
 }
 
-const updateJobTypeProgress = (id, value, total) => {
-    let percent = (value/total) * 100;
-    document.getElementById(id+'-percent').textContent = `${percent.toFixed(2)}%`;
+const updateCount = (id, value, is_pdf) => {
+    if (!unknown) {
+        document.getElementById(id+'-number').textContent = value.toLocaleString('en');
+    } else {
+        if (is_pdf) {
+            document.getElementById(id+'-number').textContent = "Unknown"
+        } else {
+            document.getElementById(id+'-number').textContent = " "
+        }
+    }
 }
 
 const updateJobsQueued = (id, value) => {
@@ -79,7 +95,8 @@ const updateClientDashboardData = () => {
             regulations_total_comments,
         } = jobInformation;
 
-        let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments;
+        const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
+        let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments + regulations_total_attachments;
 
         updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals);
         // Counts for percents
@@ -88,7 +105,6 @@ const updateClientDashboardData = () => {
         updateJobTypeProgress("comments-done",num_comments_done, regulations_total_comments);
         updateJobTypeProgress("pdf-extractions-done", num_extractions_done, num_pdf_attachments_done);
         // Current estimate of number of attachments (from comments)
-        const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
         updateJobTypeProgress("attachments-done",num_attachments_done, regulations_total_attachments); 
         // Counts for numbers
         updateCount("dockets-done",num_dockets_done);
@@ -140,7 +156,9 @@ const updateDeveloperDashboardData = () => {
             nginx,
             redis,
             work_generator,
-            rabbitmq
+            rabbitmq,
+            extractor,
+            validator
         } = jobInformation;
 
         updateStatus('client1-status', client1);
@@ -172,6 +190,8 @@ const updateDeveloperDashboardData = () => {
         updateStatus('redis-status', redis);
         updateStatus('work-generator-status', work_generator);
         updateStatus('rabbitmq-status', rabbitmq);
+        updateStatus('extractor-status', extractor);
+        updateStatus('validator-status', validator);
     })
     .catch((err) => console.log(err));
 } 

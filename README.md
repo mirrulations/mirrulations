@@ -4,7 +4,7 @@ Software to create and maintain a mirror of regulations.gov
 
 ## Architecture
 The image below shows the overview of the architecture for our system. Right now, the portions in blue are implemented at a basic level. Those in red are the remaining parts we need to connect. Regardless, the image shows the relationship between the working plumbing but also includes the plan over the next few weeks.
-![Architecture](Architecture.png)
+![Architecture](architecture.png)
 #### Regulations.gov
 ------
 The data on [Regulations.gov](https://www.regulations.gov) consists of Congressional laws that have been passed and implemented as regulations by federal agencies. The site is available to the public such that anyone can read and provide feedback for these regulations to make their opinions known.
