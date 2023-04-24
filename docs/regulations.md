@@ -1,12 +1,12 @@
 # Regulations Storage on Disk
 
 ## General Description
-  The format of the Regulations API is split up into ... `agencies`, `dockets`, `docket`, `attachment`
+  The format of the Regulations API is split up into `agencies`, `dockets`, `documents`, `comments`
 
 * **Agency**
     * **Dockets**
         * Docket Description 
-            * Stored as JSon
+            * Stored as JSON
         * **Documents**
             * Attachments
                 * PDF
@@ -20,7 +20,7 @@ There is a finite number of agencies within the Regulations.gov api. Within a si
 
  * **Dockets**  
 
-Within each single docket there exists a description for the specific docket that is stored as a Json. EAch docket has its specific set of attributes that varies based on the specific Agency posting the docket.
+Within each single docket there exists a description for the specific docket that is stored as a JSON. EAch docket has its specific set of attributes that varies based on the specific Agency posting the docket.
 
 * **Documents**
 

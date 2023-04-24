@@ -1,88 +1,8 @@
-# Mongo Database Collections
-Mongo database collections includes a table for the following: Comments, Dockets, and Documents. 
+# JSON Example
+Example of how data is saved for the following: Dockets, Documents, and Comments.
 
-## Comments 
-This collection contains the comments made on documents. This collection is nested with multiple dictionaries. Below is an example of a comment: 
-
-```
-{
-  _id: ObjectId(“60d56e18e0bd631edd99e668”),
-  data: {
-   id: ‘EPA-HQ-OECA-2004-0024-0048’,
-   type: ‘comments’,
-   links: {
-    self: ‘https://api.regulations.gov/v4/comments/EPA-HQ-OECA-2004-0024-0048’
-   },
-   attributes: {
-    commentOn: ‘09000064800b858d’,
-    commentOnDocumentId: null,
-    duplicateComments: 1,
-    address1: null,
-    address2: null,
-    agencyId: ‘EPA’,
-    city: null,
-    category: null,
-    comment: null,
-    country: null,
-    displayProperties: [
-     {
-      name: ‘pageCount’,
-      label: ‘Page Count’,
-      tooltip: ‘Number of pages In the content file’
-     }
-    ],
-    docAbstract: null,
-    docketId: ‘EPA-HQ-OECA-2004-0024’,
-    documentType: ‘Public Submission’,
-    email: null,
-    fax: null,
-    field1: null,
-    field2: null,
-    fileFormats: null,
-    firstName: null,
-    govAgency: null,
-    govAgencyType: null,
-    objectId: ‘09000064800b8954’,
-    lastName: null,
-    legacyId: null,
-    modifyDate: ‘2006-09-02T12:39:21Z’,
-    organization: null,
-    originalDocumentId: ‘’,
-    pageCount: 3,
-    phone: null,
-    postedDate: ‘2005-03-07T05:00:00Z’,
-    postmarkDate: ‘2005-03-07T05:00:00Z’,
-    reasonWithdrawn: null,
-    receiveDate: ‘2005-03-07T05:00:00Z’,
-    restrictReason: null,
-    restrictReasonType: null,
-    stateProvinceRegion: null,
-    submitterRep: null,
-    submitterRepAddress: null,
-    submitterRepCityState: null,
-    subtype: ‘Public Comment’,
-    title: ‘Comment submitted by Karen M. Jayne, Environmental Attorney, Oklahoma State Department of Environmental Quality ’,
-    trackingNbr: ‘800b8954’,
-    withdrawn: false,
-    zip: null,
-    openForComment: false
-   },
-   relationships: {
-    attachments: {
-     links: {
-      self: ‘https://api.regulations.gov/v4/comments/EPA-HQ-OECA-2004-0024-0048/relationships/attachments’,
-      related: ‘https://api.regulations.gov/v4/comments/EPA-HQ-OECA-2004-0024-0048/attachments’
-     }
-    }
-   }
-  }
- }
-
-```
-
- 
 ## Dockets
-This collection contains the dockets filed by the court. This collection is nested with multuple dictionaries. Below is an example of a docket: 
+This collection contains the dockets filed by the court. This collection is nested with multiple dictionaries. Below is an example of a docket: 
 
 ```
 {
@@ -130,9 +50,10 @@ This collection contains the dockets filed by the court. This collection is nest
 
 ```
 
+
 ## Documents
-This collection contains the documents associated with dockets. This collection is nested with multuple dictionaries.  
-Below is an example of a docket: 
+This JSON contains the documents associated with dockets. This collection is nested with multiple dictionaries.  
+Below is an example of a document: 
 
 ```
 {
@@ -240,41 +161,81 @@ Below is an example of a docket:
 
 ```
 
-## Loading a Mongodump onto Mongo
-
-Mongodump Files stored on an AWS S3 Bucket.
-Download these files by using the `aws s3` CLI commands
+## Comments 
+This JSON contains the comments made on documents. It is nested with multiple dictionaries. Below is an example of a comment: 
 
 ```
-# Example
-aws s3 cp s3://mirrulations-mongodump-2023-02-03/mirrulations/dockets_2023_02_03.bson .
+{
+  _id: ObjectId(“60d56e18e0bd631edd99e668”),
+  data: {
+   id: ‘EPA-HQ-OECA-2004-0024-0048’,
+   type: ‘comments’,
+   links: {
+    self: ‘https://api.regulations.gov/v4/comments/EPA-HQ-OECA-2004-0024-0048’
+   },
+   attributes: {
+    commentOn: ‘09000064800b858d’,
+    commentOnDocumentId: null,
+    duplicateComments: 1,
+    address1: null,
+    address2: null,
+    agencyId: ‘EPA’,
+    city: null,
+    category: null,
+    comment: null,
+    country: null,
+    displayProperties: [
+     {
+      name: ‘pageCount’,
+      label: ‘Page Count’,
+      tooltip: ‘Number of pages In the content file’
+     }
+    ],
+    docAbstract: null,
+    docketId: ‘EPA-HQ-OECA-2004-0024’,
+    documentType: ‘Public Submission’,
+    email: null,
+    fax: null,
+    field1: null,
+    field2: null,
+    fileFormats: null,
+    firstName: null,
+    govAgency: null,
+    govAgencyType: null,
+    objectId: ‘09000064800b8954’,
+    lastName: null,
+    legacyId: null,
+    modifyDate: ‘2006-09-02T12:39:21Z’,
+    organization: null,
+    originalDocumentId: ‘’,
+    pageCount: 3,
+    phone: null,
+    postedDate: ‘2005-03-07T05:00:00Z’,
+    postmarkDate: ‘2005-03-07T05:00:00Z’,
+    reasonWithdrawn: null,
+    receiveDate: ‘2005-03-07T05:00:00Z’,
+    restrictReason: null,
+    restrictReasonType: null,
+    stateProvinceRegion: null,
+    submitterRep: null,
+    submitterRepAddress: null,
+    submitterRepCityState: null,
+    subtype: ‘Public Comment’,
+    title: ‘Comment submitted by Karen M. Jayne, Environmental Attorney, Oklahoma State Department of Environmental Quality ’,
+    trackingNbr: ‘800b8954’,
+    withdrawn: false,
+    zip: null,
+    openForComment: false
+   },
+   relationships: {
+    attachments: {
+     links: {
+      self: ‘https://api.regulations.gov/v4/comments/EPA-HQ-OECA-2004-0024-0048/relationships/attachments’,
+      related: ‘https://api.regulations.gov/v4/comments/EPA-HQ-OECA-2004-0024-0048/attachments’
+     }
+    }
+   }
+  }
+ }
 
 ```
-* `mirrulations-mongodump-2023-02-03` the bucket name
-* `mirrulations` the "folder" files are in 
-* `dockets_2023_02_03.bson` the filename of object to retrieve
-* `.` save into current directory
-
-Files are in Bson format. In order to use these, store onto Mongo. 
-Example CLI command:
-
-```
-docker-compose up -d mongo # if mongo isn't running
-mongorestore --uri="mongodb://localhost:27017" --db=mirrulations dockets_2023_02_03.bson
-```
-* --uri: Connection on which Mongo is running
-* --db: Name of the database being created
-* `dockets_2023_02_03.bson`: The file to restore. Can point to directory as well
-
-To use Mongo, simply use the following command in the terminal
-
-```Mongo```
-
-You can also use MongoDB Compass for a Graphical interface view of the data which can be downloaded at: https://www.mongodb.com/try/download/compass
-
-* On MongoDB Compass, connect to the locally running Mongohost
-
-```
-mongodb://localhost:27017
-```
-

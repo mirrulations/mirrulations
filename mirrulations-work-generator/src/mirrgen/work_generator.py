@@ -7,7 +7,7 @@ from mirrcore.regulations_api import RegulationsAPI
 from mirrcore.job_queue import JobQueue
 from mirrcore.job_queue_exceptions import JobQueueException
 from mirrcore.redis_check import load_redis
-from mirrcore.data_counts import DataCounts
+from mirrcore.data_counts import DataCounts, DataNotFoundException
 from mirrcore.jobs_statistics import JobStatistics
 
 
@@ -48,12 +48,7 @@ if __name__ == '__main__':
 
         generator = WorkGenerator(job_queue, api)
 
-        job_stats = JobStatistics(database)
-
-        # Save the total number of docket, document, and comment
-        # entries in Regulations.gov
-        regulations_data_counts = DataCounts(api_key).get_counts()
-        job_stats.set_regulations_data(regulations_data_counts)
+        update_data_counts(api_key, database)
 
         # Download dockets, documents, and comments
         # from all jobs in the job queue
@@ -66,6 +61,16 @@ if __name__ == '__main__':
         print('Begin generate comment jobs')
         generator.download('comments')
         print('End generate comment jobs')
+
+    def update_data_counts(api_key, database):
+        # Save the total number of docket, document, and comment
+        # entries in Regulations.gov
+        job_stats = JobStatistics(database)
+        try:
+            regulations_data_counts = DataCounts(api_key).get_counts()
+            job_stats.set_regulations_data(regulations_data_counts)
+        except DataNotFoundException:
+            print("Error occurred when getting data counts.")
 
     while True:
         try:
