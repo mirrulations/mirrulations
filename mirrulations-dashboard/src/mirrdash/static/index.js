@@ -63,14 +63,8 @@ const updateHtmlValues = (jobsWaiting, jobsDone, pdfAttachments, pdfExtracted) =
             else {
                 let percent = (numerators[i]/totalPDFs) * 100;
                 document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
-                if (pdfAttachments === 0 && pdfExtracted === 0) {
-                    document.getElementById(id+'-circle-percentage').textContent = `0.0%`;
-                    document.getElementById(id+'-circle-front').style.strokeDasharray = `0, 100`;
-                }
-                else {
-                    document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
-                    document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
-                }
+                document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
+                document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
             }
         }
     }
