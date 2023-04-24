@@ -69,8 +69,7 @@ button:hover {
 }
 
 .info-container {
-    text-align: left;
-    display: grid;
+    width: 160px;
 }
 
 .data-container {
