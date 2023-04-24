@@ -35,7 +35,7 @@
                         <div class="info-container">
                             <h2>
                                 <span id="jobs-waiting-number">0</span>
-                                <span class="dot red"></span>
+                                <span class="dot blue"></span>
                             </h2>
                             <p>Jobs Waiting</p>
                         </div>
@@ -43,7 +43,7 @@
                             <path class="circle-back" d="M18 2.0845
                             a 15.9155 15.9155 0 0 1 0 31.831
                             a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="circle-front red" id="jobs-waiting-circle-front" d="M18 2.0845
+                            <path class="circle-front blue" id="jobs-waiting-circle-front" d="M18 2.0845
                             a 15.9155 15.9155 0 0 1 0 31.831
                             a 15.9155 15.9155 0 0 1 0 -31.831" />
                             <text x="18" y="20.35" class="circle-percentage"
@@ -54,7 +54,7 @@
                         <div class="info-container">
                             <h2>
                                 <span id="jobs-done-number">0</span>
-                                <span class="dot green"></span>
+                                <span class="dot blue"></span>
                             </h2>
                             <p>Jobs Done</p>
                         </div>
@@ -62,10 +62,46 @@
                             <path class="circle-back" d="M18 2.0845
                             a 15.9155 15.9155 0 0 1 0 31.831
                             a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="circle-front green" id="jobs-done-circle-front" d="M18 2.0845
+                            <path class="circle-front blue" id="jobs-done-circle-front" d="M18 2.0845
                             a 15.9155 15.9155 0 0 1 0 31.831
                             a 15.9155 15.9155 0 0 1 0 -31.831" />
                             <text x="18" y="20.35" class="circle-percentage" id='jobs-done-circle-percentage'>0%</text>
+                        </svg>
+                    </div>
+                    <div class="card">
+                        <div class="info-container">
+                            <h2>
+                                <span id="pdf-attachments-wating-number">0</span>
+                                <span class="dot blue"></span>
+                            </h2>
+                            <p>PDFs Waiting</p>
+                        </div>
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-back" d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle-front blue" id="pdf-attachments-waiting-circle-front" d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="circle-percentage" id='pdf-attachments-waiting-circle-percentage'>0%</text>
+                        </svg>
+                    </div>
+                    <div class="card">
+                        <div class="info-container">
+                            <h2>
+                                <span id="pdf-extractions-done-number">0</span>
+                                <span class="dot blue"></span>
+                            </h2>
+                            <p>PDFs Extracted</p>
+                        </div>
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-back" d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle-front blue" id="pdf-extractions-done-circle-front" d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="circle-percentage" id='pdf-extractions-done-circle-percentage'>0%</text>
                         </svg>
                     </div>
                 </div>              
@@ -76,12 +112,12 @@
                                 <div class="info-container">
                                     <div class="info-container-data">
                                         <h3>Dockets</h3>
-                                        <caption>Downloaded:</caption>
+                                        <caption>Downloaded: </caption>
                                         <span id="dockets-done-percent">0</span>
                                         <br>
                                         <span id="dockets-done-number">0</span>
                                         <br>
-                                        <caption>Out of:</caption>
+                                        <caption>Out of: </caption>
                                         <span id="regulations-total-dockets-number">0</span>
                                     </div>
                                 </div>
@@ -90,12 +126,12 @@
                                 <div class="info-container">
                                     <div class="info-container-data">
                                         <h3>Documents</h3>
-                                        <caption>Downloaded:</caption>
+                                        <caption>Downloaded: </caption>
                                         <span id="documents-done-percent">0</span>
                                         <br>
                                         <span id="documents-done-number">0</span>
                                         <br>
-                                        <caption>Out of:</caption>
+                                        <caption>Out of: </caption>
                                         <span id="regulations-total-documents-number">0</span>
                                     </div>
                                 </div>
@@ -104,12 +140,12 @@
                                 <div class="info-container">
                                     <div class="info-container-data">
                                         <h3>Comments</h3>
-                                        <caption>Downloaded:</caption>
+                                        <caption>Downloaded: </caption>
                                         <span id="comments-done-percent">0</span>
                                         <br>
                                         <span id="comments-done-number">0</span>
                                         <br>
-                                        <caption>Out of:</caption>
+                                        <caption>Out of: </caption>
                                         <span id="regulations-total-comments-number">0</span>
                                     </div>
                                 </div>
@@ -118,26 +154,13 @@
                                 <div class="info-container">
                                     <div class="info-container-data">
                                         <h3>Attachments</h3>
-                                        <caption>Downloaded:</caption>
+                                        <caption>Downloaded: </caption>
                                         <span id="attachments-done-percent">0</span>
                                         <br>
                                         <span id="attachments-done-number">0</span>
                                         <br>
                                         <caption>Out Of:</caption>
                                         <span id="regulations-total-attachments-number">0</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card header-card">
-                                <div class="info-container">
-                                    <div class="info-container-data">
-                                        <h3>PDFs</h3>
-                                        <caption>Extracted:</caption>
-                                        <span id="pdf-extractions-done-percent">0</span>
-                                        <br>
-                                        <span id="pdf-extractions-done-number">0</span>
-                                        <br>
-                                        <caption>Extracted</caption>
                                     </div>
                                 </div>
                             </div>

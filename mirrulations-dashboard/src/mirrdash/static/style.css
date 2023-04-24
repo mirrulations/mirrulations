@@ -31,10 +31,10 @@ button:hover {
 
 /* Utilities */
 .container {
-    max-width: 1100px;
+    max-width: 1300px;
     margin: 0 auto;
     overflow: auto;
-    padding: 0 40px;
+    padding: 0 10px;
     height: 100%;
 }
 
@@ -63,7 +63,7 @@ button:hover {
     color: #333;
     border-radius: 1rem;
     box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
-    padding: 30px;
+    padding: 10px;
     margin: 10px;
     align-items: center;
     justify-content: center;
@@ -158,7 +158,7 @@ button:hover {
 /* Progress to Corpus */
 .progress-container {
     width: 100%;
-    padding-bottom: 15px;
+    padding-bottom: 25px;
 }
 
 .total-to-corpus {
@@ -184,7 +184,7 @@ button:hover {
 
 .left {
   padding-top: 5px;
-  padding-left: 5px;
+  padding-left: 10px;
 }
 .center {
   left: 44%;
@@ -210,8 +210,8 @@ button:hover {
 .circular-chart {
     display: block;
     margin: 10px auto;
-    width: 200px;
-    height: 200px;
+    width: 120px;
+    height: 120px;
   }
 
   .circle-back {
