@@ -48,6 +48,7 @@ def add_mock_data_to_database(job_queue, job_stats=MockJobStatistics()):
     job_stats.cache.set('mirrulations_bucket_size', 10)
 
 
+# pylint: disable=R0915:too-many-statements
 def test_dashboard_returns_job_information(mock_server):
     client = MagicMock()
 
