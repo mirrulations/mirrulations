@@ -48,7 +48,7 @@ const updateHtmlValues = (jobsWaiting, jobsDone, pdfAttachments, pdfExtracted) =
         document.getElementById('pdf-attachments-wating-number').textContent = "Unkown";
     }
     else {
-        let ids = ['jobs-waiting', 'jobs-done', 'pdf-extractions-done', 'pdf-attachments-wating'];
+        let ids = ['jobs-waiting', 'jobs-done', 'pdf-attachments-waiting', 'pdf-extractions-done'];
         let numerators = [jobsWaiting, jobsDone, pdfAttachments, pdfExtracted];
         let totalJobs = jobsWaiting + jobsDone;
         let totalPDFs = pdfAttachments + pdfExtracted;
