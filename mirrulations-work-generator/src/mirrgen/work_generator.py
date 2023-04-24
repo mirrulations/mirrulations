@@ -10,6 +10,7 @@ from mirrcore.redis_check import load_redis
 from mirrcore.data_counts import DataCounts
 from mirrcore.jobs_statistics import JobStatistics
 from mirrcore.bucket_size import BucketSize
+from botocore.exceptions import ClientError
 
 
 class WorkGenerator:
@@ -56,7 +57,10 @@ if __name__ == '__main__':
         regulations_data_counts = DataCounts(api_key).get_counts()
         job_stats.set_regulations_data(regulations_data_counts)
 
-        print('BUCKET SIZE', BucketSize.get_bucket_size())
+        try:
+            print('BUCKET SIZE', BucketSize.get_bucket_size())
+        except ClientError as e:
+            print('error : Signature does not match', e)
 
         # Download dockets, documents, and comments
         # from all jobs in the job queue
