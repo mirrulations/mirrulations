@@ -39,9 +39,9 @@ https://api.regulations.gov/v4/END_POINT?filter[lastModifiedDate][ge]=2020-08-10
 ### **What the client should do**
 While the above section describes how to generate all jobs, the client will do the actual work for each job. 
 
-This will be relatively simple: return the JSON given by the endpoint to the work server.
+The client will get a job from regulations.gov, process the job URL, and finally downloads the job.
 
-Additionally, if a document/comment is being retrieved, return any attachments that go along with that document/comment. These can be identified in the JSON given under data/attributes/fileFormats.
+Additionally, if a document/comment is being retrieved, the client will get their respective attachments alongside the document/comment. These can be identified in the JSON given under data/attributes/fileFormats.
 
 ### **Job Generator Endpoints**
 ***Three job generating endpoints***
@@ -58,7 +58,6 @@ Comments - Child of Documents
 *Documents* - Missing fields in detailed view for Documents `lastModifiedDate` and `highlightedContent`
 
 *Dockets* - Missing fields in detailed view for Dockets `lastModifiedDate` and `highlightedContent`
-
 
 ***Additional Notes***
 `lastModifiedDate` and `modifyDate` have the same values. Non-detailed view for all types have `modifyDate` instead of `lastModifiedDate`
