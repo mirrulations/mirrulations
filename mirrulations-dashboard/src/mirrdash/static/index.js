@@ -104,10 +104,6 @@ const updateCount = (id, value, is_pdf) => {
     }
 }
 
-const updateJobsQueued = (id, value) => {
-    document.getElementById(id+'-number').textContent = `${value.toLocaleString('en')} Jobs Queued`;
-}
-
 const updateClientDashboardData = () => {
     fetch(`${BASE_URL}data`)
     .then(response => response.json())
@@ -149,7 +145,6 @@ const updateClientDashboardData = () => {
         updateCount("regulations-total-documents", regulations_total_documents);
         updateCount("regulations-total-comments", regulations_total_comments);
         updateCount("regulations-total-attachments", regulations_total_attachments);
-        updateJobsQueued("jobs-queued", num_jobs_waiting);
         
     })
     .catch((err) => console.log(err));
