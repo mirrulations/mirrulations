@@ -9,6 +9,9 @@ from mirrcore.job_queue_exceptions import JobQueueException
 from mirrcore.redis_check import load_redis
 from mirrcore.data_counts import DataCounts, DataNotFoundException
 from mirrcore.jobs_statistics import JobStatistics
+from mirrcore.bucket_size import BucketSize
+from botocore.exceptions import ClientError
+# pylint: disable=R0915:too-many-statements
 
 
 class WorkGenerator:
@@ -49,6 +52,11 @@ if __name__ == '__main__':
         generator = WorkGenerator(job_queue, api)
 
         update_data_counts(api_key, database)
+
+        try:
+            print('BUCKET SIZE', BucketSize.get_bucket_size())
+        except ClientError:
+            print('error : Signature does not match')
 
         # Download dockets, documents, and comments
         # from all jobs in the job queue
