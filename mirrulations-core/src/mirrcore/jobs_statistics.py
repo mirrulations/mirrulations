@@ -117,4 +117,6 @@ class JobStatistics:
 
         Dashboard_server calls this method to update dashboard display
         """
+        if not self.cache.exists(BUCKET_SIZE):
+            return 0
         return int(self.cache.get(BUCKET_SIZE))

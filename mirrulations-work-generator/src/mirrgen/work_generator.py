@@ -1,6 +1,7 @@
 import os
 import time
 import dotenv
+import redis
 from mirrgen.search_iterator import SearchIterator
 from mirrgen.results_processor import ResultsProcessor
 from mirrcore.regulations_api import RegulationsAPI
@@ -11,7 +12,6 @@ from mirrcore.data_counts import DataCounts, DataNotFoundException
 from mirrcore.jobs_statistics import JobStatistics
 from mirrcore.bucket_size import BucketSize
 from botocore.exceptions import ClientError
-# pylint: disable=R0915:too-many-statements
 
 
 class WorkGenerator:
@@ -51,12 +51,10 @@ if __name__ == '__main__':
 
         generator = WorkGenerator(job_queue, api)
 
-        update_data_counts(api_key, database)
+        job_stats = JobStatistics(database)
 
-        try:
-            print('BUCKET SIZE', BucketSize.get_bucket_size())
-        except ClientError:
-            print('error : Signature does not match')
+        update_data_counts(job_stats, api_key)
+        update_bucket_size(job_stats)
 
         # Download dockets, documents, and comments
         # from all jobs in the job queue
@@ -70,15 +68,22 @@ if __name__ == '__main__':
         generator.download('comments')
         print('End generate comment jobs')
 
-    def update_data_counts(api_key, database):
+    def update_data_counts(job_stats, api_key):
         # Save the total number of docket, document, and comment
         # entries in Regulations.gov
-        job_stats = JobStatistics(database)
         try:
             regulations_data_counts = DataCounts(api_key).get_counts()
             job_stats.set_regulations_data(regulations_data_counts)
-        except DataNotFoundException:
+        except (DataNotFoundException, redis.exceptions.ConnectionError):
             print("Error occurred when getting data counts.")
+
+    def update_bucket_size(job_stats):
+        try:
+            size = BucketSize.get_bucket_size()
+            if size is not None:
+                job_stats.set_bucket_size(size)
+        except (ClientError, redis.exceptions.ConnectionError):
+            print('Could not get size of Mirrulations bucket')
 
     while True:
         try:

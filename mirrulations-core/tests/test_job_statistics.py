@@ -19,3 +19,8 @@ def test_get_bucket_size():
     job_stats = JobStatistics(MockRedisWithStorage())
     job_stats.set_bucket_size(10)
     assert job_stats.get_bucket_size() == 10
+
+
+def test_buckey_key_does_not_exist():
+    job_stats = JobStatistics(MockRedisWithStorage())
+    assert job_stats.get_bucket_size() == 0
