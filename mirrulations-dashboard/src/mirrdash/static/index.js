@@ -93,10 +93,6 @@ const updateCount = (id, value, is_pdf) => {
     }
 }
 
-const updateJobsQueuedByType = (id, value) => {
-    document.getElementById(id+'-number').textContent = value.toLocaleString('en');
-}
-
 const updateClientDashboardData = () => {
     fetch(`${BASE_URL}data`)
     .then(response => response.json())
@@ -111,9 +107,6 @@ const updateClientDashboardData = () => {
             num_extractions_done,
             num_jobs_done, 
             num_jobs_waiting,
-            num_jobs_comments_queued,
-            num_jobs_dockets_queued,
-            num_jobs_documents_queued,
             regulations_total_dockets,
             regulations_total_documents,
             regulations_total_comments,
@@ -142,9 +135,6 @@ const updateClientDashboardData = () => {
         updateCount("regulations-total-documents", regulations_total_documents);
         updateCount("regulations-total-comments", regulations_total_comments);
         updateCount("regulations-total-attachments", regulations_total_attachments);
-        updateJobsQueuedByType("comments-queued", num_jobs_comments_queued);
-        updateJobsQueuedByType("dockets-queued", num_jobs_dockets_queued);
-        updateJobsQueuedByType("documents-queued", num_jobs_documents_queued);
         
     })
     .catch((err) => console.log(err));
