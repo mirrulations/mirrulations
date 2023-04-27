@@ -15,28 +15,6 @@ window.addEventListener('load', function init() {
     }
 })
 
-const updateHtmlValues = (jobsWaiting, jobsDone) => {
-    if (jobsWaiting === null || jobsDone === null) {
-        // Handle the case where value or total is null,
-        // indicating Job Queue Error from dashboard
-        unknown = true;
-        document.getElementById('jobs-waiting-number').textContent = "Unknown";
-        document.getElementById('jobs-done-number').textContent = "Unknown";
-    }
-    else {
-        let ids = ['jobs-waiting', 'jobs-done'];
-        let numerators = [jobsWaiting, jobsDone];
-        let totalJobs = jobsWaiting + jobsDone;
-
-        for (let [i, id] of ids.entries()) {
-            let percent = (numerators[i]/totalJobs) * 100;
-            document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
-            document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
-            document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
-        }
-    }
-}
-
 /**
  * Calculates the progression towards corpus
  * @param jobTypeCountsDone : array of number of jobs for each job type (dockets, documents, comments, attachments) completed
@@ -59,6 +37,39 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus, mirrulationsBu
 
     // Set the width of the progress bar to the calculated percentage
     progressBar.style.width = `${percent}%`;
+}
+
+const updateHtmlValues = (jobsWaiting, jobsDone, pdfAttachments, pdfExtracted) => {
+    if (jobsWaiting === null || jobsDone === null || pdfAttachments === null || pdfExtracted === null) {
+        // Handle the case where value or total is null,
+        // indicating Job Queue Error from dashboard
+        unknown = true;
+        document.getElementById('jobs-waiting-number').textContent = "Unknown";
+        document.getElementById('jobs-done-number').textContent = "Unknown";
+        document.getElementById('pdf-extractions-done-number').textContent = "Unkown";
+        document.getElementById('pdf-attachments-wating-number').textContent = "Unkown";
+    }
+    else {
+        let ids = ['jobs-waiting', 'jobs-done', 'pdf-attachments-waiting', 'pdf-extractions-done'];
+        let numerators = [jobsWaiting, jobsDone, pdfAttachments, pdfExtracted];
+        let totalJobs = jobsWaiting + jobsDone;
+        let totalPDFs = pdfAttachments + pdfExtracted;
+
+        for (let [i, id] of ids.entries()) {
+            if (i < 2) {
+                let percent = (numerators[i]/totalJobs) * 100;
+                document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
+                document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
+                document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
+            }
+            else {
+                let percent = (numerators[i]/totalPDFs) * 100;
+                document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
+                document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
+                document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
+            }
+        }
+    }
 }
 
 const updateStatus = (container, status) => {
@@ -100,7 +111,6 @@ const updateClientDashboardData = () => {
     .then(response => response.json())
     .then(jobInformation => {
         const {
-            jobs_total,
             num_attachments_done,
             num_pdf_attachments_done,
             num_comments_done,
@@ -118,13 +128,12 @@ const updateClientDashboardData = () => {
         const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
         let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments + regulations_total_attachments;
 
-        updateHtmlValues(num_jobs_waiting, num_jobs_done);
+        updateHtmlValues(num_jobs_waiting, num_jobs_done, num_pdf_attachments_done, num_extractions_done);
         updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals, mirrulations_bucket_size);
         // Counts for percents
         updateJobTypeProgress("dockets-done", num_dockets_done, regulations_total_dockets);
         updateJobTypeProgress("documents-done",num_documents_done, regulations_total_documents);
         updateJobTypeProgress("comments-done",num_comments_done, regulations_total_comments);
-        updateJobTypeProgress("pdf-extractions-done", num_extractions_done, num_pdf_attachments_done);
         // Current estimate of number of attachments (from comments)
         updateJobTypeProgress("attachments-done",num_attachments_done, regulations_total_attachments); 
         // Counts for numbers
@@ -132,8 +141,6 @@ const updateClientDashboardData = () => {
         updateCount("documents-done",num_documents_done);
         updateCount("comments-done",num_comments_done);
         updateCount("attachments-done",num_attachments_done);
-        updateCount("pdf-attachments-done", num_pdf_attachments_done, true);
-        updateCount("pdf-extractions-done", num_extractions_done);
         updateCount("regulations-total-dockets", regulations_total_dockets);
         updateCount("regulations-total-documents", regulations_total_documents);
         updateCount("regulations-total-comments", regulations_total_comments);

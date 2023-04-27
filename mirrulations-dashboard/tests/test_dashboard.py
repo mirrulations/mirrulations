@@ -67,8 +67,8 @@ def test_dashboard_returns_job_information(mock_server):
     results = response.get_json()
     assert results['num_jobs_waiting'] == 5
     assert results['num_jobs_in_progress'] == 4
-    assert results['num_jobs_done'] == 10
-    assert results['jobs_total'] == 19
+    assert results['num_jobs_done'] == 7
+    assert results['jobs_total'] == 16
     assert results['num_jobs_comments_queued'] == 2
     assert results['num_jobs_documents_queued'] == 2
     assert results['num_jobs_dockets_queued'] == 1

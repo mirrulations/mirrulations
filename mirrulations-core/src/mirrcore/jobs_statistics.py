@@ -38,8 +38,7 @@ class JobStatistics:
         extractions = int(self.cache.get(EXTRACTIONS_DONE))
 
         return {
-            'num_jobs_done': dockets + documents + comments + attachments +
-            extractions,
+            'num_jobs_done': dockets + documents + comments,
 
             DOCKETS_DONE: dockets,
             DOCUMENTS_DONE: documents,
@@ -53,7 +52,6 @@ class JobStatistics:
         """
         increment the cache counter (currently redis) for the given job type
         when completed
-
         :param job_type: the type of job completed
         :param is_pdf: whether an attachment completed is a pdf
         """
@@ -78,12 +76,10 @@ class JobStatistics:
         """
         Sets the total number of dockets, documents, and comments
         in Regulations.gov with Redis values
-
         PARAMETERS
         ------------
         data_counts: an array like:
           [dockets_total, documents_total, comments_total]
-
         """
         self.cache.set(REGULATIONS_TOTAL_DOCKETS, data_counts[0])
         self.cache.set(REGULATIONS_TOTAL_DOCUMENTS, data_counts[1])

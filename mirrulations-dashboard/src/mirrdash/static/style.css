@@ -9,10 +9,6 @@ body {
     font-family: 'Avenir', 'Helvetica', 'Arial', 'sans-serif';
 }
 
-p {
-    margin: 10px 0;
-}
-
 header {
     text-align: right;
     box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
@@ -35,10 +31,10 @@ button:hover {
 
 /* Utilities */
 .container {
-    max-width: 1100px;
+    max-width: 1220px;
     margin: 0 auto;
     overflow: auto;
-    padding: 0 40px;
+    padding: 0 10px;
     height: 100%;
 }
 
@@ -49,6 +45,17 @@ button:hover {
     flex-wrap: wrap;
 }
 
+.card-corpus-stats {
+    background-color: #fff;
+    color: #333;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin: 10px;
+    justify-content: center;
+    text-align: center;
+}
+
 .card {
     position: relative;
     display: flex;
@@ -56,13 +63,35 @@ button:hover {
     color: #333;
     border-radius: 1rem;
     box-shadow: 0 0.125rem 0.8rem rgba(0, 0, 0, 0.1);
-    padding: 30px;
+    padding: 10px;
     margin: 10px;
     align-items: center;
     justify-content: center;
     text-align: center;
 }
 
+.info-container {
+    width: 160px;
+}
+
+.data-container {
+  display: block;
+  padding: 5px;
+}
+
+.data-container span{
+    display: inline;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.data-container-heading {
+    display: inline-flex;
+    padding-right: 5px;
+    font-weight: bold;
+}
+
+/* Dev side specific css */
 .card.header-card {
     border-radius: 2rem;
     padding: 10px 18px;
@@ -88,11 +117,6 @@ button:hover {
 }
 
 /* Dashboard */
-.dashboard {
-    margin-bottom: 50px;
-    align-items: center;
-}
-
 .dashboard-heading {
     text-align: center;
     margin: 50px auto;
@@ -104,38 +128,6 @@ button:hover {
     font-weight: 400;
     color: #4C84FF;
 }
-
-.info-container {
-    margin-right: 68px;
-    width: 160px;
-}
-
-.progress-container {
-    width: 100%;
-}
-
-.dashboard h2 {
-    font-size: 32px;
-    font-weight: 800;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.dashboard p {
-    font-size: 22px;
-    color: #6c757d;
-    font-weight: 300;
-}
-
-.dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    margin-left: 16px;
-    border-radius: 50%;
-}
-
 
 /* Colors */
 .blue {
@@ -163,13 +155,61 @@ button:hover {
     stroke: #F0404C
 }
 
+/* Progress to Corpus */
+.progress-container {
+    width: 100%;
+}
+
+.total-to-corpus {
+    width: 100%;
+    background: rgb(238,238,238);
+    border-radius: 16px;
+  }
+
+  .progress-bar-to-corpus {
+    width: 0%;
+    border-radius: 16px;
+    color: #4C84FF;
+    animation: onReload 2s ease-out forwards;
+  }
+
+  .corpus-header {
+    padding-bottom: 10px;
+  }
+
+  .corpus-progress {
+    position: absolute;
+  }
+
+.left {
+  padding-left: 10px;
+}
+.center {
+  left: 44%;
+  padding-top: 5px;
+}
+
+.right {
+  padding-top: 5px;
+  padding-right: 5px;
+}
+
+  @keyframes onReload {
+    0% {
+        opacity: 0;
+        width: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+  }
 
 /* Circular Chart */
 .circular-chart {
     display: block;
     margin: 10px auto;
-    width: 200px;
-    height: 200px;
+    width: 120px;
+    height: 120px;
   }
 
   .circle-back {
@@ -208,37 +248,3 @@ button:hover {
         transform: translateY(0);
     }
 }
-
-/* Progress to Corpus */
-.total-to-corpus {
-    width: 100%;
-    background: rgb(238,238,238);
-    border-radius: 16px;
-  }
-
-  .progress-bar-to-corpus {
-    width: 0%;
-    border-radius: 16px;
-    color: #4C84FF;
-    animation: onReload 2s ease-out forwards;
-  }
-
-  .corpus-header {
-    padding-bottom: 10px;
-  }
-
-  .progress-percentage-to-corpus {
-    padding-top: 5px;
-    padding-left: 5px;
-    text-align: left;
-  }
-
-  @keyframes onReload {
-    0% {
-        opacity: 0;
-        width: 0;
-    }
-    100% {
-        opacity: 1;
-    }
-  }
