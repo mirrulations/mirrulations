@@ -158,7 +158,6 @@ button:hover {
 /* Progress to Corpus */
 .progress-container {
     width: 100%;
-    padding-bottom: 25px;
 }
 
 .total-to-corpus {
@@ -183,7 +182,6 @@ button:hover {
   }
 
 .left {
-  padding-top: 5px;
   padding-left: 10px;
 }
 .center {
