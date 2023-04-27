@@ -41,8 +41,9 @@ const updateHtmlValues = (jobsWaiting, jobsDone) => {
  * Calculates the progression towards corpus
  * @param jobTypeCountsDone : array of number of jobs for each job type (dockets, documents, comments, attachments) completed
  * @param totalCorpus : amount of jobs available from Regulations (dockets, documents, comments)
+ * @param mirrulationsBucketSize : the size of the mirrulations bucket on S3
  */
-const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus) => {
+const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus, mirrulationsBucketSize) => {
     let currentProgress = 0;
     for (let i = 0; i < jobTypeCountsDone.length; i++) {
         currentProgress += jobTypeCountsDone[i];
@@ -50,6 +51,7 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus) => {
     let percent = (currentProgress/totalCorpus) * 100;
     if (!unknown) {
         document.getElementById('progress-to-corpus-bar-percentage').textContent = `${percent.toFixed(2)}%`;
+        document.getElementById('total-size').textContent = mirrulationsBucketSize
     } else {
         document.getElementById('progress-to-corpus-bar-percentage').textContent = `Unknown`
     }
@@ -110,13 +112,14 @@ const updateClientDashboardData = () => {
             regulations_total_dockets,
             regulations_total_documents,
             regulations_total_comments,
+            mirrulations_bucket_size
         } = jobInformation;
 
         const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
         let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments + regulations_total_attachments;
 
         updateHtmlValues(num_jobs_waiting, num_jobs_done);
-        updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals);
+        updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals, mirrulations_bucket_size);
         // Counts for percents
         updateJobTypeProgress("dockets-done", num_dockets_done, regulations_total_dockets);
         updateJobTypeProgress("documents-done",num_documents_done, regulations_total_documents);

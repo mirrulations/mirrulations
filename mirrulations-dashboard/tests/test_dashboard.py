@@ -45,8 +45,10 @@ def add_mock_data_to_database(job_queue, job_stats=MockJobStatistics()):
     job_stats.cache.set('regulations_total_dockets', 1)
     job_stats.cache.set('regulations_total_documents', 2)
     job_stats.cache.set('regulations_total_comments', 3)
+    job_stats.cache.set('mirrulations_bucket_size', 10)
 
 
+# pylint: disable=R0915:too-many-statements
 def test_dashboard_returns_job_information(mock_server):
     client = MagicMock()
 
@@ -73,6 +75,7 @@ def test_dashboard_returns_job_information(mock_server):
     assert results['regulations_total_dockets'] == 1
     assert results['regulations_total_documents'] == 2
     assert results['regulations_total_comments'] == 3
+    assert results['mirrulations_bucket_size'] == 10
 
 
 def test_dev_dashboard_returns_container_information(mock_server):
