@@ -110,17 +110,17 @@ This project is currently being developed by a student research team at Moravian
 
 #### 2020
 
-* Alghamdi Riyad (alghamdir@moravian.edu)
-* Anderson Ben (andersonb03@moravian.edu)
-* Dahdoh Sara (stsad05@moravian.edu)
-* Estephan Anthony (estephana02@moravian.edu)
-* Faux Timothy (fauxt@moravian.edu)
-* Hilal Abrar (stanh17@moravian.edu)
-* Ives Elijah (ivese@moravian.edu)
-* McCool Caelin (mccoolc@moravian.edu)
-* Piya Nischal (piyan@moravian.edu)
-* Rajhi Somaya (stsar04@moravian.edu)
-* Schmall Kiersten (schmallk@moravian.edu)
+* [Alghamdi Riyad](https://www.linkedin.com/in/riyad-alghamdi/?originalSubdomain=sa) 
+* [Anderson Ben](https://www.linkedin.com/in/banderson6895/) (andersonb03@moravian.edu)
+* [Dahdoh Sara](https://www.linkedin.com/in/sara-dahdoh-789b78172/) 
+* [Estephan Anthony](https://www.linkedin.com/in/anthony-estephan-4693841a2/) 
+* [Faux Timothy](https://www.linkedin.com/in/timothy-faux/) 
+* [Hilal Abrar](https://www.linkedin.com/in/abrar-hilal-47b357207/) 
+* [Ives Elijah](https://www.linkedin.com/in/elijah-ives-4110761a3/) 
+* [McCool Caelin](https://www.linkedin.com/in/caelin-mccool-110261180/) 
+* [Piya Nischal](https://www.linkedin.com/in/nischalpiya/) 
+* [Rajhi Somaya](https://www.linkedin.com/in/somaya-rajhi-7b1b66173/) 
+* [Schmall Kiersten](https://www.linkedin.com/in/kierstenschmall9/) 
 * Wang Yuwen (wang@moravian.edu)
 
 #### 2019
