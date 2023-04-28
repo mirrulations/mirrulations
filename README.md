@@ -72,23 +72,23 @@ This project is currently being developed by a student research team at Moravian
 
 #### 2022
 
-* Abdullah Alramyan (abdullaha@moravian.edu)
-* Valeria Aguilar (aguilarv@moravian.edu)
-* Jack Fineanganofo (fineanganofoj@moravian.edu)
-* Richard Glennon (glennonr@moravian.edu)
-* Eric Gorski (gorskie@moravian.edu)
-* Shane Houghton (houghtons@moravian.edu)
-* Benjamin Jones (jonesb04@moravian.edu)
-* Matthew Kosack (koasckm@moravian.edu)
-* Cory Little (littlec@moravian.edu)
+* [Abdullah Alramyan](https://www.linkedin.com/in/abdullah-alramyan-1b1b56113/) 
+* [Valeria Aguilar](https://www.linkedin.com/in/valeria-aguilar-395479222/) 
+* [Jack Fineanganofo](https://www.linkedin.com/in/jackbf/) 
+* [Richard Glennon](https://www.linkedin.com/in/glennonr/) 
+* [Eric Gorski](https://www.linkedin.com/in/eric-gorski-5a7888197/) 
+* [Shane Houghton](https://www.linkedin.com/in/shane-houghton-b4b0a41a2/) 
+* [Benjamin Jones](https://www.linkedin.com/in/benjamin-jones-bb9533229/) 
+* [Matthew Kosack](https://www.linkedin.com/in/matthew-kosack-517835173/) 
+* [Cory Little](https://www.linkedin.com/in/cory-little/) 
 * Michael Marchese (marchesem@moravian.edu)
-* Kimberly Miller (millerk10@moravian.edu)
-* Mark Morykan (morykanm@moravian.edu)
-* Robert Rabinovich (rabinovichr@moravian.edu)
-* Maxwell Schuman (schumanm@moravian.edu)
+* [Kimberly Miller](https://www.linkedin.com/in/kimberly-miller-39b31a162/) 
+* [Mark Morykan](https://www.linkedin.com/in/mark-morykan-a64605189/) 
+* [Robert Rabinovich](https://www.linkedin.com/in/robert-rabinovich-8412591a2/) 
+* [Maxwell Schuman](https://www.linkedin.com/in/maxwell-schuman-98276020a/) 
 * Elizabeth Vincente (vincentee@moravian.edu)
-* Kimberly Wolf (wolfk@moravian.edu)
-* Isaac Wood (woodi@moravian.edu)
+* [Kimberly Wolf](https://www.linkedin.com/in/wolfkimberly/) 
+* [Isaac Wood](https://www.linkedin.com/in/isaac-wood-615a09154/) 
 
 #### 2021
 
