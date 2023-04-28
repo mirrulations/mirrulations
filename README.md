@@ -125,14 +125,14 @@ This project is currently being developed by a student research team at Moravian
 
 #### 2019
 
-* Balga Zachary (stzlb01@moravian.edu) 
-* Edwards Manasseh (stmde03@moravian.edu)
-* Harbison Ed (stewh01@moravian.edu)
-* Haug Alex (stahh02@moravian.edu)
-* Mateo Lauren (stlem04@moravian.edu)
+* [Balga Zachary](https://www.linkedin.com/in/zachary-balga-52b07a137/) 
+* [Edwards Manasseh](https://www.linkedin.com/in/manasseh-edwards/) 
+* [Harbison Ed](https://www.linkedin.com/in/edwharbison/) 
+* [Haug Alex](https://www.linkedin.com/in/alexander-haug-024396137/) 
+* [Mateo Lauren](https://www.linkedin.com/in/lauren-mateo-8a6821159/) 
 * Murphy Timothy (sttam09@moravian.edu)
-* Spirk John (stjfs03@moravian.edu)
-* Stocker Daniel (stdrs02@moravian.edu)
+* [Spirk John](https://www.linkedin.com/in/john-spirk-iii/) 
+* [Stocker Daniel](https://www.linkedin.com/in/daniel-stocker-453936159/) 
 
 ## Faculty
 * Ben Coleman (colemanb@moravian.edu)
