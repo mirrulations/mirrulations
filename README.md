@@ -56,18 +56,18 @@ This project is currently being developed by a student research team at Moravian
 ## Contributors
 
 #### 2023
-* Alexander Flores-Sosa (floressosaa@moravian.edu)
-* Bryan Cohen (cohenb@moravian.edu)
-* Edgar Perez (pereze03@moravian.edu)
-* Edwin Cojitambo (cojitamboe@moravian.edu)
-* Evan Toyberg (toyberge@moravian.edu)
+* [Alexander Flores-Sosa](https://www.linkedin.com/in/alexflore301/) 
+* [Bryan Cohen](https://www.linkedin.com/in/bryan-cohen-642374253/) 
+* [Edgar Perez](https://www.linkedin.com/in/edgar-perez-245269191/) 
+* [Edwin Cojitambo](https://www.linkedin.com/in/edwin-cojitambo-744334222/?trk=people-guest_people_search-card) 
+* [Evan Toyberg](https://www.linkedin.com/in/evantoyberg/) 
 * Jack Wagner (wagnerj05@moravian.edu)
-* Justin Szaro (szaroj@moravian.edu)
-* Kyle Smilon (smilonk@moravian.edu)
-* Nikolas Kovacs (kovacsn@moravian.edu)
-* Reed Sturza (sturzar@moravian.edu)
-* Tanishq Iyer (iyert@moravian.edu)
-* Tyler Valentine (valentinet02@moravian.edu)
+* [Justin Szaro](https://www.linkedin.com/in/justinszaro/) 
+* [Kyle Smilon](https://www.linkedin.com/in/kyle-smilon-aa362b212/) 
+* [Nikolas Kovacs](https://www.linkedin.com/in/nikolas-kovacs/) 
+* [Reed Sturza](https://www.linkedin.com/in/reed-sturza/) 
+* [Tanishq Iyer](https://www.linkedin.com/in/tanishqiyer/) 
+* [Tyler Valentine](https://www.linkedin.com/in/tyler-valentine-026104219/) 
 
 
 #### 2022
