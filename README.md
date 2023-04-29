@@ -61,7 +61,7 @@ This project is currently being developed by a student research team at Moravian
 * [Edgar Perez](https://www.linkedin.com/in/edgar-perez-245269191/) 
 * [Edwin Cojitambo](https://www.linkedin.com/in/edwin-cojitambo-744334222/?trk=people-guest_people_search-card) 
 * [Evan Toyberg](https://www.linkedin.com/in/evantoyberg/) 
-* Jack Wagner (https://www.linkedin.com/in/jack-wagner-181b03162/)
+* [Jack Wagner](https://www.linkedin.com/in/jack-wagner-181b03162/)
 * [Justin Szaro](https://www.linkedin.com/in/justinszaro/) 
 * [Kyle Smilon](https://www.linkedin.com/in/kyle-smilon-aa362b212/) 
 * [Nikolas Kovacs](https://www.linkedin.com/in/nikolas-kovacs/) 
