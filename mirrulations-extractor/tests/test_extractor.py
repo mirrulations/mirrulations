@@ -1,3 +1,4 @@
+import struct
 from mirrextractor.extractor import Extractor
 from mirrmock.mock_redis import MockRedisWithStorage
 from mirrcore.jobs_statistics import JobStatistics
@@ -26,6 +27,13 @@ def test_extract_text_non_pdf(capfd, mocker):
     Extractor.extract_text('a.docx', 'b.txt')
     assert "FAILURE: attachment doesn't have appropriate extension a.docx" \
         in capfd.readouterr()[0]
+
+
+def test_extract_raises_struct_error(mocker, capfd):
+    mocker.patch('pdfminer.high_level.extract_text', side_effect=struct.error)
+    mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
+    Extractor.extract_text('a.pdf', 'b.txt')
+    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
 
 
 def test_open_pdf_throws_pikepdf_error(mocker, capfd):
