@@ -1,9 +1,9 @@
+import struct
 from mirrextractor.extractor import Extractor
 from mirrmock.mock_redis import MockRedisWithStorage
 from mirrcore.jobs_statistics import JobStatistics
 import pikepdf
 import redis
-import struct
 import boto3
 from moto import mock_s3
 
