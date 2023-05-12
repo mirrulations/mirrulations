@@ -67,7 +67,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    restart: always
+    env_file: env_files/extractor.env
     volumes:
       - "~/data/data:/data"
   dashboard:
