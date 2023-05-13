@@ -70,7 +70,7 @@ class Extractor:
         """
         try:
             pdf = pikepdf.open(attachment_path)
-        except pikepdf.PdfError as err:
+        except (pikepdf.PdfError, pikepdf.PasswordError) as err:
             print(f"FAILURE: failed to open {attachment_path}\n{err}")
             return
         pdf_bytes = io.BytesIO()
