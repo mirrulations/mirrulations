@@ -35,6 +35,14 @@ def test_extract_raises_password_error(mocker, capfd):
     assert "FAILURE: failed to open" in capfd.readouterr()[0]
 
 
+def test_extract_raises_assertion_error(mocker, capfd):
+    mocker.patch('pdfminer.high_level.extract_text',
+                 side_effect=AssertionError)
+    mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
+    Extractor.extract_text('a.pdf', 'b.txt')
+    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
+
+
 def test_extract_raises_struct_error(mocker, capfd):
     mocker.patch('pdfminer.high_level.extract_text', side_effect=struct.error)
     mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
