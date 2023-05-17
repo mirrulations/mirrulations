@@ -81,7 +81,7 @@ class Extractor:
             return
         try:
             text = pdfminer.high_level.extract_text(pdf_bytes)
-        except (ValueError, TypeError, struct.error) as err:
+        except (ValueError, TypeError, struct.error, AssertionError) as err:
             print("FAILURE: failed to extract "
                   f"text from {attachment_path}\n{err}")
             return
