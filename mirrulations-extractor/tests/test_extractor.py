@@ -32,7 +32,7 @@ def test_extract_text_non_pdf(capfd, mocker):
 def test_extract_raises_password_error(mocker, capfd):
     mocker.patch('pikepdf.open', side_effect=pikepdf.PasswordError)
     Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to open" in capfd.readouterr()[0]
+    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
 
 
 def test_extract_raises_key_error(mocker, capfd):
@@ -61,14 +61,14 @@ def test_extract_raises_struct_error(mocker, capfd):
 def test_open_pdf_throws_pikepdf_error(mocker, capfd):
     mocker.patch('pikepdf.open', side_effect=pikepdf.PdfError)
     Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to open" in capfd.readouterr()[0]
+    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
 
 
 def test_save_pdf_throws_runtime_error(mocker, capfd):
     mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
     mocker.patch('pikepdf.Pdf.save', side_effect=RuntimeError)
     Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to save" in capfd.readouterr()[0]
+    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
 
 
 def test_text_extraction_throws_error(mocker, capfd):
@@ -76,7 +76,7 @@ def test_text_extraction_throws_error(mocker, capfd):
     mocker.patch('pikepdf.Pdf.save', return_value=None)
     mocker.patch('pdfminer.high_level.extract_text', side_effect=ValueError)
     Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract text from" in capfd.readouterr()[0]
+    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
 
 
 def test_init_job_statistics(mocker):

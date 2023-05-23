@@ -70,19 +70,12 @@ class Extractor:
         """
         try:
             pdf = pikepdf.open(attachment_path)
-        except (pikepdf.PdfError, pikepdf.PasswordError) as err:
-            print(f"FAILURE: failed to open {attachment_path}\n{err}")
-            return
-        pdf_bytes = io.BytesIO()
-        try:
+            pdf_bytes = io.BytesIO()
             pdf.save(pdf_bytes)
-        except (RuntimeError, pikepdf.PdfError) as err:
-            print(f"FAILURE: failed to save {attachment_path}\n{err}")
-            return
-        try:
             text = pdfminer.high_level.extract_text(pdf_bytes)
         except (ValueError, TypeError, struct.error,
-                AssertionError, KeyError) as err:
+                AssertionError, KeyError,
+                RuntimeError, pikepdf.PdfError, pikepdf.PasswordError) as err:
             print("FAILURE: failed to extract "
                   f"text from {attachment_path}\n{err}")
             return
