@@ -86,7 +86,7 @@ class Extractor:
         try:
             Extractor.job_stat.increase_extractions_done()
         except redis.ConnectionError as error:
-            print(f"Coudn't increase extraction cache number due to: {error}")
+            print(f"Couldn't increase extraction cache number due to: {error}")
 
 
 if __name__ == '__main__':
@@ -108,5 +108,5 @@ if __name__ == '__main__':
                           f" is {time.time() - start_time} seconds")
         # sleep for a hour
         current_time = now.strftime("%H:%M:%S")
-        print(f"Sleeping for an hour : started at {current_time}")
+        print(f"Sleeping for one hour : started at {current_time}")
         time.sleep(3600)
