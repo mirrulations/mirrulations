@@ -80,6 +80,8 @@ def test_work_generator_catches_job_queue_exception(requests_mock, mocker):
     # with a new method that raises the JobQueueException exception
     mocker.patch.object(job_queue, 'add_job', side_effect=JobQueueException())
 
+    mocker.patch('time.sleep')
+
     generator = WorkGenerator(job_queue, api)
 
     # Attempt to generate work and ensure that a JobQueueException is raised
