@@ -8,7 +8,7 @@ class DiskSaver():
         try:
             os.makedirs(_dir)
         except FileExistsError:
-            print(f'Directory already exists in root: /data{_dir}')
+            pass
 
     def save_to_disk(self, path, data):
         with open(path, 'x', encoding='utf8') as file:
