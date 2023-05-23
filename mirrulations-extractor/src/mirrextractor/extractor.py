@@ -48,13 +48,14 @@ class Extractor:
         file_type = attachment_path[attachment_path.rfind('.')+1:]
         if file_type.endswith('pdf'):
             print(f"Extracting text from {attachment_path}")
-            Extractor._extract_pdf(attachment_path, save_path)
+            text = Extractor._extract_pdf(attachment_path)
+            Extractor.save_text(text, save_path)
         else:
             print("FAILURE: attachment doesn't have appropriate extension",
                   attachment_path)
 
     @staticmethod
-    def _extract_pdf(attachment_path, save_path):  # pylint: disable=R0915
+    def _extract_pdf(attachment_path):
         """
         This method takes a complete path to a pdf and stores
         the extracted text in the save_path.
@@ -64,25 +65,42 @@ class Extractor:
         attachment_path : str
             the complete file path for the attachment that is being extracted
             ex. /path/to/pdf/attachment_1.pdf
-        save_path : str
-            the complete path to store the extract text
-            ex. /path/to/text/attachment_1.txt
         """
         try:
             pdf = pikepdf.open(attachment_path)
             pdf_bytes = io.BytesIO()
             pdf.save(pdf_bytes)
-            text = pdfminer.high_level.extract_text(pdf_bytes)
+            return pdfminer.high_level.extract_text(pdf_bytes)
         except (ValueError, TypeError, struct.error,
                 AssertionError, KeyError,
                 RuntimeError, pikepdf.PdfError, pikepdf.PasswordError) as err:
             print("FAILURE: failed to extract "
                   f"text from {attachment_path}\n{err}")
-            return
+            return "ERROR"
+
+    @staticmethod
+    def save_text(text, save_path):
+        """
+        Save the text.
+
+        @param text: the text to save
+        @param save_path: str the path where we save
+            the complete path to store the extract text
+            ex. /path/to/text/attachment_1.txt
+        @return: None
+        """
+
         # Save the extracted text to a file
         saver = Saver([DiskSaver(), S3Saver("mirrulations")])
         saver.save_text(save_path, text.strip())
         print(f"SUCCESS: Saved extraction at {save_path}")
+
+    @staticmethod
+    def update_stats():
+        """
+        Update the redis stats
+        @return: None
+        """
         try:
             Extractor.job_stat.increase_extractions_done()
         except redis.ConnectionError as error:
@@ -106,6 +124,7 @@ if __name__ == '__main__':
                     Extractor.extract_text(complete_path, output_path)
                     print(f"Time taken to extract text from {complete_path}"
                           f" is {time.time() - start_time} seconds")
+                    Extractor.update_stats()
         # sleep for a hour
         current_time = now.strftime("%H:%M:%S")
         print(f"Sleeping for one hour : started at {current_time}")
