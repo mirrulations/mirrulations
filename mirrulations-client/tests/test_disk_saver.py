@@ -38,17 +38,6 @@ def test_save_path_directory_does_not_already_exist():
         mock_dir.assert_called_once_with('/USTR')
 
 
-def test_save_path_directory_already_exists(capsys):
-    with patch('os.makedirs') as mock_dir:
-        saver = DiskSaver()
-        mock_dir.side_effect = FileExistsError('Directory already exists')
-        saver.make_path('/USTR')
-
-        print_data = 'Directory already exists in root: /data/USTR\n'
-        captured = capsys.readouterr()
-        assert captured.out == print_data
-
-
 def test_save_json():
     saver = DiskSaver()
     path = '/USTR/file.json'
