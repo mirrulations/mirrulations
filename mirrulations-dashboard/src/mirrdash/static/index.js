@@ -8,10 +8,10 @@ let unknown = false;
 window.addEventListener('load', function init() {
     if (window.location.pathname === '/') {
         updateClientDashboardData();
-        setInterval(updateClientDashboardData, 5000);
+        setInterval(updateClientDashboardData, 500);
     } else if (window.location.pathname === '/dev') {
         updateDeveloperDashboardData();
-        setInterval(updateDeveloperDashboardData, 5000);
+        setInterval(updateDeveloperDashboardData, 500);
     }
 })
 
