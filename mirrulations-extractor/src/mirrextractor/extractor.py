@@ -5,6 +5,7 @@ import io
 import struct
 import pdfminer
 import pdfminer.high_level
+import pdfminer.psparser
 import pikepdf
 import redis
 from mirrcore.path_generator import PathGenerator
@@ -72,7 +73,7 @@ class Extractor:
             pdf.save(pdf_bytes)
             return pdfminer.high_level.extract_text(pdf_bytes)
         except (ValueError, TypeError, struct.error,
-                AssertionError, KeyError,
+                AssertionError, KeyError, pdfminer.psparser.PSSyntaxError,
                 RuntimeError, pikepdf.PdfError, pikepdf.PasswordError) as err:
             print("FAILURE: failed to extract "
                   f"text from {attachment_path}\n{err}")
