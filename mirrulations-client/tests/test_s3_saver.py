@@ -1,6 +1,6 @@
 import os
 import boto3
-from moto import mock_s3
+from moto import mock_aws
 from pytest import fixture
 from mirrclient.s3_saver import S3Saver
 
@@ -21,7 +21,7 @@ def test_get_credentials():
     assert S3Saver().get_credentials() is True
 
 
-@mock_s3
+@mock_aws
 def test_get_s3_client():
     assert S3Saver().get_s3_client()
 
@@ -58,7 +58,7 @@ def test_try_saving_binary_without_credentials(capsys):
     assert captured.out == "".join(print_data)
 
 
-@mock_s3
+@mock_aws
 def test_save_json_to_bucket():
     conn = create_mock_mirrulations_bucket()
     s3_bucket = S3Saver(bucket_name="test-mirrulations1")
@@ -74,7 +74,7 @@ def test_save_json_to_bucket():
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200
 
 
-@mock_s3
+@mock_aws
 def test_save_binary_to_bucket():
     conn = create_mock_mirrulations_bucket()
     s3_bucket = S3Saver(bucket_name="test-mirrulations1")
@@ -87,7 +87,7 @@ def test_save_binary_to_bucket():
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200
 
 
-@mock_s3
+@mock_aws
 def test_save_text_to_bucket():
     conn = create_mock_mirrulations_bucket()
     s3_bucket = S3Saver(bucket_name="test-mirrulations1")
