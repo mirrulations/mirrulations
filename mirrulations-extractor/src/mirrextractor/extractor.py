@@ -121,6 +121,12 @@ if __name__ == '__main__':
                 output_path = PathGenerator\
                     .make_attachment_save_path(complete_path)
                 if not os.path.isfile(output_path):
+                    # Write an empty file.  The extract_text method sometimes
+                    # fails with an out-of-memory error if the file is too large,
+                    # and a restart would try again.  This ensures that the 
+                    # extraction is not attempted again when the extractor
+                    # process is restarted (by Docker).
+                    with open(output_path, 'w') as f: pass
                     start_time = time.time()
                     Extractor.extract_text(complete_path, output_path)
                     print(f"Time taken to extract text from {complete_path}"
