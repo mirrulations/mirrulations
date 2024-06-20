@@ -88,6 +88,7 @@ services:
       redis:
         condition: service_healthy
     env_file: env_files/extractor.env
+    restart: always
     volumes:
       - "~/data/data:/data"
     logging:
