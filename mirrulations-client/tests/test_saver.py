@@ -2,7 +2,7 @@ from json import dumps
 from unittest.mock import patch, mock_open
 import os
 from pytest import fixture
-from moto import mock_s3
+from moto import mock_aws
 import boto3
 from mirrclient.saver import Saver
 from mirrclient.s3_saver import S3Saver
@@ -30,7 +30,7 @@ def test_saving_to_disk():
                 dumps(test_data['results']))
 
 
-@mock_s3
+@mock_aws
 def test_saving_to_s3():
     conn = boto3.resource("s3", region_name="us-east-1")
     conn.create_bucket(Bucket="test-mirrulations1")
@@ -47,7 +47,7 @@ def test_saving_to_s3():
     assert body == test_data["results"]
 
 
-@mock_s3
+@mock_aws
 def test_saver_saves_json_to_multiple_places():
     conn = boto3.resource("s3", region_name="us-east-1")
     conn.create_bucket(Bucket="test-mirrulations1")
@@ -71,7 +71,7 @@ def test_saver_saves_json_to_multiple_places():
             assert body == test_data["results"]
 
 
-@mock_s3
+@mock_aws
 def test_saver_saves_binary_to_multiple_places():
     conn = boto3.resource("s3", region_name="us-east-1")
     conn.create_bucket(Bucket="test-mirrulations1")
@@ -93,7 +93,7 @@ def test_saver_saves_binary_to_multiple_places():
             assert body == '\x17'
 
 
-@mock_s3
+@mock_aws
 def test_saver_saves_text_to_multiple_places():
     conn = boto3.resource("s3", region_name="us-east-1")
     conn.create_bucket(Bucket="test-mirrulations1")
