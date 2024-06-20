@@ -126,8 +126,7 @@ if __name__ == '__main__':
                     # large, and a restart would try again.  This ensures
                     # that the extraction is not attempted again when the
                     # extractor process is restarted (by Docker).
-                    with open(output_path, 'w', encoding='utf-8') as f:
-                        pass
+                    Extractor.save_text('', output_path)
                     start_time = time.time()
                     Extractor.extract_text(complete_path, output_path)
                     print(f"Time taken to extract text from {complete_path}"
