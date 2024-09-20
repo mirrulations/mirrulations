@@ -83,16 +83,22 @@ def test_dev_dashboard_returns_container_information(mock_server):
 
     # Mock out the docker object to return Container-like values
     # for the list method.
-    Container = namedtuple('Container', ['name', 'status'])
-    return_value = [Container('capstone_client1_1', 'running'),
-                    Container('capstone_work_server_1', 'running')]
+    Container = namedtuple('Container', ['name', 'status', 'health'])
+    return_value = [
+        Container(name="capstone_client1_1", status="running", health="unknown"),
+        Container(name="capstone_work_server_1", status="paused", health="unknown"),
+        Container(name="capstone_redis_1", status="running", health="healthy"),
+    ]
     client.containers.list = Mock(return_value=return_value)
 
     mock_server.docker = client
     response = mock_server.client.get('/devdata')
 
-    expected = {'client1': 'running',
-                'work_server': 'running'}
+    expected = {
+        "client1": {"status": "running"},
+        "work_server": {"status": "paused"},
+        "redis": {"status": "running", "health": "healthy"},
+    }
 
     assert response.status_code == 200
     results = response.get_json()
@@ -122,15 +128,21 @@ def test_get_container_stats():
 
     # Mock out the docker object to return Container-like values
     # for the list method.
-    Container = namedtuple('Container', ['name', 'status'])
-    return_value = [Container('capstone_client1_1', 'running'),
-                    Container('capstone_work_server_1', 'running')]
+    Container = namedtuple('Container', ['name', 'status','health'])
+    return_value = [
+        Container(name="capstone_client1_1", status="running", health="unknown"),
+        Container(name="capstone_work_server_1", status="paused", health="unknown"),
+        Container(name="capstone_redis_1", status="running", health="healthy"),
+    ]
     client.containers.list = Mock(return_value=return_value)
 
     stats = get_container_stats(client)
 
-    expected = {'client1': 'running',
-                'work_server': 'running'}
+    expected = {
+        "client1": {"status": "running"},
+        "work_server": {"status": "paused"},
+        "redis": {"status": "running", "health": "healthy"},
+    }
 
     assert stats == expected
 
