@@ -12,29 +12,23 @@ regulations_total_comments
 num_dockets_done
 num_documents_done
 num_attachments_done
-num_jobs_num_jobs_documents_queue_queue
-num_pdf_attachment_done
-num_jobs_num_jobs_dockets_queue_queue
 last_job_id
 jobs_in_progress
 num_pdf_attachments_done
 num_jobs_documents_waiting
 num_jobs_comments_waiting
 dockets_last_timestamp
-num_jobs_num_jobs_comments_queue_queue
 invalid_jobs
 regulations_total_dockets
 client_jobs
-last_timestamp
-total_num_client_ids
 num_extractions_done
 regulations_total_documents
 mirrulations_bucket_size
 num_comments_done
-num_jobs_attachments_waiting
 documents_last_timestamp
 num_jobs_dockets_waiting
 comments_last_timestamp
+
 
 ## Job Management
 
@@ -90,10 +84,6 @@ timestamp seen when querying regulations.gov.
 The `last_job_id` variable is used by the work generator to ensure it generates
 unique ids for each job.
 
-## Client IDs
-
-The 'last_client_id' variable is used by the work server to ensure that it
-generates unique client ids.
 
 ## Job Statistics Keys 
 
