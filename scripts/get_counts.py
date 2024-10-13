@@ -198,8 +198,7 @@ if __name__ == "__main__":
 
     api_key: str = args.api_key
 
-    regulations = Counts(dockets=253807, documents=1843774, comments=22240511)
-    # regulations = get_regulation_count(api_key, start, end)
+    regulations = get_regulation_count(api_key, start, end)
     if correct:
         mirrulations = get_accurate_prod_count(redis.Redis(), regulations)
     else:
