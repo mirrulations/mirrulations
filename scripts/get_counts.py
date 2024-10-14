@@ -45,7 +45,7 @@ def get_regulation_count(api_key: str, start: dt.datetime, end: dt.datetime) -> 
     counts: Counts = {"dockets": -1, "documents": -1, "comments": -1}
 
     params = {
-        "fitler[lastModifiedDate][ge]": start.strftime("%Y-%m-%d %H:%M:%S"),
+        "filter[lastModifiedDate][ge]": start.strftime("%Y-%m-%d %H:%M:%S"),
         "filter[lastModifiedDate][le]": end.strftime("%Y-%m-%d %H:%M:%S"),
     }
 
@@ -84,13 +84,16 @@ def clamp_counts(counts: Counts, max_counts: Counts) -> Counts:
     return clamped
 
 
-def get_accurate_prod_count(db: redis.Redis, max_counts: Counts) -> Counts:
+def get_accurate_prod_count(
+    db: redis.Redis, max_counts: Counts, ignore_queue: bool = False
+) -> Counts:
     """Get the counts of a running mirrulations instance, ignoring duplicated downloads
 
     Args:
         db: a redis database connection
         strict: true if the resulting counts are allowed to be larger
                 than the official Regulations.gov counts
+        ignore_queue: continue even if jobs are in the queue
     """
     counts = Counts(
         dockets=int(db.get("num_dockets_done")),
@@ -104,6 +107,9 @@ def get_accurate_prod_count(db: redis.Redis, max_counts: Counts) -> Counts:
     }
 
     if any(jobs_waiting.values()):
+        if not ignore_queue:
+            print("Jobs in queue, exitting", file=sys.stderr)
+            sys.exit(1)
         for k in counts:
             counts[k] = min(max_counts[k] - jobs_waiting[k], counts[k])
 
@@ -171,6 +177,9 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
+        "--ignore-queue", help="Continue if jobs are in the job queue", action="store_true"
+    )
+    parser.add_argument(
         "-a",
         "--api-key",
         help="Regulations.gov api key, defaults to value of `API_KEY` environment variable",
@@ -191,16 +200,16 @@ if __name__ == "__main__":
     out_path: str = args.output
     correct: bool = args.correct
     dashboard_url: str = args.dashboard
+    ignore_queue: bool = args.ignore_queue
 
-    if args.api_key is None:
+    api_key = args.api_key
+    if api_key is None or api_key == "":
         print("No api key found, exitting", file=sys.stderr)
         sys.exit(1)
 
-    api_key: str = args.api_key
-
     regulations = get_regulation_count(api_key, start, end)
     if correct:
-        mirrulations = get_accurate_prod_count(redis.Redis(), regulations)
+        mirrulations = get_accurate_prod_count(redis.Redis(), regulations, ignore_queue)
     else:
         mirrulations = get_true_prod_count(dashboard_url)
 

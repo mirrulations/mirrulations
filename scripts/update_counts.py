@@ -1,4 +1,6 @@
+#!/usr/bin/env python3
 import argparse
+from pathlib import Path
 import json
 import redis
 import sys
@@ -20,7 +22,7 @@ def list_current_values(r):
         print(f"{key}: {value}")
     print("-" * 50)
 
-def update_values(r, data):
+def update_values(r, data, confirmed):
     # Extract values from JSON data
     num_dockets_done = data.get("dockets", {}).get("downloaded", 0)
     num_documents_done = data.get("documents", {}).get("downloaded", 0)
@@ -49,8 +51,10 @@ def update_values(r, data):
         print("-" * 50)
 
     # Confirm before updating
-    confirm = input("Do you want to update these keys with the new values? (yes/no): ").strip().lower()
-    if confirm == 'yes':
+    if not confirmed:
+        confirm = input("Do you want to update these keys with the new values? (yes/no): ").strip().lower()
+        confirmed = confirm == 'yes'
+    if confirmed:
         for key, new_value in key_value_pairs.items():
             r.set(key, new_value)
         print("Keys have been updated successfully.")
@@ -59,7 +63,8 @@ def update_values(r, data):
 
 def main():
     parser = argparse.ArgumentParser(description="Redis Key Updater")
-    parser.add_argument('-i', '--input', help='Path to the JSON file')
+    parser.add_argument('-i', '--input', help='Path to the JSON file', default='-')
+    parser.add_argument('-y', '--yes', help="Automagically accepts all prompts", action="store_true")
     args = parser.parse_args()
 
     # Connect to Redis
@@ -73,12 +78,15 @@ def main():
     if args.input:
         # Load JSON data from the provided file
         try:
-            with open(args.input, 'r') as f:
-                data = json.load(f)
+            if args.input == '-':
+                data = json.load(sys.stdin)
+            else:
+                with open(Path(args.input), 'r') as f:
+                    data = json.load(f)
         except Exception as e:
             print(f"Error reading JSON file: {e}")
             sys.exit(1)
-        update_values(r, data)
+        update_values(r, data, args.yes)
     else:
         # List current values
         list_current_values(r)
