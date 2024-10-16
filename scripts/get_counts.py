@@ -6,7 +6,7 @@ import json
 import os
 import pathlib
 import sys
-from counts import Output, OutputEncoder
+from counts import Counts, CountsEncoder
 
 import redis
 import requests
@@ -23,15 +23,15 @@ def _download_regulation_count(
         params=params,
     )
     response.raise_for_status()
-    return response.json()["meta"]["totalElemnts"]
+    return response.json()["meta"]["totalElements"]
 
 
-def get_regulation(api_key: str, last_timestamp: dt.datetime) -> Output:
+def get_regulation(api_key: str, last_timestamp: dt.datetime) -> Counts:
     """Get counts from regulations.gov given a last_timestamp
 
     Exactly 6 Regulations.gov API calls are made during this function
     """
-    output: Output = {
+    output: Counts = {
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
         "dockets": {
             "downloaded": -1,
@@ -73,14 +73,14 @@ def get_regulation(api_key: str, last_timestamp: dt.datetime) -> Output:
     return output
 
 
-def get_dashboard(dashboard_url: str, last_timestamp: dt.datetime) -> Output:
+def get_dashboard(dashboard_url: str, last_timestamp: dt.datetime) -> Counts:
     """Get the counts of a running mirrulations instance via it's dashboard"""
     response = requests.get(dashboard_url + "/data")
     response.raise_for_status()
 
     content = response.json()
 
-    output: Output = {
+    output: Counts = {
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
         "dockets": {
             "downloaded": content["num_dockets_done"],
@@ -105,10 +105,10 @@ def get_dashboard(dashboard_url: str, last_timestamp: dt.datetime) -> Output:
     return output
 
 
-def get_redis(db: redis.Redis) -> Output:
+def get_redis(db: redis.Redis) -> Counts:
     """Get the counts of a running mirrulations instance via a Redis connection"""
 
-    output: Output = {
+    output: Counts = {
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
         "dockets": {
             "downloaded": int(db.get("num_dockets_done")),
@@ -235,7 +235,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.output == "-":
-        json.dump(output, sys.stdout, cls=OutputEncoder)
+        json.dump(output, sys.stdout, cls=CountsEncoder)
     else:
         with open(pathlib.Path(args.output), "w") as fp:
-            json.dump(output, fp, cls=OutputEncoder)
+            json.dump(output, fp, cls=CountsEncoder)
