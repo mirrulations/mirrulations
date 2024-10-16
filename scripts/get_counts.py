@@ -6,33 +6,12 @@ import json
 import os
 import pathlib
 import sys
-from typing import Any, TypedDict
+from counts import Output, OutputEncoder
 
 import redis
 import requests
 
 REGULATIONS_BASE_URL = "https://api.regulations.gov/v4/"
-
-
-class EntityCount(TypedDict):
-    downloaded: int
-    jobs: int
-    total: int
-    last_timestamp: dt.datetime
-
-
-class Output(TypedDict):
-    creation_timestamp: dt.datetime
-    dockets: EntityCount
-    documents: EntityCount
-    comments: EntityCount
-
-
-class OutputEncoder(json.JSONEncoder):
-    def default(self, o: Any) -> Any:
-        if isinstance(o, dt.datetime):
-            return o.strftime("%Y-%m-%d %H:%M:%S")
-        return super().default(o)
 
 
 def _download_regulation_count(
@@ -162,7 +141,8 @@ def get_redis(db: redis.Redis) -> Output:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Get Docket, Document, and Comment counts from multiple sources"
+        "Get Counts",
+        description="Get Docket, Document, and Comment counts from multiple sources",
     )
     parser.add_argument(
         "-o",
@@ -237,10 +217,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    print(args)
-
-    path: str = args.output
-    output_file = sys.stdout if path == "-" else open(pathlib.Path(path), "w")
 
     source = args.source
     if source == "regulations":
@@ -258,8 +234,8 @@ if __name__ == "__main__":
         print("Unrecognized source, exitting", file=sys.stderr)
         sys.exit(1)
 
-    if path == "-":
+    if args.output == "-":
         json.dump(output, sys.stdout, cls=OutputEncoder)
     else:
-        with open(pathlib.Path(path), "w") as fp:
+        with open(pathlib.Path(args.output), "w") as fp:
             json.dump(output, fp, cls=OutputEncoder)
