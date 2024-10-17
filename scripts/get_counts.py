@@ -14,6 +14,10 @@ import requests
 REGULATIONS_BASE_URL = "https://api.regulations.gov/v4/"
 
 
+class MissingRedisKeyException(Exception):
+    pass
+
+
 def _download_regulation_count(
     url: str, headers: dict[str, str], params: dict[str, str]
 ) -> int:
@@ -80,7 +84,7 @@ def get_dashboard(dashboard_url: str, last_timestamp: dt.datetime) -> Counts:
 
     content = response.json()
 
-    output: Counts = {
+    counts: Counts = {
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
         "dockets": {
             "downloaded": content["num_dockets_done"],
@@ -102,41 +106,39 @@ def get_dashboard(dashboard_url: str, last_timestamp: dt.datetime) -> Counts:
         },
     }
 
-    return output
+    return counts
+
+
+def _get_key_or_raise(db: redis.Redis, key: str) -> str:
+    value: str | None = db.get(key)
+    if value is None:
+        raise MissingRedisKeyException(f"missing redis key: {key}")
+
+    return value
 
 
 def get_redis(db: redis.Redis) -> Counts:
     """Get the counts of a running mirrulations instance via a Redis connection"""
 
-    output: Counts = {
+    counts: Counts = {
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
-        "dockets": {
-            "downloaded": int(db.get("num_dockets_done")),
-            "jobs": int(db.get("num_jobs_dockets_waiting")),
-            "total": int(db.get("regulations_total_dockets")),
-            "last_timestamp": dt.datetime.strptime(
-                str(db.get("dockets_last_timestamp")), "%Y-%m-%d %H:%M:%S"
-            ),
-        },
-        "documents": {
-            "downloaded": int(db.get("num_documents_done")),
-            "jobs": int(db.get("num_jobs_documents_waiting")),
-            "total": int(db.get("regulations_total_documents")),
-            "last_timestamp": dt.datetime.strptime(
-                str(db.get("documents_last_timestamp")), "%Y-%m-%d %H:%M:%S"
-            ),
-        },
-        "comments": {
-            "downloaded": int(db.get("num_comments_done")),
-            "jobs": int(db.get("num_jobs_comments_waiting")),
-            "total": int(db.get("regulations_total_comments")),
-            "last_timestamp": dt.datetime.strptime(
-                str(db.get("comments_last_timestamp")), "%Y-%m-%d %H:%M:%S"
-            ),
-        },
     }
 
-    return output
+    for entity_type in ("dockets", "documents", "comments"):
+        # Getting any of these values can raise an exception
+        downloaded = _get_key_or_raise(db, f"num_{entity_type}_done")
+        jobs = _get_key_or_raise(db, f"num_jobs_{entity_type}_waiting")
+        total = _get_key_or_raise(db, f"regulations_total_{entity_type}")
+        last_timestamp = _get_key_or_raise(db, f"{entity_type}_last_timestamp")
+
+        counts[entity_type] = {
+            "downloaded": int(downloaded),
+            "jobs": int(jobs),
+            "total": int(total),
+            "last_timestamp": dt.datetime.strptime(last_timestamp, "%Y-%m-%d %H:%M:%S"),
+        }
+
+    return counts
 
 
 if __name__ == "__main__":
@@ -228,8 +230,14 @@ if __name__ == "__main__":
     elif source == "dashboard":
         output = get_dashboard(args.url, args.last_timestamp)
     elif source == "redis":
-        db = redis.Redis(host=args.hostname, port=args.port, db=args.db)
-        output = get_redis(db)
+        db = redis.Redis(
+            host=args.hostname, port=args.port, db=args.db, decode_responses=True
+        )
+        try:
+            output = get_redis(db)
+        except MissingRedisKeyException as e:
+            print(f"Missing a redis key, exitting\n{e}", file=sys.stderr)
+            sys.exit(1)
     else:
         print("Unrecognized source, exitting", file=sys.stderr)
         sys.exit(1)
