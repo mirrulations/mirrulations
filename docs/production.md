@@ -1,7 +1,3 @@
-
-
-
-
 ## Production Environment Documentation
 
 The system is Dockerized into a number of components:
