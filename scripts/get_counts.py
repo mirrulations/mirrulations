@@ -7,6 +7,7 @@ import os
 import pathlib
 import sys
 from counts import Counts, CountsEncoder
+from job_queue import RabbitMQ
 
 import redis
 import requests
@@ -37,6 +38,7 @@ def get_regulation(api_key: str, last_timestamp: dt.datetime) -> Counts:
     """
     output: Counts = {
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
+        "queue_size": 0,
         "dockets": {
             "downloaded": -1,
             "jobs": 0,
@@ -86,6 +88,7 @@ def get_dashboard(dashboard_url: str, last_timestamp: dt.datetime) -> Counts:
 
     counts: Counts = {
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
+        "queue_size": content["num_jobs_waiting"],
         "dockets": {
             "downloaded": content["num_dockets_done"],
             "jobs": content["num_jobs_dockets_queued"],
@@ -123,6 +126,8 @@ def get_redis(db: redis.Redis) -> Counts:
     counts: Counts = {
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
     }
+    queue = RabbitMQ("jobs_waiting_queue")
+    counts["queue_size"] = queue
 
     for entity_type in ("dockets", "documents", "comments"):
         # Getting any of these values can raise an exception

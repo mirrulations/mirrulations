@@ -12,6 +12,7 @@ class EntityCount(TypedDict):
 
 class Counts(TypedDict):
     creation_timestamp: dt.datetime
+    queue_size: int
     dockets: EntityCount
     documents: EntityCount
     comments: EntityCount
