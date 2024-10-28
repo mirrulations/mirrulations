@@ -18,7 +18,7 @@ def strategy_cap(recieved: Counts, ignore_queue: bool) -> Counts:
     for entity_type in ("dockets", "documents", "comments"):
         total_ = filtered[entity_type]["total"]
         downloaded = filtered[entity_type]["downloaded"]
-        if filtered[entity_type]["jobs"] > 0 and not ignore_queue:
+        if filtered["queue_size"] != 0 and not ignore_queue:
             raise JobsInQueueException(
                 f'{entity_type} has {filtered[entity_type]["jobs"]} in queue'
             )
