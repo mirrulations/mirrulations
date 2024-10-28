@@ -68,12 +68,17 @@ def show_changes(db: redis.Redis, counts: Counts) -> None:
 
 def set_values(db: redis.Redis, counts: Counts):
     for entity_type in ("dockets", "documents", "comments"):
-        db.set(f"num_{entity_type}_done", counts[entity_type]["downloaded"])
-        db.set(f"regulations_total_{entity_type}", counts[entity_type]["total"])
-        db.set(
-            f"{entity_type}_last_timestamp",
-            counts[entity_type]["last_timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
-        )
+        try:
+            db.set(f"num_{entity_type}_done", counts[entity_type]["downloaded"])
+            db.set(f"regulations_total_{entity_type}", counts[entity_type]["total"])
+            db.set(
+                f"{entity_type}_last_timestamp",
+                counts[entity_type]["last_timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
+            )
+        except Exception as e:
+            print(f"Error occurred while setting values for {entity_type}, exitting", file=sys.stderr)
+            print(e)
+            return
 
 
 if __name__ == "__main__":
