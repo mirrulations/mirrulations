@@ -34,10 +34,12 @@ def get_jobs_stats(job_queue):
 
 def get_container_stats(client):
     stats = {}
-    for container in client.containers.list():
+    for container in client.containers.list(all=True):
         name = get_container_name(container.name)
-        status = container.status
-        stats[name] = status
+        state = {'status': container.status}
+        if container.health != 'unknown':
+            state['health'] = container.health
+        stats[name] = state
     return stats
 
 

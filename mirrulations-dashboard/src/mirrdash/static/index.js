@@ -72,17 +72,29 @@ const updateHtmlValues = (jobsWaiting, jobsDone, pdfAttachments, pdfExtracted) =
     }
 }
 
-const updateStatus = (container, status) => {
+const updateStatus = (container, state) => {
         let status_span = document.getElementById(container)
-        if (status == "running") {
-            status_span.textContent = "RUNNING";
-            status_span.style.color = "green";
-        }
-        else {
-            status_span.textContent = 'ERROR';
-            status_span.style.color = "red";
-        }
+        let text = "NOT RUNNING";
+        let color = "grey";
 
+
+        if (state) {
+        switch(state.status) {
+            case "running":
+                text = "RUNNING";
+                color = "green";
+                break;
+            case "exited":
+                text = "EXITED";
+                color = "red";
+                break;
+            default:
+                text = state.status.toUpperCase();
+                color = "orange";
+        }}
+
+        status_span.textContent = text;
+        status_span.style.color = color;
 }
 
 const updateJobTypeProgress = (id, value, total) => {
