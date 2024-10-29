@@ -4,6 +4,7 @@ from copy import deepcopy
 import json
 import pathlib
 import sys
+from json import JSONDecodeError
 from counts import Counts, CountsEncoder, CountsDecoder
 
 import argparse
@@ -15,13 +16,11 @@ class JobsInQueueException(Exception):
 
 def strategy_cap(recieved: Counts, ignore_queue: bool) -> Counts:
     filtered = deepcopy(recieved)
+    if filtered["queue_size"] != 0 and not ignore_queue:
+        raise JobsInQueueException(f'Found jobs in job queue: {filtered["queue_size"]}')
     for entity_type in ("dockets", "documents", "comments"):
         total_ = filtered[entity_type]["total"]
         downloaded = filtered[entity_type]["downloaded"]
-        if filtered["queue_size"] != 0 and not ignore_queue:
-            raise JobsInQueueException(
-                f'{entity_type} has {filtered[entity_type]["jobs"]} in queue'
-            )
         filtered[entity_type]["downloaded"] = min(total_, downloaded)
 
     return filtered
@@ -79,11 +78,19 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.input == "-":
-        input_counts: Counts = json.load(sys.stdin, cls=CountsDecoder)
-    else:
-        with open(pathlib.Path(args.input), "r") as fp:
-            input_counts = json.load(fp, cls=CountsDecoder)
+    try:
+        if args.input == "-":
+            input_counts: Counts = json.load(sys.stdin, cls=CountsDecoder)
+        else:
+            try:
+                with open(pathlib.Path(args.input), "r") as fp:
+                    input_counts = json.load(fp, cls=CountsDecoder)
+            except FileNotFoundError:
+                print(f"Missing file {args.input}, exitting", file=sys.stderr)
+                sys.exit(2)
+    except JSONDecodeError:
+        print(f"Malformed input file {args.input}, exitting", file=sys.stderr)
+        sys.exit(2)
 
     try:
         if args.strategy == "cap_with_total":

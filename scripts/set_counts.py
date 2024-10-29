@@ -76,7 +76,10 @@ def set_values(db: redis.Redis, counts: Counts):
                 counts[entity_type]["last_timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
             )
         except Exception as e:
-            print(f"Error occurred while setting values for {entity_type}, exitting", file=sys.stderr)
+            print(
+                f"Error occurred while setting values for {entity_type}, exitting",
+                file=sys.stderr,
+            )
             print(e)
             return
 
@@ -125,11 +128,21 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.input == "-":
-        input_counts: Counts = json.load(sys.stdin, cls=CountsDecoder)
-    else:
-        with open(pathlib.Path(args.input), "r") as fp:
-            input_counts = json.load(fp, cls=CountsDecoder)
+    try:
+        if args.input == "-":
+            input_counts: Counts = json.load(sys.stdin, cls=CountsDecoder)
+        else:
+            try:
+                with open(pathlib.Path(args.input), "r") as fp:
+                    input_counts = json.load(fp, cls=CountsDecoder)
+            except FileNotFoundError:
+                print(
+                    f"Input file {args.input} does not exist, exitting", file=sys.stderr
+                )
+                sys.exit(2)
+    except json.JSONDecodeError:
+        print(f"Malformed input file {args.input}, exitting", file=sys.stderr)
+        sys.exit(2)
 
     db = redis.Redis(args.host, args.port, args.db, decode_responses=True)
     changes_confirmed: bool = args.changes_confirmed

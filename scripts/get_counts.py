@@ -127,7 +127,7 @@ def get_redis(db: redis.Redis) -> Counts:
         "creation_timestamp": dt.datetime.now(dt.timezone.utc),
     }
     queue = RabbitMQ("jobs_waiting_queue")
-    counts["queue_size"] = queue
+    counts["queue_size"] = queue.size()
 
     for entity_type in ("dockets", "documents", "comments"):
         # Getting any of these values can raise an exception

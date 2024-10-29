@@ -19,12 +19,12 @@ class RabbitMQ:
 
     def _ensure_channel(self):
         if self.connection is None or not self.connection.is_open:
-            connection_parameter = pika.ConnectionParameters("rabbitmq")
+            connection_parameter = pika.ConnectionParameters("localhost")
             self.connection = pika.BlockingConnection(connection_parameter)
             self.channel = self.connection.channel()
             self.channel.queue_declare(self.queue_name, durable=True)
 
-    def size(self):
+    def size(self) -> int:
         """
         Get the number of jobs in the queue.
         Can't be sure Channel is active between ensure_channel()
@@ -38,3 +38,4 @@ class RabbitMQ:
             return queue.method.message_count
         except pika.exceptions.StreamLostError:
             print("FAILURE: RabbitMQ Channel Connection Lost", file=sys.stderr)
+            return 0
