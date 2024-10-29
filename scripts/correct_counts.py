@@ -16,12 +16,17 @@ class JobsInQueueException(Exception):
 
 def strategy_cap(recieved: Counts, ignore_queue: bool) -> Counts:
     filtered = deepcopy(recieved)
+    no_changes = True
     if filtered["queue_size"] != 0 and not ignore_queue:
         raise JobsInQueueException(f'Found jobs in job queue: {filtered["queue_size"]}')
     for entity_type in ("dockets", "documents", "comments"):
         total_ = filtered[entity_type]["total"]
         downloaded = filtered[entity_type]["downloaded"]
+        no_changes &= total_ == downloaded
         filtered[entity_type]["downloaded"] = min(total_, downloaded)
+
+    if no_changes:
+        print("No downloaded count exceeds it's total", file=sys.stderr)
 
     return filtered
 
