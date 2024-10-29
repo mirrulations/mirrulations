@@ -2,8 +2,33 @@
 
 ## Database Format
 
-We use [Redis](https://redis.io/) to store jobs as well as key values that must
-be remembered.
+We use [Redis](https://redis.io/) to store jobs as well as key values 
+
+## Database Structure 
+
+The Redis database is structured with the following keys: 
+
+regulations_total_comments
+num_dockets_done
+num_documents_done
+num_attachments_done
+last_job_id
+jobs_in_progress
+num_pdf_attachments_done
+num_jobs_documents_waiting
+num_jobs_comments_waiting
+dockets_last_timestamp
+invalid_jobs
+regulations_total_dockets
+client_jobs
+num_extractions_done
+regulations_total_documents
+mirrulations_bucket_size
+num_comments_done
+documents_last_timestamp
+num_jobs_dockets_waiting
+comments_last_timestamp
+
 
 ## Job Management
 
@@ -11,14 +36,19 @@ The REDIS database has three "queues", with the names:
 
 `jobs_waiting_queue`, `jobs_in_progress`, and `jobs_done`.
 
-`jobs_waiting_queue` is a list, while 'jobs_in_progress' and 'jobs_done' are hashes.
-Each stores jobs for clients to process.
+The keys serve the following functions: 
 
-Keys will be integers, the job ids of the jobs.
-These keys will be mapped to integers, the values to be processed.
+jobs_waiting_queue: A list holding JSON strings representing each job.
 
-Additionally, the database has an integer value storing the number of clients:
-`total_num_client_ids`.
+jobs_in_progress: A hash storing jobs currently being processed.
+
+jobs_done: A hash storing completed jobs.
+
+The keys client_jobs and total_num_client_ids are used for sotring client information.
+
+client_jobs: A hash mapping job IDs to client IDs.
+
+total_num_client_ids: An integer value storing the number of clients.
 
 ## Redis Format
 ## `jobs_waiting_queue`
@@ -54,7 +84,19 @@ timestamp seen when querying regulations.gov.
 The `last_job_id` variable is used by the work generator to ensure it generates
 unique ids for each job.
 
-## Client IDs
 
-The 'last_client_id' variable is used by the work server to ensure that it
-generates unique client ids.
+## Job Statistics Keys 
+
+DOCKETS_DONE: Tracks the number of completed dockets.
+
+DOCUMENTS_DONE: Tracks the number of completed documents.
+
+COMMENTS_DONE: Tracks the number of completed comments.
+
+ATTACHMENTS_DONE: Tracks the number of completed attachments.
+
+PDF_ATTACHMENTS_DONE: Tracks the number of completed PDF attachments.
+
+EXTRACTIONS_DONE: Tracks the number of completed extractions.
+
+MIRRULATION_BUCKET_SIZE: Stores the size of the mirrulations bucket.

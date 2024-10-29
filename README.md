@@ -31,15 +31,13 @@ With the API limiting that is in place, it would take us months to download all 
 
 
 ## Getting Started
-
 If you are interested in becoming a developer, see `docs/developers.md`.
 
 To run Mirrulations, you need Python 3.9 or greater ([MacOSX](https://docs.python-guide.org/starting/install3/osx/) or [Windows](https://docs.python-guide.org/starting/install3/win/)) on your machine to run this, as well as [redis](https://redis.io/) if you are running a server
 
-You will also need a valid API key from Regulations.gov to participate. To apply for a key, you must simply [contact the Regulations Help Desk](regulations@erulemakinghelpdesk.com) and provide your name, email address, organization, and intended use of the API. If you are not with any organizations, just say so in your message. They will email you with a key once they've verified you and activated the key.
+You will also need a valid API key from Regulations.gov to participate. To apply for a key, you must simply complete the API key request form (https://open.gsa.gov/api/regulationsgov/) and provide your name, email address, organization, and intended use of the API. After review the key will be sent by email.
 
 To download the actual project, you will need to go to our [GitHub page](https://github.com/MoravianUniversity/mirrulations) and [clone](https://help.github.com/articles/cloning-a-repository/) the project to your computer.
-
 
 
 ### Disclaimers
