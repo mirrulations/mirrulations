@@ -8,6 +8,7 @@ import pathlib
 import sys
 from counts import Counts, CountsEncoder
 from job_queue import RabbitMQ
+from typing import Dict
 
 import redis
 import requests
@@ -20,7 +21,7 @@ class MissingRedisKeyException(Exception):
 
 
 def _download_regulation_count(
-    url: str, headers: dict[str, str], params: dict[str, str]
+    url: str, headers: Dict[str, str], params: Dict[str, str]
 ) -> int:
     response = requests.get(
         url,

@@ -15,7 +15,7 @@ ANSI_BLINK_OFF = "\033[25m"
 ANSI_FG_RED = "\033[31m"
 
 
-def _get_vals(db: redis.Redis, entity_type: str) -> dict[str, int | str]:
+def _get_vals(db: redis.Redis, entity_type: str) -> dict:
     done_raw: str | None = db.get(f"num_{entity_type}_done")
     if done_raw is not None:
         done = int(done_raw)
