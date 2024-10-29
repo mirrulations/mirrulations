@@ -83,11 +83,17 @@ def test_dev_dashboard_returns_container_information(mock_server):
 
     # Mock out the docker object to return Container-like values
     # for the list method.
-    Container = namedtuple('Container', ['name', 'status', 'health'])
+    Container = namedtuple("Container", ["name", "status", "health"])
     return_value = [
-        Container(name="capstone_client1_1", status="running", health="unknown"),
-        Container(name="capstone_work_server_1", status="paused", health="unknown"),
-        Container(name="capstone_redis_1", status="running", health="healthy"),
+        Container(name="capstone_client1_1",
+                  status="running",
+                  health="unknown"),
+        Container(name="capstone_work_server_1",
+                  status="paused",
+                  health="unknown"),
+        Container(name="capstone_redis_1",
+                  status="running",
+                  health="healthy"),
     ]
     client.containers.list = Mock(return_value=return_value)
 
@@ -128,11 +134,17 @@ def test_get_container_stats():
 
     # Mock out the docker object to return Container-like values
     # for the list method.
-    Container = namedtuple('Container', ['name', 'status','health'])
+    Container = namedtuple('Container', ['name', 'status', 'health'])
     return_value = [
-        Container(name="capstone_client1_1", status="running", health="unknown"),
-        Container(name="capstone_work_server_1", status="paused", health="unknown"),
-        Container(name="capstone_redis_1", status="running", health="healthy"),
+        Container(name="capstone_client1_1",
+                  status="running",
+                  health="unknown"),
+        Container(name="capstone_work_server_1",
+                  status="paused",
+                  health="unknown"),
+        Container(name="capstone_redis_1",
+                  status="running",
+                  health="healthy"),
     ]
     client.containers.list = Mock(return_value=return_value)
 
