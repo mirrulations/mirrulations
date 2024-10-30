@@ -22,7 +22,7 @@ def strategy_cap(recieved: Counts, ignore_queue: bool) -> Counts:
     for entity_type in ("dockets", "documents", "comments"):
         total_ = filtered[entity_type]["total"]
         downloaded = filtered[entity_type]["downloaded"]
-        no_changes &= total_ == downloaded
+        no_changes &= total_ > downloaded
         filtered[entity_type]["downloaded"] = min(total_, downloaded)
 
     if no_changes:
