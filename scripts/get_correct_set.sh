@@ -4,7 +4,7 @@ WORK_DIR="/home/cs334/mirrulations/scripts/"
 LOG_FILE=/var/log/mirrulations_counts.log
 START_TIME=$(date -Iseconds)
 
-echo "$START_TIME: Running" > $LOG_FILE
+echo "$START_TIME: Running" >> $LOG_FILE
 cd $WORK_DIR
 source .venv/bin/python3/activate
 
