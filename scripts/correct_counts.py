@@ -91,10 +91,10 @@ if __name__ == "__main__":
                 with open(pathlib.Path(args.input), "r") as fp:
                     input_counts = json.load(fp, cls=CountsDecoder)
             except FileNotFoundError:
-                print(f"Missing file {args.input}, exitting", file=sys.stderr)
+                print(f"Missing file {args.input}, exiting", file=sys.stderr)
                 sys.exit(2)
     except JSONDecodeError:
-        print(f"Malformed input file {args.input}, exitting", file=sys.stderr)
+        print(f"Malformed input file {args.input}, exiting", file=sys.stderr)
         sys.exit(2)
 
     try:
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         elif args.strategy == "diff_total_with_jobs":
             modified_counts = strategy_diff(input_counts, args.ignore_queue)
         else:
-            print(f"Unrecognized strategy {args.strategy}, exitting", file=sys.stderr)
+            print(f"Unrecognized strategy {args.strategy}, exiting", file=sys.stderr)
             sys.exit(1)
     except JobsInQueueException as e:
         print(
