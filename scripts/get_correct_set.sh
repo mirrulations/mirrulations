@@ -6,7 +6,7 @@ START_TIME=$(date -Iseconds)
 
 echo "$START_TIME: Running" >> $LOG_FILE
 cd $WORK_DIR
-source .venv/bin/python3/activate
+source .venv/bin/activate
 
 ./get_counts.py -o "/tmp/mirrulations_$START_TIME.json" redis 2>> $LOG_FILE &&
     ./correct_counts.py -i "/tmp/mirrulations_$START_TIME.json" -o "/tmp/mirrulations_${START_TIME}_corrected.json" 2>> $LOG_FILE &&
