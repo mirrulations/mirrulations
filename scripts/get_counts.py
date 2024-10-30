@@ -8,6 +8,7 @@ import pathlib
 import sys
 from counts import Counts, CountsEncoder
 from job_queue import RabbitMQ
+from typing import Dict
 
 import redis
 import requests
@@ -20,7 +21,7 @@ class MissingRedisKeyException(Exception):
 
 
 def _download_regulation_count(
-    url: str, headers: dict[str, str], params: dict[str, str]
+    url: str, headers: Dict[str, str], params: Dict[str, str]
 ) -> int:
     response = requests.get(
         url,
@@ -229,7 +230,7 @@ if __name__ == "__main__":
     if source == "regulations":
         api_key = args.api_key
         if api_key is None or api_key == "":
-            print("No api key found, exitting", file=sys.stderr)
+            print("No api key found, exiting", file=sys.stderr)
             sys.exit(1)
         output = get_regulation(api_key, args.last_timestamp)
     elif source == "dashboard":
@@ -241,10 +242,10 @@ if __name__ == "__main__":
         try:
             output = get_redis(db)
         except MissingRedisKeyException as e:
-            print(f"Missing a redis key, exitting\n{e}", file=sys.stderr)
+            print(f"Missing a redis key, exiting\n{e}", file=sys.stderr)
             sys.exit(1)
     else:
-        print("Unrecognized source, exitting", file=sys.stderr)
+        print("Unrecognized source, exiting", file=sys.stderr)
         sys.exit(1)
 
     if args.output == "-":

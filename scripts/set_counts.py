@@ -15,7 +15,7 @@ ANSI_BLINK_OFF = "\033[25m"
 ANSI_FG_RED = "\033[31m"
 
 
-def _get_vals(db: redis.Redis, entity_type: str) -> dict[str, int | str]:
+def _get_vals(db: redis.Redis, entity_type: str) -> dict:
     done_raw: str | None = db.get(f"num_{entity_type}_done")
     if done_raw is not None:
         done = int(done_raw)
@@ -77,7 +77,7 @@ def set_values(db: redis.Redis, counts: Counts):
             )
         except Exception as e:
             print(
-                f"Error occurred while setting values for {entity_type}, exitting",
+                f"Error occurred while setting values for {entity_type}, exiting",
                 file=sys.stderr,
             )
             print(e)
@@ -137,11 +137,11 @@ if __name__ == "__main__":
                     input_counts = json.load(fp, cls=CountsDecoder)
             except FileNotFoundError:
                 print(
-                    f"Input file {args.input} does not exist, exitting", file=sys.stderr
+                    f"Input file {args.input} does not exist, exiting", file=sys.stderr
                 )
                 sys.exit(2)
     except json.JSONDecodeError:
-        print(f"Malformed input file {args.input}, exitting", file=sys.stderr)
+        print(f"Malformed input file {args.input}, exiting", file=sys.stderr)
         sys.exit(2)
 
     db = redis.Redis(args.host, args.port, args.db, decode_responses=True)
@@ -160,5 +160,5 @@ if __name__ == "__main__":
         if changes_confirmed:
             set_values(db, input_counts)
         else:
-            print("No values set, exitting")
+            print("No values set, exiting")
             sys.exit()
