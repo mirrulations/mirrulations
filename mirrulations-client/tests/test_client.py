@@ -12,6 +12,7 @@ from mirrclient.exceptions import NoJobsAvailableException, APITimeoutException
 from mirrmock.mock_redis import ReadyRedis, InactiveRedis, MockRedisWithStorage
 from mirrmock.mock_job_queue import MockJobQueue
 
+
 BASE_URL = 'http://work_server:8080'
 
 
@@ -234,7 +235,6 @@ def test_client_downloads_document_htm(capsys, mocker):
                               "job_type": "documents"})
     mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/documents'])
 
-
     test_json = {'data': {'id': '1', 'type': 'documents',
                                 'attributes':
                                 {'agencyId': 'USTR',
@@ -321,7 +321,6 @@ def test_handles_none_in_comment_file_formats(path_generator):
                                                   'http://regulations.gov/job']
     assert mock_redis.get('client_jobs') == [1, '-1']
 
-
     attachment_paths = path_generator.get_attachment_json_paths(test_json)
     assert attachment_paths == []
 
@@ -339,7 +338,6 @@ def test_client_downloads_attachment_results(mocker, capsys):
                               'url': 'http://regulations.gov/comments',
                               "job_type": "comments"})
     mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/comments'])
-
 
     test_json = {
                 "data": {
@@ -367,13 +365,11 @@ def test_client_downloads_attachment_results(mocker, capsys):
                    FDA-2016-D-2335/attachment_1.pdf'),
                   json='\bx17', status=200)
 
-
     client.job_operation()
     job_stat_results = client.cache.get_jobs_done()
     assert job_stat_results['num_comments_done'] == 1
     assert job_stat_results['num_attachments_done'] == 1
     assert job_stat_results['num_pdf_attachments_done'] == 1
-
 
     captured = capsys.readouterr()
     print_data = [
@@ -405,7 +401,6 @@ def test_does_comment_have_attachment_with_empty_attachment_list():
     client = Client(ReadyRedis(), MockJobQueue())
     client.api_key = 1234
 
-
     test_json = {
                 "data": {
                     "id": "agencyID-001-0002",
@@ -433,11 +428,9 @@ def test_two_attachments_in_comment(mocker):
     client = Client(ReadyRedis(), MockJobQueue())
     client.api_key = 1234
 
-
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/job',
                               "job_type": "comments"})
-
 
     test_json = {
             "data": {
@@ -461,7 +454,6 @@ def test_two_attachments_in_comment(mocker):
     responses.add(responses.GET, 'http://regulations.gov/job',
                   json=test_json, status=200)
 
-
     client.job_operation()
     results = client.cache.get_jobs_done()
     assert results['num_comments_done'] == 1
@@ -482,7 +474,6 @@ def test_client_perform_job_times_out(mock_requests):
         mock_requests.get(
             fake_url,
             exc=ReadTimeout)
-
 
         with pytest.raises(APITimeoutException):
             client = Client(MockRedisWithStorage(), MockJobQueue())
