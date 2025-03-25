@@ -564,21 +564,18 @@ def test_client_perform_job_times_out(mock_requests):
 
 @responses.activate
 def test_client_handles_api_timeout():
-   mock_redis = ReadyRedis()
-   client = Client(mock_redis, MockJobQueue())
-   client.api_key = 1234
-   client.job_queue.add_job({'job_id': 1,
-                             'url': 'http://regulations.gov/job',
-                             "job_type": "comments"})
-   mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/job'])
+    mock_redis = ReadyRedis()
+    client = Client(mock_redis, MockJobQueue())
+    client.api_key = 1234
+    client.job_queue.add_job({'job_id': 1,
+                              'url': 'http://regulations.gov/job',
+                              "job_type": "comments"})
+    mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/job'])
 
+    responses.get("http://regulations.gov/job",
+                  body=ReadTimeout("Read Timeout"))
 
-   responses.get("http://regulations.gov/job",
-                 body=ReadTimeout("Read Timeout"))
+    with pytest.raises(APITimeoutException):
+        client.job_operation()
 
-
-   with pytest.raises(APITimeoutException):
-       client.job_operation()
-
-
-   assert mock_redis.get('invalid_jobs') == [1, 'http://regulations.gov/job']
+    assert mock_redis.get('invalid_jobs') == [1, 'http://regulations.gov/job']
