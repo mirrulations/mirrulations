@@ -268,7 +268,7 @@ def test_client_downloads_document_htm(capsys, mocker):
         ('SAVED document HTM '
             '- http://downloads.regulations.gov/USTR-2015-0010-0001/'
             'content.htm to path:  '
-            '/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
+            '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
             '1_content.htm\n')
     ]
     assert captured.out == "".join(print_data)
