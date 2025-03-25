@@ -49,7 +49,7 @@ class PathGenerator:
         if 'data' not in json or json['data'] == []:
             return "/unknown/unknown.json"
         if json['data'].get("type") != -1:
-            return self.get_json_path(json)
+            return '/Raw_data' + self.get_json_path(json)
         return "/unknown/unknown.json"
 
     def _get_nested_keys_in_json(self, json_data, nested_keys, default_value):
@@ -122,7 +122,7 @@ class PathGenerator:
     def get_document_htm_path(self, json):
         agency_id, docket_id, item_id = self.get_attributes(json)
 
-        return f'/{agency_id}/{docket_id}/text-{docket_id}/' + \
+        return f'/Raw_data/{agency_id}/{docket_id}/text-{docket_id}/' + \
                f'documents/{item_id}_content.htm'
 
     def get_comment_json_path(self, json):
@@ -143,7 +143,7 @@ class PathGenerator:
         if "fileUrl" in file_format:
             attachment_name = item_i_d + "_" + \
                 file_format["fileUrl"].split("/")[-1]
-            attachments.append(f'/{agency_i_d}/{docket_i_d}/' +
+            attachments.append(f'/Raw_data/{agency_i_d}/{docket_i_d}/' +
                                f'binary-{docket_i_d}/comments_' +
                                f'attachments/{attachment_name}')
         return attachments
