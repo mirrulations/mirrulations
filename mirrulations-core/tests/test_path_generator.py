@@ -136,7 +136,7 @@ def test_get_docket_path(generator):
 
 
 def test_get_path_returns_valid_corpus_type_path(generator):
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/Raw_data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "docket/USTR-2015-0010.json"
     assert expected_path == generator.get_path(get_test_docket())
 
@@ -201,7 +201,7 @@ def test_get_document_path(generator):
 
 
 def test_get_path_on_document_returns_valid_path(generator):
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/Raw_data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "documents/USTR-2015-0010-0015.json"
     assert expected_path == generator.get_path(get_test_document())
 
@@ -302,7 +302,7 @@ def test_get_document_path_with_missing_agency_i_d_key(generator):
 
 def test_get_document_path_for_htm(generator):
     document = get_test_document_htm()
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/Raw_data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "documents/USTR-2015-0010-0001_content.htm"
     assert expected_path == generator.get_document_htm_path(document)
 
@@ -315,7 +315,7 @@ def test_get_comment_path(generator):
 
 
 def test_get_path_on_comment_returns_valid_comment_path(generator):
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/Raw_data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "comments/USTR-2015-0010-0002.json"
     assert expected_path == generator.get_path(get_test_comment())
 
@@ -404,8 +404,9 @@ def test_empty_json_places_json_in_unknown(generator):
 
 def test_attachment_comment_paths(generator):
     json_pls = get_attachment_and_comment()
-    expected_path = ["/FDA/FDA-2017-D-2335/binary-FDA-2017-D-2335/comments" +
-                     "_attachments/FDA-2017-D-2335-1566_attachment_1.pdf"]
+    expected_path = ["/Raw_data/FDA/FDA-2017-D-2335/binary-FDA-2017-D-2335" +
+                     "/comments_attachments/"
+                     + "FDA-2017-D-2335-1566_attachment_1.pdf"]
     assert expected_path == generator.get_attachment_json_paths(json_pls)
 
 
