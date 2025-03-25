@@ -404,8 +404,9 @@ def test_empty_json_places_json_in_unknown(generator):
 
 def test_attachment_comment_paths(generator):
     json_pls = get_attachment_and_comment()
-    expected_path = ["/Raw_data/FDA/FDA-2017-D-2335/binary-FDA-2017-D-2335/comments" +
-                     "_attachments/FDA-2017-D-2335-1566_attachment_1.pdf"]
+    expected_path = ["/Raw_data/FDA/FDA-2017-D-2335/binary-FDA-2017-D-2335" +
+                     "/comments_attachments/"
+                     + "FDA-2017-D-2335-1566_attachment_1.pdf"]
     assert expected_path == generator.get_attachment_json_paths(json_pls)
 
 
