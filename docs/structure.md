@@ -2,15 +2,14 @@
 
 ## Raw Data Structure Overview 
 
-- raw-data
-  └── <agency>
+-     <agency>
       └── <docket id>
           ├── binary-<docket id>
           │   ├── comments_attachments
-          │   │   ├── <comment id>_attachment_<counter>.<extension>
+          │   │   ├── <comment id>_attachement_<counter>.<extension>
           │   │   └── ...
           │   ├── documents_attachments
-          │   │   ├── <document id>_attachment_<counter>.<extension>
+          │   │   ├── <document id>_attachement_<counter>.<extension>
           │   │   └── ...
           └── text-<docket id>
               ├── comments
@@ -18,7 +17,7 @@
               │   └── ...
               ├── docket
               │   ├── <docket id>.json
-              │   └── ...
+              |   └── ...
               ├── documents
               │   ├── <document id>.json
               │   ├── <document id>_content.htm
