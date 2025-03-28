@@ -1,110 +1,150 @@
-# Structure Overview
+# Proposed S3 Version 
 
-This structure organizes data by agency and docket id.  Within each docket, the binary data (attachments) are stored separately from the text data so that users can easily download only the text data.
+## Raw Data Structure Overview 
 
-The structure also allows us to store the results from multiple text extraction tools.  Further, the attachments on comments and documents are stored separately.
-
-```
-data
-└── <agency>
-    └── <docket id>
-        ├── binary-<docket id>
-        │   ├── comments_attachments
-        │   │   ├── <comment id>_attachement_<counter>.<extension>
-        │   │   └── ...
-        │   ├── documents_attachments
-        │   │   ├── <document id>_attachement_<counter>.<extension>
-        │   │   └── ...
-        └── text-<docket id>
-            ├── comments
-            │   ├── <comment id>.json
-            │   └── ...
-            ├── comments_extracted_text
-            │   ├── <tool name>
-            │   |   ├── <comment id>_attachment_<counter>_extracted.txt
-            │   |   └── ...
-            |   └─ ... <other tools>
-            ├── docket
-            │   ├── <docket id>.json
-            |   └── ...
-            ├── documents
-            │   ├── <document id>.json
-            │   ├── <document id>_content.htm
-            │   └── ...
-            └── documents_extracted_text
-                ├── <tool name>
-                |   ├── <document id>_content_extracted.txt
-                |   └── ...
-                └─ ... <other tools>
-```                    
-
-# Example
-
-The USTR contains a docket id `USTR-2015-0010` that holds 1 docket, 4 documents, and 4 comments.  Each of the comments has an attachment, and each of the documents have one or more attachments.  The tool `pikepdf` was used to extract text from these attachments.
+- raw-data
+  └── <agency>
+      └── <docket id>
+          ├── binary-<docket id>
+          │   ├── comments_attachments
+          │   │   ├── <comment id>_attachment_<counter>.<extension>
+          │   │   └── ...
+          │   ├── documents_attachments
+          │   │   ├── <document id>_attachment_<counter>.<extension>
+          │   │   └── ...
+          └── text-<docket id>
+              ├── comments
+              │   ├── <comment id>.json
+              │   └── ...
+              ├── docket
+              │   ├── <docket id>.json
+              │   └── ...
+              ├── documents
+              │   ├── <document id>.json
+              │   ├── <document id>_content.htm
+              │   └── ...
 
 
-This data would be stored in the structure as follows:
+## Overall S3 Structure Overview
 
-```
-data
-└── USTR
-    └── USTR-2015-0010
-        ├── binary-USTR-2015-0010
-        │   ├── comments_attachments
-        │   │   ├── USTR-2015-0010-0002_attachment_1.pdf
-        │   │   ├── USTR-2015-0010-0003_attachment_1.pdf
-        │   │   ├── USTR-2015-0010-0004_attachment_1.pdf
-        │   │   └── USTR-2015-0010-0005_attachment_1.pdf
-        │   └── documents_attachments
-        │       ├── USTR-2015-0010-0001_content.pdf
-        │       ├── USTR-2015-0010-0015_content.pdf
-        │       ├── USTR-2015-0010-0016_content.doc
-        │       ├── USTR-2015-0010-0016_content.pdf
-        │       ├── USTR-2015-0010-0017_content.doc
-        │       └── USTR-2015-0010-0017_content.pdf
-        └── text-USTR-2015-0010
-            ├── comments
-            │   ├── USTR-2015-0010-0002.json
-            │   ├── USTR-2015-0010-0003.json
-            │   ├── USTR-2015-0010-0004.json
-            │   └── USTR-2015-0010-0005.json
-            ├── comments_extracted_text
-            │   ├── pikepdf
-            │       ├── USTR-2015-0010-0002_attachment_1_extracted.txt
-            │       ├── USTR-2015-0010-0003_attachment_1_extracted.txt
-            │       ├── USTR-2015-0010-0004_attachment_1_extracted.txt
-            │       └── USTR-2015-0010-0005_attachment_1_extracted.txt
-            ├── docket
-            │   └── USTR-2015-0010.json
-            ├── documents
-            │   ├── USTR-2015-0010-0001.json
-            │   ├── USTR-2015-0010-0001_content.htm
-            │   ├── USTR-2015-0010-0015.json
-            │   ├── USTR-2015-0010-0016.json
-            │   └── USTR-2015-0010-0017.json
-            └── documents_extracted_text
-                ├── pikepdf
-                    ├── USTR-2015-0010-0015_content_extracted.txt
-                    ├── USTR-2015-0010-0016_content_extracted.txt
-                    └── USTR-2015-0010-0017_content_extracted.txt
 
-```
+-       Mirrulations
+            ├── derived-data
+            │   └── agency
+            │       └── docketID
+            │           ├── MoravianResearch
+            │           │   └── projectName
+            │           │       ├── comment
+            │           │       ├── docket
+            │           │       └── document
+            │           ├── mirrulations
+            │           │   ├── ai_summary
+            │           │   │   ├── comment
+            │           │   │   ├── comment_attachments
+            │           │   │   └── document
+            │           │   ├── entities
+            │           │   │   ├── comment
+            │           │   │   ├── comment_attachment
+            │           │   │   └── document
+            │           │   └── extracted_txt
+            │           │       └── comment_attachment
+            │           │           └── commentID_attachment.txt
+            │           └── trotterf
+            │               └── projectName
+            │                   └── fileType
+            │                       └── fileID.txt
+            └── raw-data
+                └── old_structure_minus_extracted_txt
 
-# Explanation
-* At the root level, an agency such as "USTR" will exist
-	* At the next level, an agencies docket will exist such as "USTR-2015-0010', which contains the agency, year, and docket number for the year
-		* Under the docketId level such as "USTR-2015-0010", there are two subfolders, which seperate out binary data and text data
-		* These folders are called "binary-{docketId}" and "text-{docketId}", which in this example, is "binary-USTR-2015-0010" and "text-USTR-2015-0010"
-		* "binary-USTR-2015-0010" would contain two subdirectories, representing "comments_attachments", and "document_attachments"
-			* Inside of "comments_attachments" a comment id will be contained, followed by the attachment number of that comment, such as "USTR-2015-0010-0002_attachment_1.pdf"
-			* Inside of "documents_attachments" a document id will be contained, followed by the attachment number of that document, which are marked by the key word of "content". Contents can be of a variety of file types, such as "USTR-2015-0010-0001_content.pdf" and "USTR-2015-0010-0016_content.doc"
-		* "text-USTR-2015-0010" would contain five subdirectories: docket, documents, comments, comments_extracted_text, documents_extracted_text
-			* Inside of "comments", the json for a comment is contained such as "USTR-2015-0010-0002.json"
-			* Inside of "comments_extracted_text", multiple directories would exist which would represent which text extraction tool was used for the attachments for a comment. In this example, only the tool 'pikepdf' was used
-				* In a tool extraction directory such as 'pikepdf', the text file of an attachment of a comment would exist, such as "USTR-2015-0010-0002_attachment_1_extracted.txt", which is the docketId + commentId, the attachment number, and "extracted", followed by the txt file extension
-			* Inside of "docket" only the json of the docket would exist, and in this case, would be "USTR-2015-0010.json"
-			* Inside of "documents", there exists the jsons for each document, along with the htm file if one exists
-				* An example of a document json is "USTR-2015-0010-0001.json"
-				* An example of an htm document is "USTR-2015-0010-0001_content.htm"
-			* Inside of "documents_extracted_text", there would be multiple subdirectories, which indicate which text extraction tool was used. In this case, the tool used was 'pikepdf'
-				* In a text extraction tool directory such as 'pikepdf', the text file for an attachment of a document would exist such as "USTR-2015-0010-0001_content_extracted.txt", which is the docketId + documentId, the "content" marking, and "extracted", followed by the txt file descriptor.
+
+## Explanation of Raw Data Structure
+
+### **Level 1: `raw-data`**
+- **Description**: The top-level directory that contains all raw data files.
+- **Purpose**: Serves as the root directory for organizing data by agency and docket.
+
+---
+
+### **Level 2: `<agency>`**
+- **Description**: Subdirectories under `raw-data` represent the government agency responsible for the data.
+- **Example**: `EPA`, `FDA`, `USTR`.
+
+---
+
+### **Level 3: `<docket id>`**
+- **Description**: Each agency directory contains subdirectories named after the docket IDs. A docket ID uniquely identifies a docket and its associated data.
+- **Example**: `EPA-HQ-OPP-2011-0939`, `FDA-2017-D-2335`.
+
+---
+
+### **Level 4: `binary-<docket id>`**
+- **Description**: This directory contains binary files (e.g., attachments) associated with the docket.
+- **Subdirectories**:
+  - **`comments_attachments`**:
+    - Contains attachments related to comments.
+    - **File Naming Convention**: `<comment id>_attachment_<counter>.<extension>`.
+    - **Example**: `FDA-2017-D-2335-1566_attachment_1.pdf`.
+  - **`documents_attachments`**:
+    - Contains attachments related to documents.
+    - **File Naming Convention**: `<document id>_attachment_<counter>.<extension>`.
+    - **Example**: `FDA-2017-D-2335-0001_attachment_2.docx`.
+
+---
+
+### **Level 4: `text-<docket id>`**
+- **Description**: This directory contains text-based files (e.g., JSON files) associated with the docket.
+- **Subdirectories**:
+  - **`comments`**:
+    - Contains JSON files representing individual comments.
+    - **File Naming Convention**: `<comment id>.json`.
+    - **Example**: `FDA-2017-D-2335-1566.json`.
+  - **`docket`**:
+    - Contains JSON files representing the docket itself.
+    - **File Naming Convention**: `<docket id>.json`.
+    - **Example**: `FDA-2017-D-2335.json`.
+  - **`documents`**:
+    - Contains JSON files representing individual documents and their content.
+    - **File Naming Convention**:
+      - `<document id>.json`: Metadata for the document.
+      - `<document id>_content.htm`: HTML content of the document.
+    - **Examples**:
+      - `FDA-2017-D-2335-0001.json`.
+      - `FDA-2017-D-2335-0001_content.htm`.
+
+---
+
+## **Summary of Raw Data Structure**
+
+### **Key Points**:
+1. **Agency-Level Organization**:
+   - Data is grouped by the agency responsible for the docket.
+2. **Docket-Level Organization**:
+   - Each docket has its own directory, ensuring that all related files are stored together.
+3. **Binary and Text Separation**:
+   - Binary files (e.g., attachments) are stored in the `binary-<docket id>` directory.
+   - Text-based files (e.g., JSON and HTML) are stored in the `text-<docket id>` directory.
+4. **File Naming Conventions**:
+   - Files are named systematically to ensure uniqueness and easy identification.
+
+
+## Explanation of Derived Data Structure
+
+### **Level 1: `derived-data`**
+- **Description**: The top-level directory that contains all derived data files.
+- **Purpose**: Serves as the root directory for organizing data by agency and docket.
+
+### **Level 2: `<agency>`**
+- **Description**: Subdirectories under `derived-data` represent the government agency responsible for the data.
+- **Purpose**: `EPA`, `FDA`, `USTR`.
+
+### **Level 3: `<docket id>`**
+- **Description**: Each agency directory contains subdirectories named after the docket IDs. A docket ID uniquely identifies a docket and its associated data.
+- **Purpose**: `EPA-HQ-OPP-2011-0939`, `FDA-2017-D-2335`.
+
+### **Level 4: `<organization>`**
+- **Description**: Each docket-id directory contains subdirectories named after certain organizations. A organization uniquely identifies the associated data with that organization.
+- **Purpose**: `mirrulations`, `MoravianResearch`.
+
+### **Level 5: `<organization data>`**
+- **Description**: Each docket-id directory contains subdirectories named after certain organizations. A organization uniquely identifies the associated derived data with that organization.
+- **Purpose**: `ai_summary`, `entities`.
