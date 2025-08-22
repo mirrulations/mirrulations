@@ -62,39 +62,6 @@ services:
       driver: "local"
       options:
         max-size: "10m"
-  validator:
-    build:
-      context: .
-      dockerfile: mirrulations-validation/Dockerfile
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    env_file: env_files/validator.env
-    restart: always
-    volumes:
-      - "~/data/validator:/data/validator"
-      - "~/data/data:/data/data"
-    logging:
-      driver: "local"
-      options:
-        max-size: "10m"
-  extractor:
-    build:
-      context: .
-      dockerfile: mirrulations-extractor/Dockerfile
-    depends_on:
-      redis:
-        condition: service_healthy
-    env_file: env_files/extractor.env
-    restart: always
-    volumes:
-      - "~/data/data:/data"
-    logging:
-      driver: "local"
-      options:
-        max-size: "10m"
   dashboard:
     build:
       context: .
