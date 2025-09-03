@@ -196,7 +196,6 @@ const updateDeveloperDashboardData = () => {
             redis,
             work_generator,
             rabbitmq,
-            extractor,
             validator
         } = jobInformation;
 
@@ -229,7 +228,6 @@ const updateDeveloperDashboardData = () => {
         updateStatus('redis-status', redis);
         updateStatus('work-generator-status', work_generator);
         updateStatus('rabbitmq-status', rabbitmq);
-        updateStatus('extractor-status', extractor);
         updateStatus('validator-status', validator);
     })
     .catch((err) => console.log(err));
