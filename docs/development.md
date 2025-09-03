@@ -40,7 +40,6 @@ The system is made up of a number of Docker containers.  See the `docker-compose
 * **Dashboard** - Provides a status page for the system
 * **NGINX** - Routes web traffic to appropriate host (currently only the dashboard)
 * **Clients** - There are multiple instances of the clients.  Each gets jobs from the work server, downloads the requested information from regulations.gov (using an API key), and returns the data to the work server.
-* **Extractor** - Walks through the data and extracts text from attachments. The text is then saved to the appropriate location.
 
 ### Docker Setup
 
