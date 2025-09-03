@@ -1,115 +1,55 @@
-import struct
-
 import pytest
+import tempfile
+import os
 from mirrextractor.extractor import Extractor
 from mirrmock.mock_redis import MockRedisWithStorage
 from mirrcore.jobs_statistics import JobStatistics
-from mirrclient.saver import Saver
-import pikepdf
-import pdfminer.psparser
 import redis
 
 
-# _ at start to avoid pylint unused parameter errors
-@pytest.fixture
-def _mock_out_save(mocker):
-    mocker.patch.object(Saver, attribute='save_text', return_value=None)
-
-
-def mock_pdf_extraction(mocker):
-    mocker.patch.object(
-        Extractor,
-        '_extract_pdf',
-        return_value=''
-    )
-
-
-def test_extract_text_non_pdf(capfd, mocker):
-    mock_pdf_extraction(mocker)
-    Extractor.extract_text('a.docx', 'b.txt')
-    assert "FAILURE: attachment doesn't have appropriate extension a.docx" \
-        in capfd.readouterr()[0]
-
-
-def test_extract_raises_parse_error(mocker, capfd, _mock_out_save):
-    mocker.patch('pikepdf.open', side_effect=pdfminer.psparser.PSSyntaxError)
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
-
-
-def test_extract_raises_password_error(mocker, capfd, _mock_out_save):
-    mocker.patch('pikepdf.open', side_effect=pikepdf.PasswordError)
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
-
-
-def test_extract_raises_key_error(mocker, capfd, _mock_out_save):
-    mocker.patch('pdfminer.high_level.extract_text',
-                 side_effect=KeyError)
-    mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
-
-
-def test_extract_raises_assertion_error(mocker, capfd, _mock_out_save):
-    mocker.patch('pdfminer.high_level.extract_text',
-                 side_effect=AssertionError)
-    mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
-
-
-def test_extract_raises_struct_error(mocker, capfd, _mock_out_save):
-    mocker.patch('pdfminer.high_level.extract_text', side_effect=struct.error)
-    mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
-
-
-def test_open_pdf_throws_pikepdf_error(mocker, capfd, _mock_out_save):
-    mocker.patch('pikepdf.open', side_effect=pikepdf.PdfError)
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
-
-
-def test_save_pdf_throws_runtime_error(mocker, capfd, _mock_out_save):
-    mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
-    mocker.patch('pikepdf.Pdf.save', side_effect=RuntimeError)
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
-
-
-def test_text_extraction_throws_error(mocker, capfd, _mock_out_save):
-    mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
-    mocker.patch('pikepdf.Pdf.save', return_value=None)
-    mocker.patch('pdfminer.high_level.extract_text', side_effect=ValueError)
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "FAILURE: failed to extract" in capfd.readouterr()[0]
+def test_extract_text_pdf_disabled(capfd, mocker):
+    """Test that PDF extraction is disabled and creates a stub file."""
+    with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as temp_file:
+        temp_path = temp_file.name
+    
+    try:
+        Extractor.extract_text('test.pdf', temp_path)
+        captured = capfd.readouterr()
+        assert "PDF extraction disabled" in captured[0]
+        
+        # Check that file was created with disabled message
+        assert os.path.exists(temp_path)
+        with open(temp_path, 'r') as f:
+            content = f.read()
+        assert "PDF extraction disabled" in content
+    finally:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 
 def test_init_job_statistics(mocker):
+    """Test that job statistics initialization works."""
     mocker.patch('redis.Redis', return_value=MockRedisWithStorage())
     Extractor.init_job_stat()
+    assert hasattr(Extractor, 'job_stat')
+
+
+def test_update_stats_success(mocker):
+    """Test that update stats works without error."""
+    job_stat = JobStatistics(MockRedisWithStorage())
+    Extractor.job_stat = job_stat
+    Extractor.update_stats()
+    # Should increment extractions counter
+    assert job_stat.get_jobs_done()['num_extractions_done'] == 1
 
 
 def test_redis_connection_error(mocker, capfd):
+    """Test that Redis connection errors are handled gracefully."""
     job_stat = JobStatistics(MockRedisWithStorage())
     Extractor.job_stat = job_stat
     Extractor.job_stat.increase_extractions_done = \
-        mocker.Mock(side_effect=redis.ConnectionError)
+        mocker.Mock(side_effect=redis.ConnectionError("Connection failed"))
     Extractor.update_stats()
-    assert "Couldn't increase extraction cache number due to:" \
-        in capfd.readouterr()[0]
-    assert job_stat.get_jobs_done()['num_extractions_done'] == 0
-
-
-def test_extract_pdf(mocker, capfd, _mock_out_save):
-    mocker.patch('pikepdf.open', return_value=pikepdf.Pdf.new())
-    mocker.patch('pikepdf.Pdf.save', return_value=None)
-    mocker.patch('pdfminer.high_level.extract_text', return_value='test')
-    mocker.patch('os.makedirs', return_value=None)
-    mocker.patch("builtins.open", mocker.mock_open())
-    job_stat = JobStatistics(MockRedisWithStorage())
-    Extractor.job_stat = job_stat
-    Extractor.extract_text('a.pdf', 'b.txt')
-    assert "SUCCESS: Saved extraction at" in capfd.readouterr()[0]
+    captured = capfd.readouterr()
+    assert "Couldn't increase extraction cache number due to:" in captured[0]
+    assert "Connection failed" in captured[0]

@@ -40,35 +40,34 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus, mirrulationsBu
 }
 
 const updateHtmlValues = (jobsWaiting, jobsDone, pdfAttachments, pdfExtracted) => {
-    if (jobsWaiting === null || jobsDone === null || pdfAttachments === null || pdfExtracted === null) {
+    if (jobsWaiting === null || jobsDone === null) {
         // Handle the case where value or total is null,
         // indicating Job Queue Error from dashboard
         unknown = true;
         document.getElementById('jobs-waiting-number').textContent = "Unknown";
         document.getElementById('jobs-done-number').textContent = "Unknown";
-        document.getElementById('pdf-extractions-done-number').textContent = "Unkown";
-        document.getElementById('pdf-attachments-wating-number').textContent = "Unkown";
+        document.getElementById('pdf-extractions-done-number').textContent = "Disabled";
+        document.getElementById('pdf-attachments-wating-number').textContent = "Disabled";
     }
     else {
-        let ids = ['jobs-waiting', 'jobs-done', 'pdf-attachments-waiting', 'pdf-extractions-done'];
-        let numerators = [jobsWaiting, jobsDone, pdfAttachments, pdfExtracted];
+        let ids = ['jobs-waiting', 'jobs-done'];
+        let numerators = [jobsWaiting, jobsDone];
         let totalJobs = jobsWaiting + jobsDone;
-        let totalPDFs = pdfAttachments + pdfExtracted;
 
         for (let [i, id] of ids.entries()) {
-            if (i < 2) {
-                let percent = (numerators[i]/totalJobs) * 100;
-                document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
-                document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
-                document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
-            }
-            else {
-                let percent = (numerators[i]/totalPDFs) * 100;
-                document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
-                document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
-                document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
-            }
+            let percent = (numerators[i]/totalJobs) * 100;
+            document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
+            document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
+            document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
         }
+        
+        // Set PDF extraction sections to show disabled
+        document.getElementById('pdf-extractions-done-number').textContent = "Disabled";
+        document.getElementById('pdf-attachments-wating-number').textContent = "Disabled";
+        document.getElementById('pdf-extractions-done-circle-percentage').textContent = "N/A";
+        document.getElementById('pdf-attachments-waiting-circle-percentage').textContent = "N/A";
+        document.getElementById('pdf-extractions-done-circle-front').style.strokeDasharray = "0, 100";
+        document.getElementById('pdf-attachments-waiting-circle-front').style.strokeDasharray = "0, 100";
     }
 }
 
