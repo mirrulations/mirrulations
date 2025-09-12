@@ -39,15 +39,13 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus, mirrulationsBu
     progressBar.style.width = `${percent}%`;
 }
 
-const updateHtmlValues = (jobsWaiting, jobsDone, pdfAttachments, pdfExtracted) => {
+const updateHtmlValues = (jobsWaiting, jobsDone) => {
     if (jobsWaiting === null || jobsDone === null) {
         // Handle the case where value or total is null,
         // indicating Job Queue Error from dashboard
         unknown = true;
         document.getElementById('jobs-waiting-number').textContent = "Unknown";
         document.getElementById('jobs-done-number').textContent = "Unknown";
-        document.getElementById('pdf-extractions-done-number').textContent = "Disabled";
-        document.getElementById('pdf-attachments-wating-number').textContent = "Disabled";
     }
     else {
         let ids = ['jobs-waiting', 'jobs-done'];
@@ -60,14 +58,6 @@ const updateHtmlValues = (jobsWaiting, jobsDone, pdfAttachments, pdfExtracted) =
             document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
             document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
         }
-        
-        // Set PDF extraction sections to show disabled
-        document.getElementById('pdf-extractions-done-number').textContent = "Disabled";
-        document.getElementById('pdf-attachments-wating-number').textContent = "Disabled";
-        document.getElementById('pdf-extractions-done-circle-percentage').textContent = "N/A";
-        document.getElementById('pdf-attachments-waiting-circle-percentage').textContent = "N/A";
-        document.getElementById('pdf-extractions-done-circle-front').style.strokeDasharray = "0, 100";
-        document.getElementById('pdf-attachments-waiting-circle-front').style.strokeDasharray = "0, 100";
     }
 }
 
@@ -105,15 +95,11 @@ const updateJobTypeProgress = (id, value, total) => {
     }
 }
 
-const updateCount = (id, value, is_pdf) => {
+const updateCount = (id, value) => {
     if (!unknown) {
         document.getElementById(id+'-number').textContent = Math.ceil(value).toLocaleString('en');
     } else {
-        if (is_pdf) {
-            document.getElementById(id+'-number').textContent = "Unknown"
-        } else {
-            document.getElementById(id+'-number').textContent = " "
-        }
+        document.getElementById(id+'-number').textContent = " "
     }
 }
 
@@ -123,11 +109,9 @@ const updateClientDashboardData = () => {
     .then(jobInformation => {
         const {
             num_attachments_done,
-            num_pdf_attachments_done,
             num_comments_done,
             num_dockets_done,
             num_documents_done,
-            num_extractions_done,
             num_jobs_done, 
             num_jobs_waiting,
             regulations_total_dockets,
@@ -139,7 +123,7 @@ const updateClientDashboardData = () => {
         const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
         let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments + regulations_total_attachments;
 
-        updateHtmlValues(num_jobs_waiting, num_jobs_done, num_pdf_attachments_done, num_extractions_done);
+        updateHtmlValues(num_jobs_waiting, num_jobs_done);
         updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals, mirrulations_bucket_size);
         // Counts for percents
         updateJobTypeProgress("dockets-done", num_dockets_done, regulations_total_dockets);
