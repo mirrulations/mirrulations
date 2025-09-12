@@ -39,35 +39,24 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus, mirrulationsBu
     progressBar.style.width = `${percent}%`;
 }
 
-const updateHtmlValues = (jobsWaiting, jobsDone, pdfAttachments, pdfExtracted) => {
-    if (jobsWaiting === null || jobsDone === null || pdfAttachments === null || pdfExtracted === null) {
+const updateHtmlValues = (jobsWaiting, jobsDone) => {
+    if (jobsWaiting === null || jobsDone === null) {
         // Handle the case where value or total is null,
         // indicating Job Queue Error from dashboard
         unknown = true;
         document.getElementById('jobs-waiting-number').textContent = "Unknown";
         document.getElementById('jobs-done-number').textContent = "Unknown";
-        document.getElementById('pdf-extractions-done-number').textContent = "Unkown";
-        document.getElementById('pdf-attachments-wating-number').textContent = "Unkown";
     }
     else {
-        let ids = ['jobs-waiting', 'jobs-done', 'pdf-attachments-waiting', 'pdf-extractions-done'];
-        let numerators = [jobsWaiting, jobsDone, pdfAttachments, pdfExtracted];
+        let ids = ['jobs-waiting', 'jobs-done'];
+        let numerators = [jobsWaiting, jobsDone];
         let totalJobs = jobsWaiting + jobsDone;
-        let totalPDFs = pdfAttachments + pdfExtracted;
 
         for (let [i, id] of ids.entries()) {
-            if (i < 2) {
-                let percent = (numerators[i]/totalJobs) * 100;
-                document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
-                document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
-                document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
-            }
-            else {
-                let percent = (numerators[i]/totalPDFs) * 100;
-                document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
-                document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
-                document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
-            }
+            let percent = (numerators[i]/totalJobs) * 100;
+            document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
+            document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
+            document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
         }
     }
 }
@@ -106,15 +95,11 @@ const updateJobTypeProgress = (id, value, total) => {
     }
 }
 
-const updateCount = (id, value, is_pdf) => {
+const updateCount = (id, value) => {
     if (!unknown) {
         document.getElementById(id+'-number').textContent = Math.ceil(value).toLocaleString('en');
     } else {
-        if (is_pdf) {
-            document.getElementById(id+'-number').textContent = "Unknown"
-        } else {
-            document.getElementById(id+'-number').textContent = " "
-        }
+        document.getElementById(id+'-number').textContent = " "
     }
 }
 
@@ -124,11 +109,9 @@ const updateClientDashboardData = () => {
     .then(jobInformation => {
         const {
             num_attachments_done,
-            num_pdf_attachments_done,
             num_comments_done,
             num_dockets_done,
             num_documents_done,
-            num_extractions_done,
             num_jobs_done, 
             num_jobs_waiting,
             regulations_total_dockets,
@@ -140,7 +123,7 @@ const updateClientDashboardData = () => {
         const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
         let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments + regulations_total_attachments;
 
-        updateHtmlValues(num_jobs_waiting, num_jobs_done, num_pdf_attachments_done, num_extractions_done);
+        updateHtmlValues(num_jobs_waiting, num_jobs_done);
         updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals, mirrulations_bucket_size);
         // Counts for percents
         updateJobTypeProgress("dockets-done", num_dockets_done, regulations_total_dockets);
@@ -197,7 +180,6 @@ const updateDeveloperDashboardData = () => {
             redis,
             work_generator,
             rabbitmq,
-            extractor,
             validator
         } = jobInformation;
 
@@ -230,7 +212,6 @@ const updateDeveloperDashboardData = () => {
         updateStatus('redis-status', redis);
         updateStatus('work-generator-status', work_generator);
         updateStatus('rabbitmq-status', rabbitmq);
-        updateStatus('extractor-status', extractor);
         updateStatus('validator-status', validator);
     })
     .catch((err) => console.log(err));
