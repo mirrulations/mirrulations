@@ -1,6 +1,6 @@
 ## ***AWS User Group Documentation***
 
-This document describes the purpose, scope, and permissions of each AWS IAM user group used in the project. It follows the same structural style as the existing `api.md` documentation and is intended to clearly define responsibilities and access boundaries for team members.
+This document describes the purpose, scope, and permissions of each AWS IAM user group used in the project. It is intended to clearly define responsibilities and access boundaries for team members.
 
 ---
 
@@ -57,20 +57,6 @@ This group manages the application front end and API layer, including deployment
 - Configure authentication with Cognito  
 - Monitor usage with CloudTrail  
 
-### **Attached Policies**
-
-| Policy Name | Type | Description |
-|-------------|------|-------------|
-| AdministratorAccess-Amplify | AWS Managed | Full access to Amplify for UI deployment |
-| AmazonAPIGatewayAdministrator | AWS Managed | Manage API Gateway endpoints |
-| AmazonRoute53FullAccess | AWS Managed | DNS configuration |
-| AWSCertificateManagerFullAccess | AWS Managed | SSL/TLS certificate management |
-| AWSCloudFormationFullAccess | AWS Managed | Infrastructure as code management |
-| AWSLambda_FullAccess | AWS Managed | Full Lambda function control |
-| cloudtrail_full | Customer Inline | Logging and audit trail access |
-| full_cognito | Customer Inline | Authentication and user pool management |
-| API_UI_FullAccessCS334S25 | Customer Inline | Project-specific API/UI permissions |
-
 ### **Intended Users**
 Frontend developers, API developers, and system administrators responsible for deployment and authentication.
 
@@ -89,28 +75,6 @@ This group manages the data storage, indexing, search, and backend infrastructur
 - Handle secrets and credentials  
 - Control event-driven services (EventBridge, Lambda triggers)  
 
-### **Attached Policies**
-
-| Policy Name | Type | Description |
-|-------------|------|-------------|
-| AmazonAuroraDSQLConsoleFullAccess | AWS Managed | Aurora console access |
-| AmazonAuroraDSQLFullAccess | AWS Managed | Full Aurora database access |
-| AmazonOpenSearchServiceFullAccess | AWS Managed | OpenSearch cluster management |
-| AmazonRDSDataFullAccess | AWS Managed | RDS data access |
-| AmazonRDSFullAccess | AWS Managed | RDS infrastructure management |
-| AmazonS3FullAccess | AWS Managed | Full S3 bucket access |
-| AmazonS3ObjectLambdaExecutionRolePolicy | AWS Managed | S3 Object Lambda execution |
-| AmazonVPCFullAccess | AWS Managed | Network configuration |
-| CloudWatchOpenSearchDashboardsFullAccess | AWS Managed | Monitoring and dashboards |
-| SecretsManagerReadWrite | AWS Managed | Secrets and credentials storage |
-| api_full | Customer Inline | Full API backend integration access |
-| AuroraRDSFullAccessCS334S25 | Customer Inline | Project-specific RDS permissions |
-| EC2_access_policy | Customer Inline | EC2 compute access |
-| EventBridge_access_policy | Customer Inline | EventBridge integration |
-| Lambda_access_policy | Customer Inline | Lambda service control |
-| OpenSearchServerlessFullAccessCS334S25 | Customer Inline | Serverless OpenSearch access |
-| ROUTE_53_access_policy | Customer Inline | DNS routing for backend |
-
 ### **Intended Users**
 Backend engineers, database administrators, and infrastructure engineers.
 
@@ -126,12 +90,6 @@ This group supports data preprocessing, ETL (Extract, Transform, Load) pipelines
 - Execute transformation pipelines  
 - Support batch processing jobs  
 - Maintain transformation scripts and workflows  
-
-### **Attached Policies**
-
-| Policy Name | Type | Description |
-|-------------|------|-------------|
-| Transformation_S3_policy_access | Customer Inline | Access to S3 buckets for transformation pipelines |
 
 ### **Intended Users**
 Data engineers and analysts responsible for cleaning, transforming, and preparing datasets.
