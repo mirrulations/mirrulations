@@ -1,0 +1,415 @@
+openapi: 3.0.3
+info:
+  title: eCFR API (Unofficial OpenAPI Spec)
+  description: |
+    OpenAPI specification derived from official eCFR documentation.
+
+    Base URL: https://www.ecfr.gov
+    Authentication: None required
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/moravian-2c6/eCFR/1.0.0
+  description: SwaggerHub API Auto Mocking
+- url: https://www.ecfr.gov
+tags:
+- name: Admin
+- name: Search
+- name: Versioner
+paths:
+  /api/admin/v1/agencies.json:
+    get:
+      tags:
+      - Admin
+      summary: Get agencies
+      responses:
+        "200":
+          description: Agencies list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/inline_response_200"
+  /api/admin/v1/corrections.json:
+    get:
+      tags:
+      - Admin
+      summary: Get corrections
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: title
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: error_corrected_date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: Corrections list
+        "400":
+          description: Bad request
+        "404":
+          description: Title not found
+  /api/admin/v1/corrections/title/{title}.json:
+    get:
+      tags:
+      - Admin
+      summary: Corrections by title
+      parameters:
+      - name: title
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Corrections list
+        "404":
+          description: Not found
+  /api/search/v1/results:
+    get:
+      tags:
+      - Search
+      summary: Search results
+      parameters:
+      - name: query
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: "agency_slugs[]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+        "405":
+          description: Invalid input
+  /api/search/v1/count:
+    get:
+      tags:
+      - Search
+      summary: Result count
+      parameters:
+      - name: query
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: "agency_slugs[]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: Count
+        "405":
+          description: Invalid input
+  /api/search/v1/summary:
+    get:
+      tags:
+      - Search
+      summary: Search summary
+      parameters:
+      - name: query
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Summary
+  /api/search/v1/suggestions:
+    get:
+      tags:
+      - Search
+      summary: Suggestions
+      parameters:
+      - name: query
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Suggestions
+  /api/versioner/v1/titles.json:
+    get:
+      tags:
+      - Versioner
+      summary: Title summary
+      responses:
+        "200":
+          description: Titles returned
+  /api/versioner/v1/structure/{date}/title-{title}.json:
+    get:
+      tags:
+      - Versioner
+      summary: Title structure
+      parameters:
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: title
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Structure
+        "404":
+          description: Invalid input
+  /api/versioner/v1/ancestry/{date}/title-{title}.json:
+    get:
+      tags:
+      - Versioner
+      summary: Hierarchy ancestry
+      parameters:
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: title
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Hierarchy returned
+        "404":
+          description: Invalid input
+  /api/versioner/v1/full/{date}/title-{title}.xml:
+    get:
+      tags:
+      - Versioner
+      summary: Retrieve XML content
+      parameters:
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: title
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: XML returned
+          content:
+            application/xml:
+              schema:
+                type: string
+        "400":
+          description: Invalid date
+        "404":
+          description: Not found
+  /api/versioner/v1/versions/title-{title}.json:
+    get:
+      tags:
+      - Versioner
+      summary: Content versions
+      parameters:
+      - name: title
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Versions returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/inline_response_200_1"
+        "400":
+          description: Bad request
+        "503":
+          description: Service unavailable
+components:
+  schemas:
+    AgencyReference:
+      type: object
+      properties:
+        title:
+          type: integer
+        chapter:
+          type: string
+    Agency:
+      type: object
+      properties:
+        name:
+          type: string
+        short_name:
+          type: string
+        display_name:
+          type: string
+        sortable_name:
+          type: string
+        slug:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/Agency"
+        cfr_references:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgencyReference"
+    SearchMeta:
+      type: object
+      properties:
+        description:
+          type: string
+        current_page:
+          type: integer
+        total_count:
+          type: integer
+        total_pages:
+          type: integer
+        max_score:
+          type: number
+        min_date:
+          type: string
+        max_date:
+          type: string
+    SearchResults:
+      type: object
+      properties:
+        results:
+          type: array
+          items: {}
+        meta:
+          $ref: "#/components/schemas/SearchMeta"
+    ContentVersion:
+      type: object
+      properties:
+        date:
+          type: string
+        amendment_date:
+          type: string
+        issue_date:
+          type: string
+        identifier:
+          type: string
+        name:
+          type: string
+        part:
+          type: string
+        subpart:
+          type: string
+          nullable: true
+        title:
+          type: string
+        type:
+          type: string
+        substantive:
+          type: boolean
+        removed:
+          type: boolean
+    inline_response_200:
+      type: object
+      properties:
+        agencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Agency"
+    inline_response_200_1:
+      type: object
+      properties:
+        content_versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentVersion"
+  parameters:
+    QueryString:
+      name: query
+      in: query
+      required: false
+      schema:
+        type: string
+    AgencySlugs:
+      name: "agency_slugs[]"
+      in: query
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    DateQuery:
+      name: date
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
+    TitlePath:
+      name: title
+      in: path
+      required: true
+      schema:
+        type: string
+    DatePath:
+      name: date
+      in: path
+      required: true
+      schema:
+        type: string
+        format: date
+
