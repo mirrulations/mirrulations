@@ -1,3 +1,4 @@
+# pylint: disable=too-many-public-methods
 class PathGenerator:
     """
     A Class which classifies any type of file into the correct directory
@@ -124,6 +125,12 @@ class PathGenerator:
 
         return f'/raw-data/{agency_id}/{docket_id}/text-{docket_id}/' + \
                f'documents/{item_id}_content.htm'
+
+    def get_document_html_path(self, json):
+        agency_id, docket_id, item_id = self.get_attributes(json)
+
+        return f'/raw-data/{agency_id}/{docket_id}/text-{docket_id}/' + \
+               f'documents/{item_id}_content.html'
 
     def get_comment_json_path(self, json):
         agency_i_d, docket_i_d, item_i_d = self.get_attributes(json)

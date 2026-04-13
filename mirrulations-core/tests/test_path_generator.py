@@ -58,6 +58,33 @@ def get_test_document_htm():
         }
 
 
+def get_test_document_html():
+    return {
+        "data": {
+            "id": "CMS-2025-0304-1544",
+            "type": "documents",
+            "attributes": {
+                "agencyId": "CMS",
+                "docketId": "CMS-2025-0304",
+                "fileFormats": [
+                    {
+                        "fileUrl": "https://downloads.regulations.gov/" +
+                                   "CMS-2025-0304-1544/content.pdf",
+                        "format": "pdf",
+                        "size": 315423
+                    },
+                    {
+                        "fileUrl": "https://downloads.regulations.gov/" +
+                                   "CMS-2025-0304-1544/content.html",
+                        "format": "html",
+                        "size": 39546
+                    }
+                ]
+            }
+        }
+        }
+
+
 def get_test_comment():
     return {
         "data": {
@@ -305,6 +332,13 @@ def test_get_document_path_for_htm(generator):
     expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "documents/USTR-2015-0010-0001_content.htm"
     assert expected_path == generator.get_document_htm_path(document)
+
+
+def test_get_document_path_for_html(generator):
+    document = get_test_document_html()
+    expected_path = "/raw-data/CMS/CMS-2025-0304/text-CMS-2025-0304/" + \
+                    "documents/CMS-2025-0304-1544_content.html"
+    assert expected_path == generator.get_document_html_path(document)
 
 
 # Comments
