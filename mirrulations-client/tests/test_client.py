@@ -497,3 +497,80 @@ def test_client_handles_api_timeout():
         client.job_operation()
 
     assert mock_redis.get('invalid_jobs') == [1, 'http://regulations.gov/job']
+
+# Document HTML Tests
+def test_get_document_htm_returns_link_for_html():
+    client = Client(ReadyRedis(), MockJobQueue())
+    json = {'data': {
+                'attributes': {
+                    'fileFormats': [{
+                        'format': 'html',
+                        'fileUrl': 'fake.com'}]}}}
+    assert client._get_document_htm(json) == 'fake.com'
+
+
+def test_get_format_returns_htm():
+    client = Client(ReadyRedis(), MockJobQueue())
+    json = {'data': {'attributes': {'fileFormats': [{'format': 'htm'}]}}}
+    assert client._get_format(json) == 'htm'
+
+
+def test_get_format_returns_html():
+    client = Client(ReadyRedis(), MockJobQueue())
+    json = {'data': {'attributes': {'fileFormats': [{'format': 'html'}]}}}
+    assert client._get_format(json) == 'html'
+
+
+@responses.activate
+def test_client_downloads_document_html(capsys, mocker):
+    mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
+                 return_value=None)
+    mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
+                 return_value=None)
+    mocker.patch('mirrclient.s3_saver.S3Saver.save_binary',
+                 return_value=None)
+    mock_redis = ReadyRedis()
+    client = Client(mock_redis, MockJobQueue())
+    client.api_key = 1234
+    client.job_queue.add_job({'job_id': 1,
+                              'url': 'http://regulations.gov/documents',
+                              "job_type": "documents"})
+    mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/documents'])
+
+    test_json = {'data': {'id': '1', 'type': 'documents',
+                                'attributes':
+                                {'agencyId': 'USTR',
+                                 'docketId': 'USTR-2015-0010',
+                                    "fileFormats": [{
+                                        "fileUrl":
+                                            ("http://downloads.regulations."
+                                                "gov/USTR-2015-0010-0001/"
+                                             "content.html"),
+                                        "format": "html",
+                                        "size": 9709
+                                    }]},
+                                'job_type': 'documents'}}
+    responses.add(responses.GET, 'http://regulations.gov/documents',
+                  json=test_json, status=200)
+    responses.add(responses.GET,
+                  'http://downloads.regulations.gov/' +
+                  'USTR-2015-0010-0001/content.html',
+                  json='\bx17', status=200)
+    client.job_operation()
+    captured = capsys.readouterr()
+    print_data = [
+        'Processing job from RabbitMQ.\n',
+        'Attempting to get job\n',
+        'Job received from job queue\n',
+        'Job received: documents for client: -1\n',
+        'Regulations.gov link: http://regulations.gov/documents\n',
+        'API URL: http://regulations.gov/documents\n',
+        'Performing job.\n',
+        'Downloading Job 1\n',
+        ('SAVED document HTM '
+            '- http://downloads.regulations.gov/USTR-2015-0010-0001/'
+            'content.html to path:  '
+            '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
+            '1_content.html\n')
+    ]
+    assert captured.out == "".join(print_data)
