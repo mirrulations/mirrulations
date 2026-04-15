@@ -490,4 +490,3 @@ def test_make_attachment_save_path_for_documents():
     assert result == "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" \
                      "documents_extracted_text/pdfminer/" \
                      "USTR-2015-0010-0001_attachment_1_extracted.txt"
-    
