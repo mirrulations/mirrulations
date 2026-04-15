@@ -294,7 +294,7 @@ class Client:
         if url is not None:
             response = requests.get(url, timeout=10)
             dir_, filename = path.rsplit('/', 1)
-            self.saver.save_binary(f'/data{dir_}/{filename}',response.content)
+            self.saver.save_binary(f'/data{dir_}/{filename}', response.content)
         print(f"SAVED document HTM - {url} to path: ", path)
         self.cache.increase_jobs_done('attachment')
 

@@ -498,6 +498,7 @@ def test_client_handles_api_timeout():
 
     assert mock_redis.get('invalid_jobs') == [1, 'http://regulations.gov/job']
 
+
 # Document HTML Tests
 def test_get_document_htm_returns_link_for_html():
     client = Client(ReadyRedis(), MockJobQueue())
