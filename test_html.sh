@@ -22,4 +22,4 @@ echo "Setup complete! Watching for HTML downloads..."
 echo "Press Ctrl+C to stop watching logs"
 
 # Watch client1 logs for any saved htm or html files
-docker compose logs -f client1 | grep -i "SAVED\|html\|htm"
+docker compose logs -f client1
