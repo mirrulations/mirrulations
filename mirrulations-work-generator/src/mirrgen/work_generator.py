@@ -31,6 +31,8 @@ class WorkGenerator:
                 continue
             # If jobs are not in redis
             # add the URL to the jobs_queue (RabbitMQ)
+            if not result.get('data'):
+                continue
             self.processor.process_results(result)
             timestamp = result['data'][-1]['attributes']['lastModifiedDate']
             self.job_queue.set_last_timestamp_string(endpoint, timestamp)
