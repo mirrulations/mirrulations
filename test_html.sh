@@ -13,9 +13,9 @@ docker compose up -d  redis
 echo "Waiting for Redis to be ready..."
 sleep 15
 
-if [[ -z "$1" ]]; then
-    echo "Error: timestamp argument is required"
-    echo "Usage: $0 <timestamp>"
+if [[ -z "$1" || -z "$2" ]]; then
+    echo "Error: timestamp arguments are required"
+    echo "Usage: $0 <date> <time>"
     exit 1
 fi
 
