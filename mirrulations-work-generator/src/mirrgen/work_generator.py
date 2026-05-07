@@ -15,27 +15,27 @@ from botocore.exceptions import ClientError
 
 
 class WorkGenerator:
-
     def __init__(self, job_queue, api):
         self.job_queue = job_queue
         self.api = api
         self.processor = ResultsProcessor(job_queue)
 
     def download(self, endpoint):
-        # Gets the timestamp of the last known job in queue
+        print(f'Starting download for endpoint: {endpoint}')
         last_timestamp = self.job_queue.get_last_timestamp_string(endpoint)
-        # Finds a job, from the timestamp of the last known job
-        # Returns a URL for the specific element
-        for result in SearchIterator(self.api, endpoint, last_timestamp):
-            if result == {}:
-                continue
-            # If jobs are not in redis
-            # add the URL to the jobs_queue (RabbitMQ)
-            if not result.get('data'):
-                continue
-            self.processor.process_results(result)
-            timestamp = result['data'][-1]['attributes']['lastModifiedDate']
-            self.job_queue.set_last_timestamp_string(endpoint, timestamp)
+        print(f'Last timestamp for {endpoint}: {last_timestamp}')
+        try:
+            for result in SearchIterator(self.api, endpoint, last_timestamp):
+                if result == {}:
+                    continue
+                if not result.get('data'):
+                    continue
+                self.processor.process_results(result)
+                timestamp = result['data'][-1]['attributes']['lastModifiedDate']
+                self.job_queue.set_last_timestamp_string(endpoint, timestamp)
+        except Exception as e:
+            print(f'Error during {endpoint} download: {e}')
+        print(f'Finished download for endpoint: {endpoint}')
 
 
 if __name__ == '__main__':
@@ -46,18 +46,12 @@ if __name__ == '__main__':
         dotenv.load_dotenv()
         api_key = os.getenv('API_KEY')
         api = RegulationsAPI(api_key)
-
         database = load_redis()
-
         job_queue = JobQueue(database)
-
         generator = WorkGenerator(job_queue, api)
-
         job_stats = JobStatistics(database)
-
         update_data_counts(job_stats, api_key)
         update_bucket_size(job_stats)
-
         # Download dockets, documents, and comments
         # from all jobs in the job queue
         print('Begin generate docket jobs')
