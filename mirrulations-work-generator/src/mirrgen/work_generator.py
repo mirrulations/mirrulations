@@ -31,8 +31,9 @@ class WorkGenerator:
                 if not result.get('data'):
                     continue
                 self.processor.process_results(result)
-                timestamp = result['data'][-1]['attributes']['lastModifiedDate']
-                self.job_queue.set_last_timestamp_string(endpoint, timestamp)
+                stamp = result['data'][-1]['attributes']['lastModifiedDate']
+                self.job_queue.set_last_timestamp_string(endpoint, stamp)
+        # pylint: disable=broad-except
         except Exception as e:
             print(f'Error during {endpoint} download: {e}')
         print(f'Finished download for endpoint: {endpoint}')
