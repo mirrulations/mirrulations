@@ -2,6 +2,7 @@ import os
 import json
 from dotenv import load_dotenv
 import boto3
+from botocore.exceptions import ClientError
 
 
 class S3Saver():
@@ -79,13 +80,17 @@ class S3Saver():
         path = path.replace("/data/", "")
         if self.s3_client is False:
             return False
-        response = self.s3_client.put_object(
-            Bucket=self.bucket_name,
-            Key=path,
-            Body=json.dumps(data["results"])
-            )
-        print(f"Wrote json to S3: {path}")
-        return response
+        try:
+            response = self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=path,
+                Body=json.dumps(data["results"])
+                )
+            print(f"Wrote json to S3: {path}")
+            return response
+        except ClientError as e:
+            print(f"Error writing json to S3: {e}")
+            return False
 
     def save_binary(self, path, binary):
         """
@@ -103,12 +108,16 @@ class S3Saver():
         path = path.replace("/data/", "")
         if self.s3_client is False:
             return False
-        response = self.s3_client.put_object(
-            Bucket=self.bucket_name,
-            Key=path,
-            Body=binary)
-        print(f"Wrote binary to S3: {path}")
-        return response
+        try:
+            response = self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=path,
+                Body=binary)
+            print(f"Wrote binary to S3: {path}")
+            return response
+        except ClientError as e:
+            print(f"Error writing json to S3: {e}")
+            return False
 
     def save_text(self, path, text):
         """
@@ -126,9 +135,13 @@ class S3Saver():
         path = path.replace("/data/", "")
         if self.s3_client is False:
             return False
-        response = self.s3_client.put_object(
-            Bucket=self.bucket_name,
-            Key=path,
-            Body=text)
-        print(f"Wrote extracted text to S3: {path}")
-        return response
+        try:
+            response = self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=path,
+                Body=text)
+            print(f"Wrote extracted text to S3: {path}")
+            return response
+        except ClientError as e:
+            print(f"Error writing json to S3: {e}")
+            return False

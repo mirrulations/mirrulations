@@ -58,6 +58,33 @@ def get_test_document_htm():
         }
 
 
+def get_test_document_html():
+    return {
+        "data": {
+            "id": "CMS-2025-0304-1544",
+            "type": "documents",
+            "attributes": {
+                "agencyId": "CMS",
+                "docketId": "CMS-2025-0304",
+                "fileFormats": [
+                    {
+                        "fileUrl": "https://downloads.regulations.gov/" +
+                                   "CMS-2025-0304-1544/content.pdf",
+                        "format": "pdf",
+                        "size": 315423
+                    },
+                    {
+                        "fileUrl": "https://downloads.regulations.gov/" +
+                                   "CMS-2025-0304-1544/content.html",
+                        "format": "html",
+                        "size": 39546
+                    }
+                ]
+            }
+        }
+        }
+
+
 def get_test_comment():
     return {
         "data": {
@@ -307,6 +334,13 @@ def test_get_document_path_for_htm(generator):
     assert expected_path == generator.get_document_htm_path(document)
 
 
+def test_get_document_path_for_html(generator):
+    document = get_test_document_html()
+    expected_path = "/raw-data/CMS/CMS-2025-0304/text-CMS-2025-0304/" + \
+                    "documents/CMS-2025-0304-1544_content.html"
+    assert expected_path == generator.get_document_html_path(document)
+
+
 # Comments
 def test_get_comment_path(generator):
     expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
@@ -437,3 +471,22 @@ def test_extractor_save_path():
                     "comments_extracted_text/pdfminer/" + \
                     "USTR-2015-0010-0002_attachment_1_extracted.txt"
     assert save_path == expected_path
+
+
+def test_get_json_path_returns_unknown_for_unknown_type(generator):
+    json = {'data': {'type': 'unknown'}}
+    assert generator.get_json_path(json) == '/unknown/unknown.json'
+
+
+def test_get_path_returns_unknown_for_empty_data(generator):
+    json = {'data': []}
+    assert generator.get_path(json) == '/unknown/unknown.json'
+
+
+def test_make_attachment_save_path_for_documents():
+    path = "/raw-data/USTR/USTR-2015-0010/binary-USTR-2015-0010/" \
+           "documents_attachments/USTR-2015-0010-0001_attachment_1.pdf"
+    result = PathGenerator.make_attachment_save_path(path)
+    assert result == "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" \
+                     "documents_extracted_text/pdfminer/" \
+                     "USTR-2015-0010-0001_attachment_1_extracted.txt"

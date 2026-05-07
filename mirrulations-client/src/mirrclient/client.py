@@ -285,22 +285,25 @@ class Client:
         return False
 
     def _download_htm(self, json):
-        """
-        Attempts to download an HTM and saves it to its correct path
-        Parameters
-        ----------
-        json : dict
-            The json of a document
-        """
         url = self._get_document_htm(json)
-        path = self.path_generator.get_document_htm_path(json)
+        file_format = self._get_format(json)
+        if file_format == "html":
+            path = self.path_generator.get_document_html_path(json)
+        else:
+            path = self.path_generator.get_document_htm_path(json)
         if url is not None:
             response = requests.get(url, timeout=10)
             dir_, filename = path.rsplit('/', 1)
-            self.saver.save_binary(f'/data{dir_}/{filename}',
-                                   response.content)
-            print(f"SAVED document HTM - {url} to path: ", path)
-            self.cache.increase_jobs_done('attachment')
+            self.saver.save_binary(f'/data{dir_}/{filename}', response.content)
+        print(f"SAVED document HTM - {url} to path: ", path)
+        self.cache.increase_jobs_done('attachment')
+
+    def _get_format(self, json):
+        file_formats = json["data"]["attributes"]["fileFormats"]
+        for file_format in file_formats:
+            if file_format.get("format") in ("htm", "html"):
+                return file_format.get("format")
+        return "htm"
 
     def _get_document_htm(self, json):
         """
@@ -312,7 +315,7 @@ class Client:
         """
         file_formats = json["data"]["attributes"]["fileFormats"]
         for file_format in file_formats:
-            if file_format.get("format") == "htm":
+            if file_format.get("format") in ("htm", "html"):
                 file_url = file_format.get("fileUrl")
                 if file_url is not None:
                     return file_url
