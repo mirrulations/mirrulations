@@ -1,10 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 import os
 import math
 import boto3
 from dotenv import load_dotenv
 
-end_time = datetime.utcnow()
+end_time = datetime.now(UTC)
 start_time = end_time - timedelta(days=2)
 
 
@@ -34,7 +34,7 @@ class BucketSize:
                         {"Name": "StorageType", "Value": "StandardStorage"}],
             MetricName="BucketSizeBytes",
             StartTime=start_time,
-            EndTime=datetime.utcnow(),
+            EndTime=datetime.now(UTC),
             Period=86400,  # 1 day in seconds
             Statistics=['Average'],
             Unit='Bytes'

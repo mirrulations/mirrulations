@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock, patch
+from datetime import UTC
 import os
 import math
 from mirrcore.bucket_size import BucketSize
@@ -61,3 +62,6 @@ def test_get_bucket_size(mock_method):
     result = math.ceil(BucketSize.get_bucket_size())
 
     assert result == 13  # Expected result in GB
+    call_kwargs = client.get_metric_statistics.call_args.kwargs
+    assert call_kwargs["StartTime"].tzinfo is UTC
+    assert call_kwargs["EndTime"].tzinfo is UTC
