@@ -35,7 +35,6 @@ Here is the body of a sample response
   "num_comments_done": 0,
   "num_dockets_done": 7,
   "num_documents_done": 0,
-  "num_extractions_done": 0,
   "num_jobs_comments_queued": 0,
   "num_jobs_dockets_queued": 115743,
   "num_jobs_documents_queued": 0,
@@ -66,9 +65,6 @@ Here is the body of a sample response
   },
   "dashboard": {
     "status": "running"
-  },
-  "extractor": {
-    "status": "exited"
   },
   "nginx": {
     "status": "running"

@@ -462,17 +462,6 @@ def test_null_file_format_for_attachment_comment_returns_nothing(generator):
     assert generator.get_attachment_json_paths(comment_json) == []
 
 
-def test_extractor_save_path():
-    path = "/data/data/USTR/USTR-2015-0010/" + \
-           "binary-USTR-2015-0010/" + \
-           "comments_attachments/USTR-2015-0010-0002_attachment_1.pdf"
-    save_path = PathGenerator.make_attachment_save_path(path)
-    expected_path = "/data/data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
-                    "comments_extracted_text/pdfminer/" + \
-                    "USTR-2015-0010-0002_attachment_1_extracted.txt"
-    assert save_path == expected_path
-
-
 def test_get_json_path_returns_unknown_for_unknown_type(generator):
     json = {'data': {'type': 'unknown'}}
     assert generator.get_json_path(json) == '/unknown/unknown.json'
@@ -481,12 +470,3 @@ def test_get_json_path_returns_unknown_for_unknown_type(generator):
 def test_get_path_returns_unknown_for_empty_data(generator):
     json = {'data': []}
     assert generator.get_path(json) == '/unknown/unknown.json'
-
-
-def test_make_attachment_save_path_for_documents():
-    path = "/raw-data/USTR/USTR-2015-0010/binary-USTR-2015-0010/" \
-           "documents_attachments/USTR-2015-0010-0001_attachment_1.pdf"
-    result = PathGenerator.make_attachment_save_path(path)
-    assert result == "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" \
-                     "documents_extracted_text/pdfminer/" \
-                     "USTR-2015-0010-0001_attachment_1_extracted.txt"

@@ -44,16 +44,6 @@ def write_files(api_key, env_path, total_clients, aws_access_key, aws_secret_acc
         file.write("REDIS_HOSTNAME=redis" + "\n")
         file.write("PYTHONUNBUFFERED=TRUE")
     
-    # Write extractor file
-    with open("{}extractor.env".format(env_path), 'w') as file:
-        file.write(f"AWS_ACCESS_KEY={aws_access_key}\n")
-        file.write(f"AWS_SECRET_ACCESS_KEY={aws_secret_access_key}")
-    
-    # Write validator file
-    with open("{}validator.env".format(env_path), 'w') as file:
-        file.write("API_KEY={}".format(api_key) + "\n")
-        file.write("PYTHONUNBUFFERED=TRUE")
-    
     # Create data folder 
     parent_dir = os.path.realpath(os.path.expanduser("~"))
     dir_name = "data/"

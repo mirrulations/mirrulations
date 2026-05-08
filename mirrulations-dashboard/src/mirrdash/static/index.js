@@ -26,7 +26,7 @@ const updateCorpusProgressHtml = (jobTypeCountsDone, totalCorpus, mirrulationsBu
     for (let i = 0; i < jobTypeCountsDone.length; i++) {
         currentProgress += jobTypeCountsDone[i];
     }
-    let percent = (currentProgress/totalCorpus) * 100;
+    const percent = totalCorpus > 0 ? (currentProgress / totalCorpus) * 100 : 0;
     if (!unknown) {
         document.getElementById('progress-to-corpus-bar-percentage').textContent = `${percent.toFixed(2)}%`;
         document.getElementById('total-size').textContent = mirrulationsBucketSize
@@ -53,7 +53,7 @@ const updateHtmlValues = (jobsWaiting, jobsDone) => {
         let totalJobs = jobsWaiting + jobsDone;
 
         for (let [i, id] of ids.entries()) {
-            let percent = (numerators[i]/totalJobs) * 100;
+            let percent = totalJobs > 0 ? (numerators[i] / totalJobs) * 100 : 0;
             document.getElementById(id+'-number').textContent = numerators[i].toLocaleString('en');
             document.getElementById(id+'-circle-percentage').textContent = `${percent.toFixed(1)}%`;
             document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
@@ -88,7 +88,7 @@ const updateStatus = (container, state) => {
 
 const updateJobTypeProgress = (id, value, total) => {
     if (!unknown) {
-        let percent = (value/total) * 100;
+        const percent = total > 0 ? (value / total) * 100 : 0;
         document.getElementById(id+'-percent').textContent = `${percent.toFixed(2)}%`;
     } else {
         document.getElementById(id+'-percent').textContent = "Unknown";
@@ -120,8 +120,10 @@ const updateClientDashboardData = () => {
             mirrulations_bucket_size
         } = jobInformation;
 
-        const regulations_total_attachments = num_attachments_done / num_comments_done * regulations_total_comments;
-        let regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments + regulations_total_attachments;
+        const regulations_total_attachments = num_comments_done > 0
+            ? (num_attachments_done / num_comments_done) * regulations_total_comments
+            : 0;
+        const regulations_totals = regulations_total_dockets + regulations_total_documents + regulations_total_comments + regulations_total_attachments;
 
         updateHtmlValues(num_jobs_waiting, num_jobs_done);
         updateCorpusProgressHtml([num_dockets_done, num_documents_done, num_comments_done, num_attachments_done], regulations_totals, mirrulations_bucket_size);
@@ -179,8 +181,7 @@ const updateDeveloperDashboardData = () => {
             nginx,
             redis,
             work_generator,
-            rabbitmq,
-            validator
+            rabbitmq
         } = jobInformation;
 
         updateStatus('client1-status', client1);
@@ -212,7 +213,6 @@ const updateDeveloperDashboardData = () => {
         updateStatus('redis-status', redis);
         updateStatus('work-generator-status', work_generator);
         updateStatus('rabbitmq-status', rabbitmq);
-        updateStatus('validator-status', validator);
     })
     .catch((err) => console.log(err));
 } 
