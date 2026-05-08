@@ -1,4 +1,4 @@
-FROM python:3.9-slim-trixie
+FROM python:3
 
 WORKDIR /app
 RUN apt-get update; apt-get install docker.io -y
