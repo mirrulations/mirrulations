@@ -1,7 +1,9 @@
 import os
+from unittest.mock import patch
 import boto3
 from moto import mock_aws
 from pytest import fixture
+from botocore.exceptions import ClientError
 from mirrclient.s3_saver import S3Saver
 
 
@@ -122,3 +124,45 @@ def test_save_text_to_s3_no_credentials_returns_false(capsys):
     assert S3Saver().save_text("test", "test") is False
     assert capsys.readouterr().out == "No AWS credentials provided, "\
                                       "Unable to write to S3.\n"
+
+
+@mock_aws
+def test_save_json_access_denied_returns_false_and_no_write(capsys):
+    conn = create_mock_mirrulations_bucket()
+    s3_saver = S3Saver(bucket_name="test-mirrulations1")
+    error = ClientError(
+        {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}},
+        "PutObject"
+    )
+    with patch.object(s3_saver.s3_client, "put_object", side_effect=error):
+        assert s3_saver.save_json("nope.json", {"results": "bar"}) is False
+    assert "Error writing json to S3:" in capsys.readouterr().out
+    assert len(list(conn.Bucket("test-mirrulations1").objects.all())) == 0
+
+
+@mock_aws
+def test_save_binary_access_denied_returns_false_and_no_write(capsys):
+    conn = create_mock_mirrulations_bucket()
+    s3_saver = S3Saver(bucket_name="test-mirrulations1")
+    error = ClientError(
+        {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}},
+        "PutObject"
+    )
+    with patch.object(s3_saver.s3_client, "put_object", side_effect=error):
+        assert s3_saver.save_binary("data/forbidden.binary", b"\x17") is False
+    assert "Error writing json to S3:" in capsys.readouterr().out
+    assert len(list(conn.Bucket("test-mirrulations1").objects.all())) == 0
+
+
+@mock_aws
+def test_save_text_access_denied_returns_false_and_no_write(capsys):
+    conn = create_mock_mirrulations_bucket()
+    s3_saver = S3Saver(bucket_name="test-mirrulations1")
+    error = ClientError(
+        {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}},
+        "PutObject"
+    )
+    with patch.object(s3_saver.s3_client, "put_object", side_effect=error):
+        assert s3_saver.save_text("data/forbidden.txt", "test") is False
+    assert "Error writing json to S3:" in capsys.readouterr().out
+    assert len(list(conn.Bucket("test-mirrulations1").objects.all())) == 0
