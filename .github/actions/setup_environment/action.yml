@@ -10,7 +10,7 @@ runs:
     - name: Setup Python Version
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8 # Install the python version needed
+        python-version: 3.14
 
     - name: Create Virtual Environment and installing mirrulations components as modules
       shell: bash
