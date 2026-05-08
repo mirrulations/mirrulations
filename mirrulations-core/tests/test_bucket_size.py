@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch
-from datetime import UTC
+from datetime import UTC, datetime
 import os
-import math
 from mirrcore.bucket_size import BucketSize
 from pytest import fixture
 from botocore.client import BaseClient
@@ -47,21 +46,54 @@ def test_get_bucket_size(mock_method):
     """
     needed the patch for mocking the return value of a static function
 
-    Mocks the process of getting the size of a bucket with the
-    get_metric_statistics function of a cloudwatch client
+    BucketSizeBytes exists per StorageType; get_bucket_size lists metrics
+    and sums the latest daily Average for each series.
     """
-    # Mock the CloudWatch client
     client = MagicMock()
+    paginator = MagicMock()
+    paginator.paginate.return_value = [
+        {
+            'Metrics': [
+                {
+                    'Namespace': 'AWS/S3',
+                    'MetricName': 'BucketSizeBytes',
+                    'Dimensions': [
+                        {'Name': 'BucketName', 'Value': 'mirrulations'},
+                        {'Name': 'StorageType', 'Value': 'StandardStorage'},
+                    ],
+                },
+                {
+                    'Namespace': 'AWS/S3',
+                    'MetricName': 'BucketSizeBytes',
+                    'Dimensions': [
+                        {'Name': 'BucketName', 'Value': 'mirrulations'},
+                        {'Name': 'StorageType',
+                         'Value': 'IntelligentTieringIAStorage'},
+                    ],
+                },
+            ]
+        },
+    ]
+    client.get_paginator.return_value = paginator
+
+    # Bucket total: 1500.5 GiB (1024³, same divisor as BucketSize).
+    # Two StorageTypes each contribute half of that total bytes.
+    bytes_per_gib = 1 << 30
+    total_bucket_bytes = int(1500.5 * bytes_per_gib)
+    bytes_per_storage_type = total_bucket_bytes // 2
+
+    ts = datetime(2026, 5, 6, tzinfo=UTC)
 
     client.get_metric_statistics.return_value = {
-        'Datapoints': [{'Average': 12345678910}]
+        'Datapoints': [{'Timestamp': ts, 'Average': bytes_per_storage_type}],
     }
 
     mock_method.return_value = client
 
-    result = math.ceil(BucketSize.get_bucket_size())
-
-    assert result == 13  # Expected result in GB
-    call_kwargs = client.get_metric_statistics.call_args.kwargs
-    assert call_kwargs["StartTime"].tzinfo is UTC
-    assert call_kwargs["EndTime"].tzinfo is UTC
+    # math.ceil(1500.5 binary GB) == 1501
+    assert BucketSize.get_bucket_size() == 1501
+    client.get_paginator.assert_called_once_with('list_metrics')
+    kwargs0 = client.get_metric_statistics.call_args_list[0].kwargs
+    assert kwargs0["StartTime"].tzinfo is UTC
+    assert kwargs0["EndTime"].tzinfo is UTC
+    assert len(client.get_metric_statistics.call_args_list) == 2

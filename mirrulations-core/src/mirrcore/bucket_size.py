@@ -4,9 +4,6 @@ import math
 import boto3
 from dotenv import load_dotenv
 
-end_time = datetime.now(UTC)
-start_time = end_time - timedelta(days=2)
-
 
 class BucketSize:
     """
@@ -22,30 +19,59 @@ class BucketSize:
 
     @staticmethod
     def get_bucket_size():
-        """Returns the size of the bucket in gigabytes"""
+        """Returns the size of the bucket in binary gigabytes (1024³ bytes).
+
+        S3 publishes ``BucketSizeBytes`` per ``StorageType`` (Standard,
+        Intelligent-Tiering tiers, Glacier, etc.). Total size is the sum of
+        the latest daily observation for each distinct series—not the sum of
+        ``Datapoints`` across time for one series.
+        """
         client = BucketSize.get_cloudwatch_client()
         # when client cannot establish connection to cloudwatch due to no AWS
         # credentials, return
         if not client:
             return None
+        total_bytes = 0.0
+        paginator = client.get_paginator("list_metrics")
+        for page in paginator.paginate(
+            Namespace="AWS/S3",
+            MetricName="BucketSizeBytes",
+            Dimensions=[{"Name": "BucketName", "Value": "mirrulations"}],
+        ):
+            for metric in page.get("Metrics", []):
+                total_bytes += BucketSize._bytes_for_metric_series(
+                    client, metric
+                )
+
+        bytes_per_gb = 1 << 30  # GiB-style GB: 1024³
+        bucket_size_gb = math.ceil(total_bytes / bytes_per_gb)
+        return bucket_size_gb
+
+    @staticmethod
+    def _bytes_for_metric_series(client, metric):
+        dimensions = metric.get("Dimensions", [])
+        stor_type = None
+        for dim in dimensions:
+            if dim.get("Name") == "StorageType":
+                stor_type = dim.get("Value")
+                break
+        if stor_type is None:
+            return 0.0
         result = client.get_metric_statistics(
             Namespace="AWS/S3",
-            Dimensions=[{"Name": "BucketName", "Value": "mirrulations"},
-                        {"Name": "StorageType", "Value": "StandardStorage"}],
+            Dimensions=dimensions,
             MetricName="BucketSizeBytes",
-            StartTime=start_time,
+            StartTime=datetime.now(UTC) - timedelta(days=2),
             EndTime=datetime.now(UTC),
             Period=86400,  # 1 day in seconds
-            Statistics=['Average'],
-            Unit='Bytes'
+            Statistics=["Average"],
+            Unit="Bytes",
         )
-        # Extract the bucket size from the client metric data
-        bucket_size_bytes = result['Datapoints'][0]["Average"]
-
-        # Convert the size from bytes to GB
-        bucket_size_gb = math.ceil(bucket_size_bytes / (1000 ** 3))
-
-        return bucket_size_gb
+        datapoints = result.get("Datapoints", [])
+        if not datapoints:
+            return 0.0
+        latest = max(datapoints, key=lambda p: p["Timestamp"])
+        return float(latest["Average"])
 
     @staticmethod
     def get_cloudwatch_client():
