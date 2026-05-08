@@ -6,8 +6,6 @@ The system is Dockerized into a number of components:
 * `redis` - Job management as well as permanent variable storage
 * `work_generator` - Finds new data and generates jobs to download from regulations.gov
 * `rabbitmq` - Job Queue Management
-* `extractor` - Text extractor for pdfs
-* `validator` - Compares current data to regulations.gov results to find missing data
 * `dashboard` - Web-based user interface to observe progress and system status
 * `client1` through `client25` - Clients that download data from regulations.gov
 

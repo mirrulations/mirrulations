@@ -3,7 +3,6 @@ DOCUMENTS_DONE = "num_documents_done"
 COMMENTS_DONE = "num_comments_done"
 ATTACHMENTS_DONE = 'num_attachments_done'
 PDF_ATTACHMENTS_DONE = 'num_pdf_attachments_done'
-EXTRACTIONS_DONE = 'num_extractions_done'
 
 REGULATIONS_TOTAL_DOCKETS = 'regulations_total_dockets'
 REGULATIONS_TOTAL_DOCUMENTS = 'regulations_total_documents'
@@ -24,7 +23,7 @@ class JobStatistics:
         Keys that should not be overwritten
         """
         keys = [DOCKETS_DONE, DOCUMENTS_DONE, COMMENTS_DONE, ATTACHMENTS_DONE,
-                PDF_ATTACHMENTS_DONE, EXTRACTIONS_DONE]
+                PDF_ATTACHMENTS_DONE]
         for key in keys:
             if not self.cache.exists(key):
                 self.cache.set(key, 0)
@@ -35,7 +34,6 @@ class JobStatistics:
         comments = int(self.cache.get(COMMENTS_DONE))
         attachments = int(self.cache.get(ATTACHMENTS_DONE))
         pdfs = int(self.cache.get(PDF_ATTACHMENTS_DONE))
-        extractions = int(self.cache.get(EXTRACTIONS_DONE))
 
         return {
             'num_jobs_done': dockets + documents + comments,
@@ -45,7 +43,6 @@ class JobStatistics:
             COMMENTS_DONE: comments,
             ATTACHMENTS_DONE: attachments,
             PDF_ATTACHMENTS_DONE: pdfs,
-            EXTRACTIONS_DONE: extractions
         }
 
     def increase_jobs_done(self, job_type, is_pdf=False):
@@ -65,12 +62,6 @@ class JobStatistics:
             self.cache.incr(ATTACHMENTS_DONE)
             if is_pdf:
                 self.cache.incr(PDF_ATTACHMENTS_DONE)
-
-    def increase_extractions_done(self):
-        """
-        Not a job being completed in the client
-        """
-        self.cache.incr(EXTRACTIONS_DONE)
 
     def set_regulations_data(self, data_counts):
         """

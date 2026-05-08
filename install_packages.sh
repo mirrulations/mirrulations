@@ -11,4 +11,3 @@ fi
 .venv/bin/pip install -e mirrulations-dashboard
 .venv/bin/pip install -e mirrulations-mocks
 .venv/bin/pip install -e mirrulations-work-generator 
-.venv/bin/pip install -e mirrulations-validation

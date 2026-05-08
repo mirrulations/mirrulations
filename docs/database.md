@@ -21,7 +21,6 @@ dockets_last_timestamp
 invalid_jobs
 regulations_total_dockets
 client_jobs
-num_extractions_done
 regulations_total_documents
 mirrulations_bucket_size
 num_comments_done
@@ -96,7 +95,5 @@ COMMENTS_DONE: Tracks the number of completed comments.
 ATTACHMENTS_DONE: Tracks the number of completed attachments.
 
 PDF_ATTACHMENTS_DONE: Tracks the number of completed PDF attachments.
-
-EXTRACTIONS_DONE: Tracks the number of completed extractions.
 
 MIRRULATION_BUCKET_SIZE: Stores the size of the mirrulations bucket.
