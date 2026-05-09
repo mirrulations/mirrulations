@@ -18,7 +18,6 @@ num_pdf_attachments_done
 num_jobs_documents_waiting
 num_jobs_comments_waiting
 dockets_last_timestamp
-invalid_jobs
 regulations_total_dockets
 client_jobs
 regulations_total_documents

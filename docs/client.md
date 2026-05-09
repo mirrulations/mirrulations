@@ -25,7 +25,7 @@ If no work is available at the current time the client waits for 3.6 seconds bef
 
 After receiving a job, a client attempts to download the remote resource pointed to by its url. If the `job_type` is a comment, any attachments are also downloaded. The client updates the database after the job is completed.
 
-If an unrecoverable error occurs while during download, the client marks the job as an invalid job in the database. Invalid jobs will not be retried by other clients.
+If an unrecoverable error occurs during download, the client prints the failing job id and URL to the log, then continues. Those jobs are not retried automatically by other clients.
 
 ### Saving Data
 
