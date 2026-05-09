@@ -98,10 +98,6 @@ class Client:
         self._set_default_key(job, 'agency', 'other_agency')
         return job
 
-    def _set_redis_values(self, job):
-        self.redis.hset('jobs_in_progress', job['job_id'], job['url'])
-        self.redis.hset('client_jobs', job['job_id'], self.client_id)
-
     def _remove_plural_from_job_type(self, job):
         split_url = str(job['url']).split('/')
         job_type = split_url[-2][:-1]  # Removes plural from job type
@@ -121,8 +117,6 @@ class Client:
         job = self._get_job_from_job_queue()
 
         job = self._set_missing_job_key_defaults(job)
-
-        self._set_redis_values(job)
 
         # update count for dashboard
         self.job_queue.decrement_count(job['job_type'])
@@ -338,10 +332,6 @@ class Client:
             return False
         return True
 
-    def _report_bad_job(self, job):
-        self.redis.hdel('jobs_in_progress', job['job_id'])
-        self.redis.hset('invalid_jobs', job['job_id'], job['url'])
-
     def job_operation(self):
         """
         Processes a job.
@@ -360,14 +350,11 @@ class Client:
             result = response.json()
 
             self._download_job(job, result)
-        except Exception as exc:
-            try:
-                self._report_bad_job(job)
-            except redis.exceptions.ConnectionError:
-                print("FAILURE: Couldn't save bad job to Redis.")
-
-            # re-raise whatever exception was being thrown
-            raise exc
+        except Exception:
+            print(
+                f'FAILURE: bad job job_id={job["job_id"]} url={job["url"]}',
+                flush=True)
+            raise
 
         return job
 

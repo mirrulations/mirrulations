@@ -29,12 +29,6 @@ def fixture_mock_server():
 def add_mock_data_to_database(job_queue, job_stats=MockJobStatistics()):
     for job in range(1, 6):
         job_queue.add_job(f'http://requlations.gov/job{job}')
-    jobs_in_progress = {i: i for i in range(6, 10)}
-    # Reach into the Redis DB and set some values.  UGH
-    job_queue.database.hset('jobs_in_progress', mapping=jobs_in_progress)
-    jobs_done = {i: i for i in range(10, 13)}
-    job_queue.database.hset('jobs_done', mapping=jobs_done)
-    job_queue.database.set('total_num_client_ids', 2)
     job_queue.database.set('num_jobs_comments_waiting', 2)
     job_queue.database.set('num_jobs_documents_waiting', 2)
     job_queue.database.set('num_jobs_dockets_waiting', 1)
@@ -66,9 +60,7 @@ def test_dashboard_returns_job_information(mock_server):
     assert response.status_code == 200
     results = response.get_json()
     assert results['num_jobs_waiting'] == 5
-    assert results['num_jobs_in_progress'] == 4
     assert results['num_jobs_done'] == 7
-    assert results['jobs_total'] == 16
     assert results['num_jobs_comments_queued'] == 2
     assert results['num_jobs_documents_queued'] == 2
     assert results['num_jobs_dockets_queued'] == 1

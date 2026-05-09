@@ -156,18 +156,6 @@ def test_get_job():
     assert client._get_job() == job
 
 
-def test_client_hsets_redis_values():
-    mock_redis = ReadyRedis()
-    client = Client(mock_redis, MockJobQueue())
-    mock_redis.set('jobs_in_progress', ['foo', 'var'])
-    mock_redis.set('client_jobs', ['foo', 'bar'])
-    job = {'job_id': 1,
-           'url': 'fake.com'}
-    client._set_redis_values(job)
-    assert mock_redis.get('jobs_in_progress') == [1, 'fake.com']
-    assert mock_redis.get('client_jobs') == [1, '-1']
-
-
 # Document HTM Tests
 def test_document_has_file_formats_does_not_have_data():
     client = Client(ReadyRedis(), MockJobQueue())
@@ -233,7 +221,6 @@ def test_client_downloads_document_htm(capsys, mocker):
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/documents',
                               "job_type": "documents"})
-    mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/documents'])
 
     test_json = {'data': {'id': '1', 'type': 'documents',
                                 'attributes':
@@ -298,8 +285,6 @@ def test_handles_none_in_comment_file_formats(path_generator):
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/job',
                               "job_type": "comments"})
-    mock_redis.set('jobs_in_progress', [1,
-                                        'http://regulations.gov/job'])
     test_json = {
                 "data": {
                     "id": "agencyID-001-0002",
@@ -317,9 +302,6 @@ def test_handles_none_in_comment_file_formats(path_generator):
     responses.add(responses.GET, 'http://regulations.gov/job',
                   json=test_json, status=200)
     client.job_operation()
-    assert mock_redis.get('jobs_in_progress') == [1,
-                                                  'http://regulations.gov/job']
-    assert mock_redis.get('client_jobs') == [1, '-1']
 
     attachment_paths = path_generator.get_attachment_json_paths(test_json)
     assert attachment_paths == []
@@ -337,7 +319,6 @@ def test_client_downloads_attachment_results(mocker, capsys):
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/comments',
                               "job_type": "comments"})
-    mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/comments'])
 
     test_json = {
                 "data": {
@@ -481,14 +462,13 @@ def test_client_perform_job_times_out(mock_requests):
 
 
 @responses.activate
-def test_client_handles_api_timeout():
+def test_client_handles_api_timeout(capsys):
     mock_redis = ReadyRedis()
     client = Client(mock_redis, MockJobQueue())
     client.api_key = 1234
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/job',
                               "job_type": "comments"})
-    mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/job'])
 
     responses.get("http://regulations.gov/job",
                   body=ReadTimeout("Read Timeout"))
@@ -496,7 +476,9 @@ def test_client_handles_api_timeout():
     with pytest.raises(APITimeoutException):
         client.job_operation()
 
-    assert mock_redis.get('invalid_jobs') == [1, 'http://regulations.gov/job']
+    captured = capsys.readouterr()
+    assert 'job_id=1' in captured.out
+    assert 'http://regulations.gov/job' in captured.out
 
 
 # Document HTML Tests
@@ -536,7 +518,6 @@ def test_client_downloads_document_html(capsys, mocker):
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/documents',
                               "job_type": "documents"})
-    mock_redis.set('jobs_in_progress', [1, 'http://regulations.gov/documents'])
 
     test_json = {'data': {'id': '1', 'type': 'documents',
                                 'attributes':

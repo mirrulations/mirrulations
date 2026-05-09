@@ -42,14 +42,9 @@ class JobQueue:
 
     def get_job_stats(self):
         jobs_waiting = self.get_num_jobs()
-        jobs_in_progress = int(self.database.hlen('jobs_in_progress'))
-        jobs_total_minus_jobs_done = jobs_waiting + jobs_in_progress
 
         return {
             'num_jobs_waiting': jobs_waiting,
-            'num_jobs_in_progress':
-                int(self.database.hlen('jobs_in_progress')),
-            'jobs_total': jobs_total_minus_jobs_done,
             'num_jobs_comments_queued':
                 int(self.database.get('num_jobs_comments_waiting')),
             'num_jobs_documents_queued':
