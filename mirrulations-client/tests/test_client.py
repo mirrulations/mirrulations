@@ -245,13 +245,9 @@ def test_client_downloads_document_htm(capsys, mocker, key_manager):
     client.job_operation(key_manager.get_next())
     captured = capsys.readouterr()
     print_data = [
-        'Processing job from RabbitMQ.\n',
-        'Attempting to get job\n',
-        'Job received from job queue\n',
         'Job received: documents (api key id: testkey)\n',
         'Regulations.gov link: http://regulations.gov/documents\n',
         'API URL: http://regulations.gov/documents\n',
-        'Performing job.\n',
         'Downloading Job 1\n',
         ('SAVED document HTM '
             '- http://downloads.regulations.gov/USTR-2015-0010-0001/'
@@ -356,13 +352,9 @@ def test_client_downloads_attachment_results(mocker, capsys, key_manager):
 
     captured = capsys.readouterr()
     print_data = [
-        'Processing job from RabbitMQ.\n',
-        'Attempting to get job\n',
-        'Job received from job queue\n',
         'Job received: comments (api key id: testkey)\n',
         'Regulations.gov link: http://regulations.gov/comments\n',
         'API URL: http://regulations.gov/comments\n',
-        'Performing job.\n',
         'Downloading Job 1\n',
         'Found 1 attachment(s) for Comment - FDA-2016-D-2335-1566\n',
         'Downloaded 1/1 attachment(s) for Comment - FDA-2016-D-2335-1566\n'
@@ -540,13 +532,9 @@ def test_client_downloads_document_html(capsys, mocker, key_manager):
     client.job_operation(key_manager.get_next())
     captured = capsys.readouterr()
     print_data = [
-        'Processing job from RabbitMQ.\n',
-        'Attempting to get job\n',
-        'Job received from job queue\n',
         'Job received: documents (api key id: testkey)\n',
         'Regulations.gov link: http://regulations.gov/documents\n',
         'API URL: http://regulations.gov/documents\n',
-        'Performing job.\n',
         'Downloading Job 1\n',
         ('SAVED document HTM '
             '- http://downloads.regulations.gov/USTR-2015-0010-0001/'

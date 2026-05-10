@@ -77,8 +77,6 @@ class Client:
         return True
 
     def _get_job_from_job_queue(self):
-        print('Attempting to get job')
-
         if not self._can_connect_to_database():
             # temporary, ideally we should get
             # rid of _can_connect_to_database() altogether
@@ -88,7 +86,6 @@ class Client:
             raise NoJobsAvailableException
 
         job = self.job_queue.get_job()
-        print('Job received from job queue')
 
         return job
 
@@ -349,13 +346,9 @@ class Client:
         api_cred : KeyCredential
             API credential to use for this job's Regulations.gov request.
         """
-        print('Processing job from RabbitMQ.')
-
         job = self._get_job(api_cred.id)
 
         try:
-            print('Performing job.')
-
             response = self._perform_job(job['url'], api_cred)
             response.raise_for_status()
             result = response.json()
@@ -398,7 +391,7 @@ if __name__ == '__main__':
         except redis.exceptions.ConnectionError:
             print('FAILURE: Could not connect to Redis.')
         except NoJobsAvailableException:
-            print('FAILURE: No Jobs Available.')
+            pass
         except APITimeoutException:
             print('FAILURE: Request to API timed out.')
         except requests.exceptions.HTTPError as err:
