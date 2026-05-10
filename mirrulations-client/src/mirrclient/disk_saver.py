@@ -25,20 +25,26 @@ class DiskSaver():
         """
         _dir = path.rsplit('/', 1)[0]
         self.make_path(_dir)
-        data = data['results']
-        if os.path.exists(path) is False:
-            self.save_to_disk(path, data)
-        else:
-            self.check_for_duplicates(path, data, 1)
-
-    def save_duplicate_json(self, path, data, i):
-        path_without_file_type = path.strip(".json")
-        path = f'{path_without_file_type}({i}).json'
-        if os.path.exists(path) is False:
-            print(f'JSON is different than duplicate: Labeling ({i})')
-            self.save_to_disk(path, data)
-        else:
-            self.check_for_duplicates(path, data, i + 1)
+        payload = data['results']
+        if not os.path.exists(path):
+            self.save_to_disk(path, payload)
+            return
+        if self.is_duplicate(self.open_json_file(path), payload):
+            return
+        # Caller passes the canonical path (…/name.json); alternates are
+        # name(1).json, name(2).json, …
+        stem = path.removesuffix('.json')
+        counter = 1
+        while True:
+            candidate = f'{stem}({counter}).json'
+            if not os.path.exists(candidate):
+                print(
+                    f'JSON is different than duplicate: Labeling ({counter})')
+                self.save_to_disk(candidate, payload)
+                return
+            if self.is_duplicate(self.open_json_file(candidate), payload):
+                return
+            counter += 1
 
     def save_binary(self, path, data):
         _dir = path.rsplit('/', 1)[0]
@@ -66,7 +72,3 @@ class DiskSaver():
             print('Data is a duplicate, skipping this download')
             return True
         return False
-
-    def check_for_duplicates(self, path, data, i):
-        if self.is_duplicate(self.open_json_file(path), data) is False:
-            self.save_duplicate_json(path, data, i)

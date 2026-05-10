@@ -1,34 +1,56 @@
 from json import dumps
-from unittest.mock import patch, mock_open, MagicMock
-from pytest import fixture, mark
+from unittest.mock import patch, mock_open
 from mirrclient.disk_saver import DiskSaver
 
 
-@fixture(name='save_duplicate_json')
-def mock_save_duplicate(mocker):
-    mocker.patch.object(
-        DiskSaver,
-        'save_duplicate_json',
-        return_value=None
-    )
+def test_save_json_writes_first_alternate_when_base_exists_and_differs():
+    path = '/USTR/file.json'
+    payload = {'data': 'new'}
+    data = {'results': payload}
+    saver = DiskSaver()
+
+    def exists_side_effect(p):
+        return p == path
+
+    with patch(
+            'mirrclient.disk_saver.os.path.exists',
+            side_effect=exists_side_effect):
+        with patch.object(saver, 'make_path'):
+            with patch.object(
+                    saver, 'open_json_file', return_value={'data': 'old'}):
+                with patch.object(saver, 'save_to_disk') as mock_save:
+                    saver.save_json(path, data)
+    mock_save.assert_called_once_with('/USTR/file(1).json', payload)
 
 
-@fixture(name='duplicate_check')
-def mock_check_for_duplicate(mocker):
-    mocker.patch.object(
-        DiskSaver,
-        'check_for_duplicates',
-        return_value=None,
-    )
+def test_save_json_skips_when_numbered_file_already_has_same_payload():
+    """Same payload already stored at file(2).json — do not write again."""
+    path = '/USTR/file.json'
+    payload = {'v': 2}
+    data = {'results': payload}
+    saver = DiskSaver()
+    contents_by_path = {
+        '/USTR/file.json': {'data': 'old'},
+        '/USTR/file(1).json': {'x': 1},
+        '/USTR/file(2).json': payload,
+    }
 
+    def exists_side_effect(p):
+        return p in contents_by_path
 
-@fixture(name='is_duplicate')
-def mock_is_duplicate(mocker):
-    mocker.patch.object(
-        DiskSaver,
-        'is_duplicate',
-        return_value=True
-    )
+    def open_json_side_effect(p):
+        return contents_by_path[p]
+
+    with patch(
+            'mirrclient.disk_saver.os.path.exists',
+            side_effect=exists_side_effect):
+        with patch.object(saver, 'make_path'):
+            with patch.object(
+                    saver, 'open_json_file',
+                    side_effect=open_json_side_effect):
+                with patch.object(saver, 'save_to_disk') as mock_save:
+                    saver.save_json(path, data)
+    mock_save.assert_not_called()
 
 
 def test_save_path_directory_does_not_already_exist():
@@ -100,58 +122,41 @@ def test_open_json():
         mocked_file.assert_called_once_with(path, encoding='utf8')
 
 
-def test_save_duplicate_json():
+def test_save_json_numbered_uses_open_x_on_first_free_slot():
     path = 'data/USTR/file.json'
-    data = {'data': 'Hello world'}
+    payload = {'data': 'Hello world'}
+    data = {'results': payload}
     saver = DiskSaver()
-    mock = MagicMock()
-    mock.mock_open()
-    with patch('mirrclient.disk_saver.open', mock) as mocked_file:
-        saver.save_duplicate_json(path, data, 1)
-        mocked_file.assert_called_once_with(f'data/USTR/file({1}).json', 'x',
-                                            encoding='utf8')
+
+    def exists_side_effect(p):
+        return p == path
+
+    with patch(
+            'mirrclient.disk_saver.os.path.exists',
+            side_effect=exists_side_effect):
+        with patch.object(
+                saver, 'open_json_file', return_value={'other': True}):
+            with patch(
+                    'mirrclient.disk_saver.open', mock_open()) as mocked_file:
+                saver.save_json(path, data)
+            mocked_file.assert_called_once_with(
+                'data/USTR/file(1).json', 'x', encoding='utf8')
 
 
-@mark.usefixtures("duplicate_check")
 def test_do_not_save_duplicate_data(capsys):
     path = '/USTR/file.json'
     data = {'results': {'data': 'Hello world'}}
     saver = DiskSaver()
-    mock = MagicMock()
-    mock.return_value(True)
-    with patch('os.path.exists', mock):
-        with patch('os.makedirs') as mock_dir:
-            saver.save_json(path, data)
-            mock_dir.assert_called_once_with('/USTR')
-            print_data = ''
-            captured = capsys.readouterr()
-            assert captured.out == print_data
-
-
-@mark.usefixtures("duplicate_check")
-def test_do_not_save_duplicate_json_data(capsys):
-    path = 'data/USTR/file.json'
-    data = {'results': {'data': 'Hello world'}}
-    saver = DiskSaver()
-    mock = MagicMock()
-    mock.return_value(True)
-    with patch('os.path.exists', mock):
-        saver.save_duplicate_json(path, data, 1)
-        print_data = ''
-        captured = capsys.readouterr()
-        assert captured.out == print_data
-
-
-@mark.usefixtures("is_duplicate")
-def test_check_for_duplicates(capsys):
-    path = 'data/USTR/file.json'
-    data = {'data': 'Hello world'}
-    saver = DiskSaver()
-    mock = mock_open(read_data=dumps(data))
-    with patch('mirrclient.disk_saver.open', mock) as mocked_file:
-        saver.open_json_file(path)
-        mocked_file.assert_called_once_with(path, encoding='utf8')
-        saver.check_for_duplicates(path, data, 1)
-        print_data = ''
-        captured = capsys.readouterr()
-        assert captured.out == print_data
+    with patch('mirrclient.disk_saver.os.path.exists', return_value=True):
+        with patch.object(
+                saver, 'open_json_file',
+                return_value=data['results']):
+            with patch('os.makedirs') as mock_dir:
+                with patch.object(saver, 'save_to_disk') as mock_save:
+                    saver.save_json(path, data)
+                    mock_dir.assert_called_once_with('/USTR')
+                    mock_save.assert_not_called()
+                    print_data = (
+                        'Data is a duplicate, skipping this download\n')
+                    captured = capsys.readouterr()
+                    assert captured.out == print_data
