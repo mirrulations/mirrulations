@@ -2,31 +2,32 @@
 
 ## Summary
 
-Clients are components of the Mirrulations system responsible for downloading data from Regulations.gov. Unless stopped a client continues to attempt the following steps:
+The **client** service downloads data from Regulations.gov. Unless stopped it repeats:
 
-1. Get work from the job queue
-2. Perform the job by downloading data from Regulations.gov
-3. Save downloaded regulation data
+1. Rotate to the next API key from `client_keys.json` (see `KeyManager`).
+2. Get work from the job queue (RabbitMQ).
+3. Call the Regulations.gov API using that key, then save results (disk and S3).
 
-To accomplish their task each client interacts externally with Regulations.gov and AWS S3. Internally, each client interacts with the database (Redis) and queue (RabbitMQ).
+Internally it uses Redis for job statistics and RabbitMQ for jobs. Keys and pacing come from **`mirrclient.key_manager.KeyManager`**; sleep duration between iterations is **`seconds_between_api_calls()`** (shared 1000/hour budget across keys).
 
 ## Details
 
-Every 3.6 seconds a client attempts to get a job, perform its jobs, and save the resulting data.
-Download jobs have three fields: `job_id`, `url`, and `job_type`.
+Download jobs include fields such as `job_id`, `url`, and `job_type`. Logs identify which API key was used via each credential’s **`id`** in `client_keys.json`.
 
-### Getting Work
+### Getting work
 
-A client gets work by removing a job from the queue and updating it's current job in the database.
+A client pulls a job from the queue when work is available.
 
-If no work is available at the current time the client waits for 3.6 seconds before attempting again.
+### Data download
 
-### Data Download
+After receiving a job, the client requests the API URL with the current key. Comments may trigger attachment downloads (no API key on those HTTP requests). Completed work increments Redis counters via `JobStatistics`.
 
-After receiving a job, a client attempts to download the remote resource pointed to by its url. If the `job_type` is a comment, any attachments are also downloaded. The client updates the database after the job is completed.
+If an unrecoverable error occurs, the client prints the failing job id and URL, then continues the loop.
 
-If an unrecoverable error occurs during download, the client prints the failing job id and URL to the log, then continues. Those jobs are not retried automatically by other clients.
+### Saving data
 
-### Saving Data
+Results are saved under `/data` and to the `mirrulations` S3 bucket when configured.
 
-After downloading data it is saved. By default data is saved to disk and to the `mirrulations` AWS S3 bucket.
+### Scaling
+
+Run a **single** client replica per shared `client_keys.json`, or split keys across processes; multiple replicas using the same key file will overshoot API rate limits.

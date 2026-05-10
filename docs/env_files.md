@@ -1,28 +1,21 @@
-# `.env Files`
-## Description
-For clients to make calls to the Regulations.gov API, they each need a unique API key. The API key is sensitive information which SHOULD NOT be posted in the GitHub repository. Each client has a corresponding `.env` file in the `/env_files` directory on the server in this format:
+# Environment files (`env_files/`)
 
-	WORK_SERVER_HOSTNAME=___________
-	WORK_SERVER_PORT=____
-	API_KEY=_______________
-	ID=____
-    PYTHONUNBUFFERED=TRUE
+The `env_files/` directory holds secrets and local configuration for Docker Compose. It is gitignored; create it by running `python dev_setup.py`.
 
-The `PYTHONUNBUFFERED=TRUE` tells Python to output immediately so that we can view logs in realtime.
+## Client (`client.env` + `client_keys.json`)
 
-## How to Add New Clients
-To add a new client, 
+The download **client** container loads AWS credentials from `client.env` and loads one or more Regulations.gov API keys from **`client_keys.json`** (JSON array of `{"id": "...", "api_key": "..."}` objects). Set **`CLIENT_KEYS_PATH`** in `client.env` to the path where **`client_keys.json`** is mounted inside the container (see `docker-compose.yml`; the default layout uses `/config/client_keys.json`).
 
-1. In the `docker-compose.yaml` file, add the client information in this format at the end of the file to create a new Docker container (client18 is used as an example, in any case use the next highest unused number).
+`PYTHONUNBUFFERED=TRUE` keeps Python logging unbuffered for Docker logs.
 
-		client18:
-		    build:
-		      context: .
-		      dockerfile: mirrulations-client/Dockerfile
-		    env_file: env_files/client18.env
-		    restart: always
+## Work generator (`work_gen.env`)
 
-2. Run `python dev_setup.py` to add the new client into `env_files` folder.
+Uses **`API_KEY`** for Regulations.gov (dev_setup sets this from the first key in `client_keys.json`), plus AWS variables.
 
-## Error Case
-If a client does not have a corresponding env file the program prints `'need environment variables'` and then closes.
+## Dashboard (`dashboard.env`)
+
+Redis hostname and `PYTHONUNBUFFERED=TRUE`.
+
+## Error cases
+
+If **`CLIENT_KEYS_PATH`** is missing or **`client_keys.json`** is invalid, the client exits at startup with an error message.

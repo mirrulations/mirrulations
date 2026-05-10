@@ -7,21 +7,31 @@ import requests_mock
 from requests.exceptions import ReadTimeout
 import boto3
 from mirrcore.path_generator import PathGenerator
-from mirrclient.client import Client, is_environment_variables_present
+from mirrclient.client import Client, is_client_keys_path_configured
 from mirrclient.exceptions import NoJobsAvailableException, APITimeoutException
+from mirrclient.key_manager import KeyManager
 from mirrmock.mock_redis import ReadyRedis, InactiveRedis, MockRedisWithStorage
 from mirrmock.mock_job_queue import MockJobQueue
 
 
-BASE_URL = 'http://work_server:8080'
+TEST_API_KEY = 'TESTINGKEY123'
+TEST_KEY_QUERY = f'?api_key={TEST_API_KEY}'
 
 
 @fixture(autouse=True)
-def mock_env():
-    os.environ['API_KEY'] = 'TESTING_KEY'
-    os.environ['ID'] = '-1'
-    os.environ['AWS_ACCESS_KEY'] = 'test_key'
-    os.environ['AWS_SECRET_ACCESS_KEY'] = 'test_secret_key'
+def mock_env(tmp_path, monkeypatch):
+    keys_path = tmp_path / 'client_keys.json'
+    keys_path.write_text(
+        f'[{{"id":"testkey","api_key":"{TEST_API_KEY}"}}]',
+        encoding='utf-8')
+    monkeypatch.setenv('CLIENT_KEYS_PATH', str(keys_path))
+    monkeypatch.setenv('AWS_ACCESS_KEY', 'test_key')
+    monkeypatch.setenv('AWS_SECRET_ACCESS_KEY', 'test_secret_key')
+
+
+@fixture(name='key_manager')
+def fixture_key_manager():
+    return KeyManager(os.environ['CLIENT_KEYS_PATH'])
 
 
 @fixture(name='mock_requests')
@@ -52,22 +62,13 @@ def mock_disk_writing(mocker):
     )
 
 
-def test_check_no_env_values():
-    # Need to delete env variables set by mock_env fixture
-    del os.environ['API_KEY']
-    assert is_environment_variables_present() is False
+def test_no_client_keys_path(monkeypatch):
+    monkeypatch.delenv('CLIENT_KEYS_PATH', raising=False)
+    assert is_client_keys_path_configured() is False
 
 
-def test_check_no_api_key():
-    # Need to delete api key env variable set by mock_env fixture
-    del os.environ['API_KEY']
-    assert is_environment_variables_present() is False
-
-
-def test_client_has_no_id():
-    # Need to delete id env variable set by mock_env fixture
-    del os.environ['ID']
-    assert is_environment_variables_present() is False
+def test_client_keys_path_configured():
+    assert is_client_keys_path_configured() is True
 
 
 def create_mock_mirrulations_bucket():
@@ -76,8 +77,8 @@ def create_mock_mirrulations_bucket():
     return conn
 
 
-def test_set_missing_job_key_defaults():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_set_missing_job_key_defaults(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     job = {
         'job_id': 1,
         'url': 'regulations.gov',
@@ -94,56 +95,56 @@ def test_set_missing_job_key_defaults():
     assert job == final_job
 
 
-def test_remove_plural_from_job():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_remove_plural_from_job(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     job = {'url': 'regulations.gov/comments/DOD-0001-0001'}
     job_without_plural = client._remove_plural_from_job_type(job)
     assert job_without_plural == 'comment/DOD-0001-0001'
 
 
-def test_can_connect_to_database():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_can_connect_to_database(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     assert client._can_connect_to_database()
 
 
-def test_api_call_has_api_key(mock_requests):
-    client = Client(MockRedisWithStorage(), MockJobQueue())
-    client.api_key = 'KEY12345'
+def test_api_call_has_api_key(mock_requests, key_manager):
+    client = Client(MockRedisWithStorage(), MockJobQueue(), key_manager)
+    credential = key_manager.get_next()
     with mock_requests:
         mock_requests.get(
-            'http://regulations.gov/job',
+            f'http://regulations.gov/job{TEST_KEY_QUERY}',
             json={'data': {'foo': 'bar'}},
             status_code=200
         )
-        client._perform_job('http://regulations.gov/job')
+        client._perform_job('http://regulations.gov/job', credential)
 
 
-def test_cannot_connect_to_database():
-    client = Client(InactiveRedis(), MockJobQueue())
+def test_cannot_connect_to_database(key_manager):
+    client = Client(InactiveRedis(), MockJobQueue(), key_manager)
     assert not client._can_connect_to_database()
 
 
-def test_job_queue_is_empty():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_job_queue_is_empty(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     with pytest.raises(NoJobsAvailableException):
-        client.job_operation()
+        client.job_operation(key_manager.get_next())
 
 
-def test_get_job_from_job_queue_no_redis():
-    client = Client(InactiveRedis(), MockJobQueue())
+def test_get_job_from_job_queue_no_redis(key_manager):
+    client = Client(InactiveRedis(), MockJobQueue(), key_manager)
     with pytest.raises(NoJobsAvailableException):
         client._get_job_from_job_queue()
 
 
-def test_get_job_from_job_queue_gets_job():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_get_job_from_job_queue_gets_job(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     client.job_queue = MockJobQueue()
     client.job_queue.add_job({'job': 'This is a job'})
     assert client._get_job_from_job_queue() == {'job': 'This is a job'}
 
 
-def test_get_job():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_get_job(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     client.job_queue = MockJobQueue()
     job = {
         'job_id': 1,
@@ -153,42 +154,42 @@ def test_get_job():
         'agency': 'other_agency'
     }
     client.job_queue.add_job(job)
-    assert client._get_job() == job
+    assert client._get_job('testkey') == job
 
 
 # Document HTM Tests
-def test_document_has_file_formats_does_not_have_data():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_document_has_file_formats_does_not_have_data(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {}
     assert not client._document_has_file_formats(json)
 
 
-def test_document_has_file_formats_does_not_have_attributes():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_document_has_file_formats_does_not_have_attributes(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {}}
     assert not client._document_has_file_formats(json)
 
 
-def test_document_has_file_formats_where_file_formats_is_none():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_document_has_file_formats_where_file_formats_is_none(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {"attributes": {"fileFormats": None}}}
     assert not client._document_has_file_formats(json)
 
 
-def test_document_has_file_formats_does_not_have_file_formats():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_document_has_file_formats_does_not_have_file_formats(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {'attributes': []}}
     assert not client._document_has_file_formats(json)
 
 
-def test_document_has_file_formats_has_required_fields():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_document_has_file_formats_has_required_fields(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {'attributes': {'fileFormats': {}}}}
     assert client._document_has_file_formats(json)
 
 
-def test_get_document_htm_returns_link():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_get_document_htm_returns_link(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {
                 'attributes': {
                     'fileFormats': [{
@@ -197,8 +198,8 @@ def test_get_document_htm_returns_link():
     assert client._get_document_htm(json) == 'fake.com'
 
 
-def test_get_document_htm_returns_none():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_get_document_htm_returns_none(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {
                 'attributes': {
                     'fileFormats': [{
@@ -208,7 +209,7 @@ def test_get_document_htm_returns_none():
 
 
 @responses.activate
-def test_client_downloads_document_htm(capsys, mocker):
+def test_client_downloads_document_htm(capsys, mocker, key_manager):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
@@ -216,8 +217,7 @@ def test_client_downloads_document_htm(capsys, mocker):
     mocker.patch('mirrclient.s3_saver.S3Saver.save_binary',
                  return_value=None)
     mock_redis = ReadyRedis()
-    client = Client(mock_redis, MockJobQueue())
-    client.api_key = 1234
+    client = Client(mock_redis, MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/documents',
                               "job_type": "documents"})
@@ -235,19 +235,20 @@ def test_client_downloads_document_htm(capsys, mocker):
                                         "size": 9709
                                     }]},
                                 'job_type': 'documents'}}
-    responses.add(responses.GET, 'http://regulations.gov/documents',
+    responses.add(responses.GET,
+                  f'http://regulations.gov/documents{TEST_KEY_QUERY}',
                   json=test_json, status=200)
     responses.add(responses.GET,
                   'http://downloads.regulations.gov/' +
                   'USTR-2015-0010-0001/content.htm',
                   json='\bx17', status=200)
-    client.job_operation()
+    client.job_operation(key_manager.get_next())
     captured = capsys.readouterr()
     print_data = [
         'Processing job from RabbitMQ.\n',
         'Attempting to get job\n',
         'Job received from job queue\n',
-        'Job received: documents for client: -1\n',
+        'Job received: documents (api key id: testkey)\n',
         'Regulations.gov link: http://regulations.gov/documents\n',
         'API URL: http://regulations.gov/documents\n',
         'Performing job.\n',
@@ -262,26 +263,25 @@ def test_client_downloads_document_htm(capsys, mocker):
 
 
 # Client Comment Attachments
-def test_does_comment_have_attachment_has_attachment():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_does_comment_have_attachment_has_attachment(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     comment_json = {'included': [0]}
     assert client._does_comment_have_attachment(comment_json)
 
 
-def test_does_comment_have_attachment_does_have_attachment():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_does_comment_have_attachment_does_have_attachment(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     comment_json = {'included': []}
     assert not client._does_comment_have_attachment(comment_json)
 
 
 @responses.activate
-def test_handles_none_in_comment_file_formats(path_generator):
+def test_handles_none_in_comment_file_formats(path_generator, key_manager):
     """
     Test for handling of the NoneType Error caused by null fileformats
     """
     mock_redis = ReadyRedis()
-    client = Client(mock_redis, MockJobQueue())
-    client.api_key = 1234
+    client = Client(mock_redis, MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/job',
                               "job_type": "comments"})
@@ -299,23 +299,24 @@ def test_handles_none_in_comment_file_formats(path_generator):
                         "fileFormats": None
                     },
                 }]}
-    responses.add(responses.GET, 'http://regulations.gov/job',
+    responses.add(responses.GET,
+                  f'http://regulations.gov/job{TEST_KEY_QUERY}',
                   json=test_json, status=200)
-    client.job_operation()
+    client.job_operation(key_manager.get_next())
 
     attachment_paths = path_generator.get_attachment_json_paths(test_json)
     assert attachment_paths == []
 
 
 @responses.activate
-def test_client_downloads_attachment_results(mocker, capsys):
+# pylint: disable=too-many-locals
+def test_client_downloads_attachment_results(mocker, capsys, key_manager):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
                  return_value=None)
     mock_redis = ReadyRedis()
-    client = Client(mock_redis, MockJobQueue())
-    client.api_key = 1234
+    client = Client(mock_redis, MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/comments',
                               "job_type": "comments"})
@@ -339,14 +340,15 @@ def test_client_downloads_attachment_results(mocker, capsys):
                     }
                 }]
             }
-    responses.add(responses.GET, 'http://regulations.gov/comments',
+    responses.add(responses.GET,
+                  f'http://regulations.gov/comments{TEST_KEY_QUERY}',
                   json=test_json, status=200)
     responses.add(responses.GET,
                   ('http://downloads.regulations.gov/\
                    FDA-2016-D-2335/attachment_1.pdf'),
                   json='\bx17', status=200)
 
-    client.job_operation()
+    client.job_operation(key_manager.get_next())
     job_stat_results = client.cache.get_jobs_done()
     assert job_stat_results['num_comments_done'] == 1
     assert job_stat_results['num_attachments_done'] == 1
@@ -357,7 +359,7 @@ def test_client_downloads_attachment_results(mocker, capsys):
         'Processing job from RabbitMQ.\n',
         'Attempting to get job\n',
         'Job received from job queue\n',
-        'Job received: comments for client: -1\n',
+        'Job received: comments (api key id: testkey)\n',
         'Regulations.gov link: http://regulations.gov/comments\n',
         'API URL: http://regulations.gov/comments\n',
         'Performing job.\n',
@@ -369,7 +371,7 @@ def test_client_downloads_attachment_results(mocker, capsys):
 
 
 @responses.activate
-def test_does_comment_have_attachment_with_empty_attachment_list():
+def test_does_comment_have_attachment_with_empty_attachment_list(key_manager):
     """
     Test that handles empty attachment list from comments json being:
     {
@@ -379,9 +381,7 @@ def test_does_comment_have_attachment_with_empty_attachment_list():
                     }
     }
     """
-    client = Client(ReadyRedis(), MockJobQueue())
-    client.api_key = 1234
-
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     test_json = {
                 "data": {
                     "id": "agencyID-001-0002",
@@ -401,14 +401,12 @@ def test_does_comment_have_attachment_with_empty_attachment_list():
 
 
 @responses.activate
-def test_two_attachments_in_comment(mocker):
+def test_two_attachments_in_comment(mocker, key_manager):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
                  return_value=None)
-    client = Client(ReadyRedis(), MockJobQueue())
-    client.api_key = 1234
-
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/job',
                               "job_type": "comments"})
@@ -432,10 +430,11 @@ def test_two_attachments_in_comment(mocker):
                 }
             }]
         }
-    responses.add(responses.GET, 'http://regulations.gov/job',
+    responses.add(responses.GET,
+                  f'http://regulations.gov/job{TEST_KEY_QUERY}',
                   json=test_json, status=200)
 
-    client.job_operation()
+    client.job_operation(key_manager.get_next())
     results = client.cache.get_jobs_done()
     assert results['num_comments_done'] == 1
     assert results['num_attachments_done'] == 2
@@ -443,38 +442,38 @@ def test_two_attachments_in_comment(mocker):
 
 
 # Exception Tests
-def test_get_job_is_empty():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_get_job_is_empty(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     with pytest.raises(NoJobsAvailableException):
-        client._get_job()
+        client._get_job('testkey')
 
 
-def test_client_perform_job_times_out(mock_requests):
+def test_client_perform_job_times_out(mock_requests, key_manager):
     with mock_requests:
         fake_url = 'http://regulations.gov/fake/api/call'
         mock_requests.get(
-            fake_url,
+            f'{fake_url}{TEST_KEY_QUERY}',
             exc=ReadTimeout)
 
         with pytest.raises(APITimeoutException):
-            client = Client(MockRedisWithStorage(), MockJobQueue())
-            client._perform_job(fake_url)
+            client = Client(
+                MockRedisWithStorage(), MockJobQueue(), key_manager)
+            client._perform_job(fake_url, key_manager.get_next())
 
 
 @responses.activate
-def test_client_handles_api_timeout(capsys):
+def test_client_handles_api_timeout(capsys, key_manager):
     mock_redis = ReadyRedis()
-    client = Client(mock_redis, MockJobQueue())
-    client.api_key = 1234
+    client = Client(mock_redis, MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/job',
                               "job_type": "comments"})
 
-    responses.get("http://regulations.gov/job",
+    responses.get(f"http://regulations.gov/job{TEST_KEY_QUERY}",
                   body=ReadTimeout("Read Timeout"))
 
     with pytest.raises(APITimeoutException):
-        client.job_operation()
+        client.job_operation(key_manager.get_next())
 
     captured = capsys.readouterr()
     assert 'job_id=1' in captured.out
@@ -482,8 +481,8 @@ def test_client_handles_api_timeout(capsys):
 
 
 # Document HTML Tests
-def test_get_document_htm_returns_link_for_html():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_get_document_htm_returns_link_for_html(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {
                 'attributes': {
                     'fileFormats': [{
@@ -492,20 +491,20 @@ def test_get_document_htm_returns_link_for_html():
     assert client._get_document_htm(json) == 'fake.com'
 
 
-def test_get_format_returns_htm():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_get_format_returns_htm(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {'attributes': {'fileFormats': [{'format': 'htm'}]}}}
     assert client._get_format(json) == 'htm'
 
 
-def test_get_format_returns_html():
-    client = Client(ReadyRedis(), MockJobQueue())
+def test_get_format_returns_html(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     json = {'data': {'attributes': {'fileFormats': [{'format': 'html'}]}}}
     assert client._get_format(json) == 'html'
 
 
 @responses.activate
-def test_client_downloads_document_html(capsys, mocker):
+def test_client_downloads_document_html(capsys, mocker, key_manager):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
@@ -513,8 +512,7 @@ def test_client_downloads_document_html(capsys, mocker):
     mocker.patch('mirrclient.s3_saver.S3Saver.save_binary',
                  return_value=None)
     mock_redis = ReadyRedis()
-    client = Client(mock_redis, MockJobQueue())
-    client.api_key = 1234
+    client = Client(mock_redis, MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
                               'url': 'http://regulations.gov/documents',
                               "job_type": "documents"})
@@ -532,19 +530,20 @@ def test_client_downloads_document_html(capsys, mocker):
                                         "size": 9709
                                     }]},
                                 'job_type': 'documents'}}
-    responses.add(responses.GET, 'http://regulations.gov/documents',
+    responses.add(responses.GET,
+                  f'http://regulations.gov/documents{TEST_KEY_QUERY}',
                   json=test_json, status=200)
     responses.add(responses.GET,
                   'http://downloads.regulations.gov/' +
                   'USTR-2015-0010-0001/content.html',
                   json='\bx17', status=200)
-    client.job_operation()
+    client.job_operation(key_manager.get_next())
     captured = capsys.readouterr()
     print_data = [
         'Processing job from RabbitMQ.\n',
         'Attempting to get job\n',
         'Job received from job queue\n',
-        'Job received: documents for client: -1\n',
+        'Job received: documents (api key id: testkey)\n',
         'Regulations.gov link: http://regulations.gov/documents\n',
         'API URL: http://regulations.gov/documents\n',
         'Performing job.\n',

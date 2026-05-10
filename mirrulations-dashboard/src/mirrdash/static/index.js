@@ -148,67 +148,19 @@ const updateClientDashboardData = () => {
 }
 
 const updateDeveloperDashboardData = () => {
-    fetch(`${BASE_URL}data`)
+    fetch(`${window.location.origin}/devdata`)
     .then(response => response.json())
     .then(jobInformation => {
 
         const {
-            client1,
-            client2,
-            client3,
-            client4,
-            client5,
-            client6,
-            client7,
-            client8,
-            client9,
-            client10,
-            client11,
-            client12,
-            client13,
-            client14,
-            client15,
-            client16,
-            client17,
-            client18,
-            client19,
-            client20,
-            client21,
-            client22,
-            client23,
-            client24,
-            client25,
+            client,
             nginx,
             redis,
             work_generator,
             rabbitmq
         } = jobInformation;
 
-        updateStatus('client1-status', client1);
-        updateStatus('client2-status', client2);
-        updateStatus('client3-status', client3);
-        updateStatus('client4-status', client4);
-        updateStatus('client5-status', client5);
-        updateStatus('client6-status', client6);
-        updateStatus('client7-status', client7);
-        updateStatus('client8-status', client8);
-        updateStatus('client9-status', client9);
-        updateStatus('client10-status', client10);
-        updateStatus('client11-status', client11);
-        updateStatus('client12-status', client12);
-        updateStatus('client13-status', client13);
-        updateStatus('client14-status', client14);
-        updateStatus('client15-status', client15);
-        updateStatus('client16-status', client16);
-        updateStatus('client17-status', client17);
-        updateStatus('client18-status', client18);
-        updateStatus('client19-status', client19);
-        updateStatus('client20-status', client20);
-        updateStatus('client21-status', client21);
-        updateStatus('client22-status', client22);
-        updateStatus('client23-status', client23);
-        updateStatus('client24-status', client24);
-        updateStatus('client25-status', client25);
+        updateStatus('client-status', client);
         updateStatus('nginx-status', nginx);
         updateStatus('redis-status', redis);
         updateStatus('work-generator-status', work_generator);

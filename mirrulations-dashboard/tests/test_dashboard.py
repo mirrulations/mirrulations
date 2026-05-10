@@ -49,7 +49,7 @@ def test_dashboard_returns_job_information(mock_server):
     # Mock out the docker object to return Container-like values
     # for the list method.
     Container = namedtuple('Container', ['name', 'status'])
-    return_value = [Container('capstone_client1_1', 'running'),
+    return_value = [Container('mirrulations_client_1', 'running'),
                     Container('capstone_work_server_1', 'running')]
     client.containers.list = Mock(return_value=return_value)
 
@@ -77,7 +77,7 @@ def test_dev_dashboard_returns_container_information(mock_server):
     # for the list method.
     Container = namedtuple("Container", ["name", "status", "health"])
     return_value = [
-        Container(name="capstone_client1_1",
+        Container(name="mirrulations_client_1",
                   status="running",
                   health="unknown"),
         Container(name="capstone_work_server_1",
@@ -93,7 +93,7 @@ def test_dev_dashboard_returns_container_information(mock_server):
     response = mock_server.client.get('/devdata')
 
     expected = {
-        "client1": {"status": "running"},
+        "client": {"status": "running"},
         "work_server": {"status": "paused"},
         "redis": {"status": "running", "health": "healthy"},
     }
@@ -128,7 +128,7 @@ def test_get_container_stats():
     # for the list method.
     Container = namedtuple('Container', ['name', 'status', 'health'])
     return_value = [
-        Container(name="capstone_client1_1",
+        Container(name="mirrulations_client_1",
                   status="running",
                   health="unknown"),
         Container(name="capstone_work_server_1",
@@ -143,7 +143,7 @@ def test_get_container_stats():
     stats = get_container_stats(client)
 
     expected = {
-        "client1": {"status": "running"},
+        "client": {"status": "running"},
         "work_server": {"status": "paused"},
         "redis": {"status": "running", "health": "healthy"},
     }
@@ -163,7 +163,7 @@ def test_get_job_stats_raises_job_queue_exception(mock_server):
     client = MagicMock()
 
     Container = namedtuple('Container', ['name', 'status'])
-    return_value = [Container('capstone_client1_1', 'running'),
+    return_value = [Container('mirrulations_client_1', 'running'),
                     Container('capstone_work_server_1', 'running')]
     client.containers.list = Mock(return_value=return_value)
 
@@ -186,7 +186,7 @@ def test_dashboard_handles_job_queue_exception(mock_server):
     client = MagicMock()
 
     Container = namedtuple('Container', ['name', 'status'])
-    return_value = [Container('capstone_client1_1', 'running'),
+    return_value = [Container('mirrulations_client_1', 'running'),
                     Container('capstone_work_server_1', 'running')]
     client.containers.list = Mock(return_value=return_value)
 

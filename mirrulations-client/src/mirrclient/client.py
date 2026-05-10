@@ -8,6 +8,12 @@ from mirrclient.saver import Saver
 from mirrclient.disk_saver import DiskSaver
 from mirrclient.s3_saver import S3Saver
 from mirrclient.exceptions import NoJobsAvailableException, APITimeoutException
+from mirrclient.key_manager import (
+    KeyCredential,
+    KeyManager,
+    KeyManagerFileError,
+    KeyManagerJsonError,
+)
 from mirrcore.redis_check import load_redis
 from mirrcore.path_generator import PathGenerator
 from mirrcore.job_queue import JobQueue
@@ -16,17 +22,18 @@ from mirrcore.job_queue_exceptions import JobQueueException
 from pika.exceptions import AMQPConnectionError
 
 
-def is_environment_variables_present():
+def is_client_keys_path_configured():
     """
-    A boolean function that returns whether environment variables are
-    present for performing jobs.
+    Return True if CLIENT_KEYS_PATH is set.
+
+    File validity is checked when KeyManager loads.
 
     Returns
     -------
     Boolean
     """
-    return (os.getenv('API_KEY') is not None
-            and os.getenv('ID') is not None)
+    path = os.getenv('CLIENT_KEYS_PATH')
+    return path is not None and path != ''
 
 
 class Client:
@@ -39,10 +46,6 @@ class Client:
 
     Attributes
     ----------
-    api_key : str
-        Api key used to authenticate requests made to api
-    client_id : int
-        An id that is included in the client.env file.
     path_generator : PathGenerator
         Returns a path for the result of a job to be saved to.
     saver : Saver
@@ -54,16 +57,17 @@ class Client:
     job_queue : JobQueue
         Queue of all of the jobs that need to be completed. The client will
         directly pull jobs from this queue.
+    key_manager : KeyManager
+        Loads API keys and pacing between calls.
     """
-    def __init__(self, redis_server, job_queue):
-        self.api_key = os.getenv('API_KEY')
-        self.client_id = os.getenv('ID')
+    def __init__(self, redis_server, job_queue, manager):
         self.path_generator = PathGenerator()
         self.saver = Saver(savers=[DiskSaver(),
                                    S3Saver(bucket_name="mirrulations")])
         self.redis = redis_server
         self.job_queue = job_queue
         self.cache = JobStatistics(redis_server)
+        self.key_manager = manager
 
     def _can_connect_to_database(self):
         try:
@@ -104,7 +108,7 @@ class Client:
         type_id = split_url[-1]
         return f'{job_type}/{type_id}'
 
-    def _get_job(self):
+    def _get_job(self, key_id: str):
         """
         Get a job from the JobQueue.
         Converts API URL to regulations.gov URL and prints to logs.
@@ -122,7 +126,7 @@ class Client:
         self.job_queue.decrement_count(job['job_type'])
 
         print(f'Job received: {job["job_type"]}'
-              + f' for client: {self.client_id}')
+              + f' (api key id: {key_id})')
 
         print(f'Regulations.gov link: {job["url"]}')
         print(f'API URL: {job["url"]}')
@@ -183,15 +187,17 @@ class Client:
         dir_, filename = data['directory'].rsplit('/', 1)
         self.saver.save_json(f'/data{dir_}/{filename}', data)
 
-    def _perform_job(self, job_url):
+    def _perform_job(self, job_url: str, api_cred: KeyCredential):
         """
         Performs job via get_request function by giving it the job_url combined
-        with the Client api_key for validation.
+        with the api_key for validation.
 
         Parameters
         ----------
         job_url : str
             url from a job
+        api_cred : KeyCredential
+            Regulations.gov API credential for this request
 
         Returns
         -------
@@ -200,7 +206,7 @@ class Client:
         """
         try:
             delimiter = '&' if '?' in job_url else '?'
-            url = f'{job_url}{delimiter}api_key={self.api_key}'
+            url = f'{job_url}{delimiter}api_key={api_cred.api_key}'
 
             return requests.get(url, timeout=10)
         except requests.exceptions.ReadTimeout as exc:
@@ -332,20 +338,25 @@ class Client:
             return False
         return True
 
-    def job_operation(self):
+    def job_operation(self, api_cred: KeyCredential):
         """
         Processes a job.
         The Client gets the job from the job queue, performs the job
         based on job_type, then saves the job results using the saver class.
+
+        Parameters
+        ----------
+        api_cred : KeyCredential
+            API credential to use for this job's Regulations.gov request.
         """
         print('Processing job from RabbitMQ.')
 
-        job = self._get_job()
+        job = self._get_job(api_cred.id)
 
         try:
             print('Performing job.')
 
-            response = self._perform_job(job['url'])
+            response = self._perform_job(job['url'], api_cred)
             response.raise_for_status()
             result = response.json()
 
@@ -361,8 +372,15 @@ class Client:
 
 if __name__ == '__main__':
     load_dotenv()
-    if not is_environment_variables_present():
-        print('Need client environment variables.')
+    if not is_client_keys_path_configured():
+        print('Need CLIENT_KEYS_PATH environment variable.')
+        sys.exit(1)
+
+    keys_path = os.environ['CLIENT_KEYS_PATH']
+    try:
+        key_manager = KeyManager(keys_path)
+    except (KeyManagerFileError, KeyManagerJsonError) as exc:
+        print(f'Could not load API keys file: {exc}')
         sys.exit(1)
 
     try:
@@ -370,11 +388,12 @@ if __name__ == '__main__':
     except redis.exceptions.ConnectionError:
         print('There is no Redis database to connect to.')
         sys.exit(1)
-    client = Client(redis_client, JobQueue(redis_client))
+    client = Client(redis_client, JobQueue(redis_client), key_manager)
 
     while True:
         try:
-            job_ = client.job_operation()
+            cred = key_manager.get_next()
+            job_ = client.job_operation(cred)
             print(f'SUCCESS: {job_["url"]} complete.')
         except redis.exceptions.ConnectionError:
             print('FAILURE: Could not connect to Redis.')
@@ -390,4 +409,4 @@ if __name__ == '__main__':
         except AMQPConnectionError:
             print("RabbitMQ is still loading")
 
-        time.sleep(3.6)
+        time.sleep(key_manager.seconds_between_api_calls())
