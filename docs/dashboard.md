@@ -58,7 +58,7 @@ If a container has a health check its current health is also returned.
 Here is the body of a sample response
 ```json
 {
-  "client1": {
+  "client": {
     "status": "paused"
   },
   "dashboard": {

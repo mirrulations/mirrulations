@@ -87,10 +87,10 @@ To make all neccessary files for the clients, dashboard, and the work generator,
   bash devdown
   ```
   
-* To see the last 25 log messages of one container (`client1` in this example):
+* To see the last 25 log messages of the download client:
 
-  ```
-  docker-compose logs --tail=25 client1
+```
+  docker-compose logs --tail=25 client
   ```
   
   If you forget `--tail=25`, it will show **all** log messages.

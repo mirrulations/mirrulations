@@ -13,3 +13,4 @@ unit-python.xml
 __pycache__
 htmlcov
 env_files
+**/client_keys.json
