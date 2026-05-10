@@ -5,6 +5,10 @@ import boto3
 from botocore.exceptions import ClientError
 
 
+class S3SaveError(Exception):
+    """Raised when S3 fails (credentials, permissions, or API error)."""
+
+
 class S3Saver():
     """
     A class which handles saving to an S3 bucket
@@ -42,7 +46,6 @@ class S3Saver():
         Returns S3 client connection using aws credentials
         """
         if self.get_credentials() is False:
-            print("No AWS credentials provided, Unable to write to S3.")
             return False
         return boto3.client(
                     's3',
@@ -79,7 +82,9 @@ class S3Saver():
         """
         path = path.replace("/data/", "")
         if self.s3_client is False:
-            return False
+            raise S3SaveError(
+                "No AWS credentials provided; cannot write to S3."
+            ) from None
         try:
             response = self.s3_client.put_object(
                 Bucket=self.bucket_name,
@@ -88,9 +93,10 @@ class S3Saver():
                 )
             print(f"Wrote json to S3: {path}")
             return response
-        except ClientError as e:
-            print(f"Error writing json to S3: {e}")
-            return False
+        except ClientError as exc:
+            raise S3SaveError(
+                f"S3 put_object failed for s3://{self.bucket_name}/{path}"
+            ) from exc
 
     def save_binary(self, path, binary):
         """
@@ -107,7 +113,9 @@ class S3Saver():
         """
         path = path.replace("/data/", "")
         if self.s3_client is False:
-            return False
+            raise S3SaveError(
+                "No AWS credentials provided; cannot write to S3."
+            ) from None
         try:
             response = self.s3_client.put_object(
                 Bucket=self.bucket_name,
@@ -115,9 +123,10 @@ class S3Saver():
                 Body=binary)
             print(f"Wrote binary to S3: {path}")
             return response
-        except ClientError as e:
-            print(f"Error writing json to S3: {e}")
-            return False
+        except ClientError as exc:
+            raise S3SaveError(
+                f"S3 put_object failed for s3://{self.bucket_name}/{path}"
+            ) from exc
 
     def save_text(self, path, text):
         """
@@ -134,7 +143,9 @@ class S3Saver():
         """
         path = path.replace("/data/", "")
         if self.s3_client is False:
-            return False
+            raise S3SaveError(
+                "No AWS credentials provided; cannot write to S3."
+            ) from None
         try:
             response = self.s3_client.put_object(
                 Bucket=self.bucket_name,
@@ -142,6 +153,7 @@ class S3Saver():
                 Body=text)
             print(f"Wrote extracted text to S3: {path}")
             return response
-        except ClientError as e:
-            print(f"Error writing json to S3: {e}")
-            return False
+        except ClientError as exc:
+            raise S3SaveError(
+                f"S3 put_object failed for s3://{self.bucket_name}/{path}"
+            ) from exc

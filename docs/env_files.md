@@ -6,6 +6,8 @@ The `env_files/` directory holds secrets and local configuration for Docker Comp
 
 The download **client** container loads AWS credentials from `client.env` and loads one or more Regulations.gov API keys from **`client_keys.json`** (JSON array of `{"id": "...", "api_key": "..."}` objects). Set **`CLIENT_KEYS_PATH`** in `client.env` to the path where **`client_keys.json`** is mounted inside the container (see `docker-compose.yml`; the default layout uses `/config/client_keys.json`).
 
+**`S3_BUCKET`** controls S3 uploads: omit it or leave it unset to use the default bucket name `mirrulations`; set it to a non-empty string to use that bucket; set it to an empty value (`S3_BUCKET=` with nothing after `=`) or whitespace-only to disable S3 and write only to disk.
+
 `PYTHONUNBUFFERED=TRUE` keeps Python logging unbuffered for Docker logs.
 
 ## Work generator (`work_gen.env`)
