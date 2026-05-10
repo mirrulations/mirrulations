@@ -6,7 +6,7 @@ import redis
 from dotenv import load_dotenv
 from mirrclient.saver import Saver
 from mirrclient.disk_saver import DiskSaver
-from mirrclient.s3_saver import S3Saver
+from mirrclient.s3_saver import S3Saver, S3SaveError
 from mirrclient.exceptions import NoJobsAvailableException, APITimeoutException
 from mirrclient.key_manager import (
     KeyCredential,
@@ -20,6 +20,28 @@ from mirrcore.job_queue import JobQueue
 from mirrcore.jobs_statistics import JobStatistics
 from mirrcore.job_queue_exceptions import JobQueueException
 from pika.exceptions import AMQPConnectionError
+
+
+def _build_savers():
+    """
+    Disk is always enabled.
+
+    S3 is controlled by ``S3_BUCKET``:
+
+    * unset — use bucket name ``mirrulations`` (backward compatible default)
+    * empty or whitespace-only — disable S3 (disk only)
+    * any other value — use that string as the bucket name
+
+    Returns
+    -------
+    list
+        ``DiskSaver`` and optionally ``S3Saver``.
+    """
+    raw = os.getenv('S3_BUCKET')
+    if raw is not None and not raw.strip():
+        return [DiskSaver()]
+    bucket = (raw.strip() if raw else None) or 'mirrulations'
+    return [DiskSaver(), S3Saver(bucket_name=bucket)]
 
 
 def is_client_keys_path_configured():
@@ -62,8 +84,7 @@ class Client:
     """
     def __init__(self, redis_server, job_queue, manager):
         self.path_generator = PathGenerator()
-        self.saver = Saver(savers=[DiskSaver(),
-                                   S3Saver(bucket_name="mirrulations")])
+        self.saver = Saver(savers=_build_savers())
         self.redis = redis_server
         self.job_queue = job_queue
         self.cache = JobStatistics(redis_server)
@@ -354,6 +375,8 @@ class Client:
             result = response.json()
 
             self._download_job(job, result)
+        except S3SaveError:
+            raise
         except Exception:
             print(
                 f'FAILURE: bad job job_id={job["job_id"]} url={job["url"]}',
@@ -401,5 +424,12 @@ if __name__ == '__main__':
             print("The Job Queue is down.")
         except AMQPConnectionError:
             print("RabbitMQ is still loading")
+        except S3SaveError as exc:
+            print(
+                'FAILURE: S3 storage error — data may not have reached the '
+                f'bucket. {exc}',
+                flush=True)
+            if exc.__cause__ is not None:
+                print(f'  Cause: {exc.__cause__!r}', flush=True)
 
         time.sleep(key_manager.seconds_between_api_calls())

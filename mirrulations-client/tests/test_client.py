@@ -7,7 +7,10 @@ import requests_mock
 from requests.exceptions import ReadTimeout
 import boto3
 from mirrcore.path_generator import PathGenerator
-from mirrclient.client import Client, is_client_keys_path_configured
+from mirrclient.client import Client, _build_savers, \
+    is_client_keys_path_configured
+from mirrclient.disk_saver import DiskSaver
+from mirrclient.s3_saver import S3Saver
 from mirrclient.exceptions import NoJobsAvailableException, APITimeoutException
 from mirrclient.key_manager import KeyManager
 from mirrmock.mock_redis import ReadyRedis, InactiveRedis, MockRedisWithStorage
@@ -543,3 +546,32 @@ def test_client_downloads_document_html(capsys, mocker, key_manager):
             '1_content.html\n')
     ]
     assert captured.out == "".join(print_data)
+
+
+def test_build_savers_default_bucket_when_unset(monkeypatch):
+    monkeypatch.delenv('S3_BUCKET', raising=False)
+    savers = _build_savers()
+    assert len(savers) == 2
+    assert isinstance(savers[0], DiskSaver)
+    assert isinstance(savers[1], S3Saver)
+    assert savers[1].bucket_name == 'mirrulations'
+
+
+def test_build_savers_custom_bucket(monkeypatch):
+    monkeypatch.setenv('S3_BUCKET', 'my-custom-bucket')
+    savers = _build_savers()
+    assert len(savers) == 2
+    assert savers[1].bucket_name == 'my-custom-bucket'
+
+
+def test_build_savers_empty_env_disables_s3(monkeypatch):
+    monkeypatch.setenv('S3_BUCKET', '')
+    savers = _build_savers()
+    assert len(savers) == 1
+    assert isinstance(savers[0], DiskSaver)
+
+
+def test_build_savers_whitespace_only_disables_s3(monkeypatch):
+    monkeypatch.setenv('S3_BUCKET', '   ')
+    savers = _build_savers()
+    assert len(savers) == 1
