@@ -74,6 +74,18 @@ class JobQueue:
     def get_job(self):
         return self.rabbitmq.get()
 
+    def wait_for_ready(self, poll_interval=1.0, timeout=None):
+        """
+        Block until RabbitMQ accepts a connection (broker and queue ready).
+
+        Delegates to the underlying transport; does not log (callers may log
+        before invoking this during startup).
+        """
+        self.rabbitmq.wait_until_ready(
+            poll_interval=poll_interval,
+            timeout=timeout,
+        )
+
     def get_job_id(self):
         job_id = self.database.incr('last_job_id')
         return job_id

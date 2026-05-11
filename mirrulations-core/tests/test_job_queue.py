@@ -1,9 +1,31 @@
+from unittest.mock import MagicMock
 
 from fakeredis import FakeRedis
 
 from mirrmock.mock_rabbitmq import MockRabbit
 from mirrmock.mock_redis import MockRedisWithStorage
 from mirrcore.job_queue import JobQueue
+
+
+def test_wait_for_ready_delegates_to_rabbitmq():
+    database = FakeRedis()
+    queue = JobQueue(database)
+    queue.rabbitmq = MagicMock()
+    queue.wait_for_ready(poll_interval=2.0, timeout=30.0)
+    queue.rabbitmq.wait_until_ready.assert_called_once_with(
+        poll_interval=2.0, timeout=30.0)
+
+
+def test_get_job_stats():
+    database = FakeRedis()
+    queue = JobQueue(database)
+    queue.rabbitmq = MockRabbit()
+    queue.add_job('http://example.com', 'comments')
+    stats = queue.get_job_stats()
+    assert stats['num_jobs_waiting'] == 1
+    assert stats['num_jobs_comments_queued'] == 1
+    assert stats['num_jobs_documents_queued'] == 0
+    assert stats['num_jobs_dockets_queued'] == 0
 
 
 def test_first_job_added_with_id_0():

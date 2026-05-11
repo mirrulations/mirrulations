@@ -1,11 +1,13 @@
-class NoJobsAvailableException(Exception):
-    """
-    Raises an Exception when there are no jobs available in the job queue.
-    """
+"""Client-specific exceptions."""
+
+
+class RedisPingFailedError(Exception):
+    """Redis did not respond to ping before dequeue."""
+
+
+class SaveError(Exception):
+    """Persisting payload to disk and/or remote storage failed."""
 
 
 class APITimeoutException(Exception):
-    """
-    Raises an Exception when the regulations.gov API
-    does not respond in time.
-    """
+    """The Regulations.gov API did not respond in time."""

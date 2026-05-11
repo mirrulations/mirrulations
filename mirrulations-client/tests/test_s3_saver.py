@@ -4,7 +4,8 @@ import boto3
 from moto import mock_aws
 import pytest
 from botocore.exceptions import ClientError
-from mirrclient.s3_saver import S3Saver, S3SaveError
+from mirrclient.s3_saver import S3Saver
+from mirrclient.exceptions import SaveError
 
 
 def create_mock_mirrulations_bucket():
@@ -39,7 +40,7 @@ def test_try_saving_json_without_credentials():
     del os.environ['AWS_SECRET_ACCESS_KEY']
     s3_saver = S3Saver()
     assert s3_saver.get_credentials() is False
-    with pytest.raises(S3SaveError, match='No AWS credentials'):
+    with pytest.raises(SaveError, match='No AWS credentials'):
         s3_saver.save_json("path", {"results": {}})
 
 
@@ -48,7 +49,7 @@ def test_try_saving_binary_without_credentials():
     del os.environ['AWS_SECRET_ACCESS_KEY']
     s3_saver = S3Saver()
     assert s3_saver.get_credentials() is False
-    with pytest.raises(S3SaveError, match='No AWS credentials'):
+    with pytest.raises(SaveError, match='No AWS credentials'):
         s3_saver.save_binary("path", b"x")
 
 
@@ -97,21 +98,21 @@ def test_save_text_to_bucket():
 def test_save_json_to_s3_no_credentials_raises():
     del os.environ['AWS_ACCESS_KEY']
     del os.environ['AWS_SECRET_ACCESS_KEY']
-    with pytest.raises(S3SaveError, match='No AWS credentials'):
+    with pytest.raises(SaveError, match='No AWS credentials'):
         S3Saver().save_json("test", {"results": {}})
 
 
 def test_save_binary_to_s3_no_credentials_raises():
     del os.environ['AWS_ACCESS_KEY']
     del os.environ['AWS_SECRET_ACCESS_KEY']
-    with pytest.raises(S3SaveError, match='No AWS credentials'):
+    with pytest.raises(SaveError, match='No AWS credentials'):
         S3Saver().save_binary("test", b"x")
 
 
 def test_save_text_to_s3_no_credentials_raises():
     del os.environ['AWS_ACCESS_KEY']
     del os.environ['AWS_SECRET_ACCESS_KEY']
-    with pytest.raises(S3SaveError, match='No AWS credentials'):
+    with pytest.raises(SaveError, match='No AWS credentials'):
         S3Saver().save_text("test", "text")
 
 
@@ -124,7 +125,7 @@ def test_save_json_access_denied_raises_and_no_write():
         "PutObject"
     )
     with patch.object(s3_saver.s3_client, "put_object", side_effect=error):
-        with pytest.raises(S3SaveError, match='put_object failed'):
+        with pytest.raises(SaveError, match='put_object failed'):
             s3_saver.save_json("nope.json", {"results": "bar"})
     assert len(list(conn.Bucket("test-mirrulations1").objects.all())) == 0
 
@@ -138,7 +139,7 @@ def test_save_binary_access_denied_raises_and_no_write():
         "PutObject"
     )
     with patch.object(s3_saver.s3_client, "put_object", side_effect=error):
-        with pytest.raises(S3SaveError, match='put_object failed'):
+        with pytest.raises(SaveError, match='put_object failed'):
             s3_saver.save_binary("data/forbidden.binary", b"\x17")
     assert len(list(conn.Bucket("test-mirrulations1").objects.all())) == 0
 
@@ -152,6 +153,6 @@ def test_save_text_access_denied_raises_and_no_write():
         "PutObject"
     )
     with patch.object(s3_saver.s3_client, "put_object", side_effect=error):
-        with pytest.raises(S3SaveError, match='put_object failed'):
+        with pytest.raises(SaveError, match='put_object failed'):
             s3_saver.save_text("data/forbidden.txt", "test")
     assert len(list(conn.Bucket("test-mirrulations1").objects.all())) == 0

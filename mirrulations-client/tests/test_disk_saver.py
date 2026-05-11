@@ -1,6 +1,11 @@
 from json import dumps
+import logging
 from unittest.mock import patch, mock_open
+
+import pytest
+
 from mirrclient.disk_saver import DiskSaver
+from mirrclient.exceptions import SaveError
 
 
 def test_save_json_writes_first_alternate_when_base_exists_and_differs():
@@ -143,7 +148,51 @@ def test_save_json_numbered_uses_open_x_on_first_free_slot():
                 'data/USTR/file(1).json', 'x', encoding='utf8')
 
 
-def test_do_not_save_duplicate_data(capsys):
+def test_save_json_raises_save_error_when_write_fails():
+    saver = DiskSaver()
+    with patch.object(saver, 'make_path'):
+        with patch('mirrclient.disk_saver.os.path.exists', return_value=False):
+            with patch(
+                    'mirrclient.disk_saver.open',
+                    side_effect=OSError('denied')):
+                with pytest.raises(SaveError) as err:
+                    saver.save_json('/x/y.json', {'results': {}})
+    assert 'Disk save_to_disk failed' in str(err.value)
+    assert 'denied' in str(err.value)
+
+
+def test_save_binary_raises_save_error_when_write_fails():
+    saver = DiskSaver()
+    with patch.object(saver, 'make_path'):
+        with patch('mirrclient.disk_saver.open', side_effect=PermissionError('no')):
+            with pytest.raises(SaveError) as err:
+                saver.save_binary('/x/y.bin', b'd')
+    assert 'Disk save_binary failed' in str(err.value)
+
+
+def test_save_text_raises_save_error_when_write_fails():
+    saver = DiskSaver()
+    with patch.object(saver, 'make_path'):
+        with patch('mirrclient.disk_saver.open', side_effect=OSError('bad')):
+            with pytest.raises(SaveError) as err:
+                saver.save_text('/x/y.txt', 't')
+    assert 'Disk save_text failed' in str(err.value)
+
+
+def test_save_json_propagates_save_error_without_double_wrap():
+    saver = DiskSaver()
+    with patch.object(saver, 'make_path'):
+        with patch(
+                'mirrclient.disk_saver.os.path.exists', return_value=False):
+            with patch.object(
+                    saver,
+                    'save_to_disk',
+                    side_effect=SaveError('preserved')):
+                with pytest.raises(SaveError, match='preserved'):
+                    saver.save_json('/x/y.json', {'results': {}})
+
+
+def test_do_not_save_duplicate_data(caplog):
     path = '/USTR/file.json'
     data = {'results': {'data': 'Hello world'}}
     saver = DiskSaver()
@@ -153,10 +202,9 @@ def test_do_not_save_duplicate_data(capsys):
                 return_value=data['results']):
             with patch('os.makedirs') as mock_dir:
                 with patch.object(saver, 'save_to_disk') as mock_save:
+                    caplog.set_level(logging.DEBUG)
                     saver.save_json(path, data)
                     mock_dir.assert_called_once_with('/USTR')
                     mock_save.assert_not_called()
-                    print_data = (
-                        'Data is a duplicate, skipping this download\n')
-                    captured = capsys.readouterr()
-                    assert captured.out == print_data
+                    msgs = '\n'.join(r.message for r in caplog.records)
+                    assert 'unchanged skip write' in msgs

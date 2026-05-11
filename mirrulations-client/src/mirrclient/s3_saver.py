@@ -1,12 +1,13 @@
+import logging
 import os
 import json
 from dotenv import load_dotenv
 import boto3
 from botocore.exceptions import ClientError
 
+from mirrclient.exceptions import SaveError
 
-class S3SaveError(Exception):
-    """Raised when S3 fails (credentials, permissions, or API error)."""
+_log = logging.getLogger(__name__)
 
 
 class S3Saver():
@@ -82,7 +83,7 @@ class S3Saver():
         """
         path = path.replace("/data/", "")
         if self.s3_client is False:
-            raise S3SaveError(
+            raise SaveError(
                 "No AWS credentials provided; cannot write to S3."
             ) from None
         try:
@@ -91,10 +92,10 @@ class S3Saver():
                 Key=path,
                 Body=json.dumps(data["results"])
                 )
-            print(f"Wrote json to S3: {path}")
+            _log.debug('S3 wrote json key=%s bucket=%s', path, self.bucket_name)
             return response
         except ClientError as exc:
-            raise S3SaveError(
+            raise SaveError(
                 f"S3 put_object failed for s3://{self.bucket_name}/{path}"
             ) from exc
 
@@ -113,7 +114,7 @@ class S3Saver():
         """
         path = path.replace("/data/", "")
         if self.s3_client is False:
-            raise S3SaveError(
+            raise SaveError(
                 "No AWS credentials provided; cannot write to S3."
             ) from None
         try:
@@ -121,10 +122,10 @@ class S3Saver():
                 Bucket=self.bucket_name,
                 Key=path,
                 Body=binary)
-            print(f"Wrote binary to S3: {path}")
+            _log.debug('S3 wrote binary key=%s bucket=%s', path, self.bucket_name)
             return response
         except ClientError as exc:
-            raise S3SaveError(
+            raise SaveError(
                 f"S3 put_object failed for s3://{self.bucket_name}/{path}"
             ) from exc
 
@@ -143,7 +144,7 @@ class S3Saver():
         """
         path = path.replace("/data/", "")
         if self.s3_client is False:
-            raise S3SaveError(
+            raise SaveError(
                 "No AWS credentials provided; cannot write to S3."
             ) from None
         try:
@@ -151,9 +152,9 @@ class S3Saver():
                 Bucket=self.bucket_name,
                 Key=path,
                 Body=text)
-            print(f"Wrote extracted text to S3: {path}")
+            _log.debug('S3 wrote text key=%s bucket=%s', path, self.bucket_name)
             return response
         except ClientError as exc:
-            raise S3SaveError(
+            raise SaveError(
                 f"S3 put_object failed for s3://{self.bucket_name}/{path}"
             ) from exc

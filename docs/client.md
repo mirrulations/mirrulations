@@ -14,6 +14,10 @@ Internally it uses Redis for job statistics and RabbitMQ for jobs. Keys and paci
 
 Download jobs include fields such as `job_id`, `url`, and `job_type`. Logs identify which API key was used via each credential’s **`id`** in `client_keys.json`.
 
+### Logging
+
+Target behavior for production vs debug logging, field conventions, and examples: **[client_logging.md](client_logging.md)**.
+
 ### Getting work
 
 A client pulls a job from the queue when work is available.

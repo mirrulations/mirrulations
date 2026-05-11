@@ -1,6 +1,28 @@
 import json
+import logging
+import time
+
 import pika
+
 from mirrcore.job_queue_exceptions import JobQueueException
+
+
+def _snapshot_pika_log_levels():
+    """Return ``{logger_name: level}`` for all ``pika`` names currently known."""
+    levels = {}
+    manager = logging.Logger.manager
+    for name in list(manager.loggerDict.keys()):
+        if isinstance(name, str) and name.startswith('pika'):
+            lg = logging.getLogger(name)
+            levels[name] = lg.level
+    root = logging.getLogger('pika')
+    levels.setdefault('pika', root.level)
+    return levels
+
+
+def _apply_pika_log_levels(levels_dict):
+    for name, level in levels_dict.items():
+        logging.getLogger(name).setLevel(level)
 
 
 class RabbitMQ:
@@ -23,6 +45,49 @@ class RabbitMQ:
             self.connection = pika.BlockingConnection(connection_parameter)
             self.channel = self.connection.channel()
             self.channel.queue_declare(self.queue_name, durable=True)
+
+    def wait_until_ready(self, poll_interval=1.0, timeout=None):
+        """
+        Block until the broker accepts an AMQP connection and the queue exists.
+
+        Retries on connection failures (e.g. broker still starting). Failed
+        attempts temporarily raise log levels on ``pika`` loggers so ERROR
+        spam from the client library does not clutter operator logs.
+
+        Parameters
+        ----------
+        poll_interval : float
+            Seconds to sleep after a failed attempt before retrying.
+        timeout : float or None
+            If set, seconds before raising ``TimeoutError`` when unreachable.
+
+        Raises
+        ------
+        TimeoutError
+            If ``timeout`` elapses without a successful connection.
+        """
+        deadline = None if timeout is None else time.monotonic() + timeout
+        while True:
+            snapshot = _snapshot_pika_log_levels()
+            _apply_pika_log_levels(
+                {name: logging.CRITICAL for name in snapshot})
+            try:
+                self._ensure_channel()
+                return
+            except (
+                    pika.exceptions.AMQPConnectionError,
+                    ConnectionError,
+                    OSError,
+            ):
+                self.connection = None
+                self.channel = None
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        f'RabbitMQ not reachable within {timeout} seconds'
+                    ) from None
+                time.sleep(poll_interval)
+            finally:
+                _apply_pika_log_levels(snapshot)
 
     def add(self, job):
         """
