@@ -11,6 +11,8 @@ class MockJobQueue:
         return len(self.jobs)
 
     def get_job(self):
+        if not self.jobs:
+            return None
         return self.jobs[0]
 
     def decrement_count(self, job):

@@ -1,4 +1,6 @@
 # pylint: disable=too-many-public-methods
+
+
 class PathGenerator:
     """
     A Class which classifies any type of file into the correct directory
@@ -138,13 +140,6 @@ class PathGenerator:
         return f'/{agency_i_d}/{docket_i_d}/text-{docket_i_d}/comments/' + \
                f'{item_i_d}.json'
 
-    def _has_file_formats(self, attributes, attachment):
-        if attributes.get("fileFormats"):
-            return True
-        print("fileFormats did not exist for attachment ID: " +
-              f"{attachment.get('id')}")
-        return False
-
     def _parse_attachment_path(self, json, file_format, attachments):
         agency_i_d, docket_i_d, item_i_d = self.get_attributes(json)
         if "fileUrl" in file_format:
@@ -165,7 +160,7 @@ class PathGenerator:
         attachments = []
         for attachment in json["included"]:
             attributes = attachment["attributes"]
-            if self._has_file_formats(attributes, attachment):
+            if attributes.get("fileFormats"):
                 for file_format in attributes["fileFormats"]:
                     attachments = self._parse_attachment_path(json,
                                                               file_format,

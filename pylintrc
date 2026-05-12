@@ -13,6 +13,9 @@ disable=missing-class-docstring,
     missing-function-docstring,
     too-few-public-methods, import-error
 
+[FORMAT]
+max-line-length=88
+
 [REFACTORING]
 max-nested-blocks=3
 

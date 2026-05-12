@@ -1,4 +1,5 @@
 # pylint: disable=W0212
+import logging
 import os
 import responses
 from pytest import fixture
@@ -11,7 +12,7 @@ from mirrclient.client import Client, _build_savers, \
     is_client_keys_path_configured
 from mirrclient.disk_saver import DiskSaver
 from mirrclient.s3_saver import S3Saver
-from mirrclient.exceptions import NoJobsAvailableException, APITimeoutException
+from mirrclient.exceptions import RedisPingFailedError, APITimeoutException
 from mirrclient.key_manager import KeyManager
 from mirrmock.mock_redis import ReadyRedis, InactiveRedis, MockRedisWithStorage
 from mirrmock.mock_job_queue import MockJobQueue
@@ -22,12 +23,7 @@ TEST_KEY_QUERY = f'?api_key={TEST_API_KEY}'
 
 
 @fixture(autouse=True)
-def mock_env(tmp_path, monkeypatch):
-    keys_path = tmp_path / 'client_keys.json'
-    keys_path.write_text(
-        f'[{{"id":"testkey","api_key":"{TEST_API_KEY}"}}]',
-        encoding='utf-8')
-    monkeypatch.setenv('CLIENT_KEYS_PATH', str(keys_path))
+def mock_env(tmp_client_keys_path, monkeypatch):  # pylint: disable=unused-argument
     monkeypatch.setenv('AWS_ACCESS_KEY', 'test_key')
     monkeypatch.setenv('AWS_SECRET_ACCESS_KEY', 'test_secret_key')
 
@@ -129,13 +125,12 @@ def test_cannot_connect_to_database(key_manager):
 
 def test_job_queue_is_empty(key_manager):
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
-    with pytest.raises(NoJobsAvailableException):
-        client.job_operation(key_manager.get_next())
+    assert client.job_operation(key_manager.get_next()) is None
 
 
 def test_get_job_from_job_queue_no_redis(key_manager):
     client = Client(InactiveRedis(), MockJobQueue(), key_manager)
-    with pytest.raises(NoJobsAvailableException):
+    with pytest.raises(RedisPingFailedError):
         client._get_job_from_job_queue()
 
 
@@ -212,7 +207,7 @@ def test_get_document_htm_returns_none(key_manager):
 
 
 @responses.activate
-def test_client_downloads_document_htm(capsys, mocker, key_manager):
+def test_client_downloads_document_htm(caplog, mocker, key_manager):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
@@ -245,20 +240,10 @@ def test_client_downloads_document_htm(capsys, mocker, key_manager):
                   'http://downloads.regulations.gov/' +
                   'USTR-2015-0010-0001/content.htm',
                   json='\bx17', status=200)
-    client.job_operation(key_manager.get_next())
-    captured = capsys.readouterr()
-    print_data = [
-        'Job received: documents (api key id: testkey)\n',
-        'Regulations.gov link: http://regulations.gov/documents\n',
-        'API URL: http://regulations.gov/documents\n',
-        'Downloading Job 1\n',
-        ('SAVED document HTM '
-            '- http://downloads.regulations.gov/USTR-2015-0010-0001/'
-            'content.htm to path:  '
-            '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
-            '1_content.htm\n')
-    ]
-    assert captured.out == "".join(print_data)
+    with caplog.at_level(logging.DEBUG, logger='mirrclient.client'):
+        client.job_operation(key_manager.get_next())
+    messages = ' '.join(r.message for r in caplog.records)
+    assert 'wrote artifact kind=document type=htm' in messages
 
 
 # Client Comment Attachments
@@ -309,7 +294,7 @@ def test_handles_none_in_comment_file_formats(path_generator, key_manager):
 
 @responses.activate
 # pylint: disable=too-many-locals
-def test_client_downloads_attachment_results(mocker, capsys, key_manager):
+def test_client_downloads_attachment_results(mocker, caplog, key_manager):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
@@ -347,22 +332,16 @@ def test_client_downloads_attachment_results(mocker, capsys, key_manager):
                    FDA-2016-D-2335/attachment_1.pdf'),
                   json='\bx17', status=200)
 
-    client.job_operation(key_manager.get_next())
+    with caplog.at_level(logging.DEBUG, logger='mirrclient.client'):
+        client.job_operation(key_manager.get_next())
     job_stat_results = client.cache.get_jobs_done()
     assert job_stat_results['num_comments_done'] == 1
     assert job_stat_results['num_attachments_done'] == 1
     assert job_stat_results['num_pdf_attachments_done'] == 1
 
-    captured = capsys.readouterr()
-    print_data = [
-        'Job received: comments (api key id: testkey)\n',
-        'Regulations.gov link: http://regulations.gov/comments\n',
-        'API URL: http://regulations.gov/comments\n',
-        'Downloading Job 1\n',
-        'Found 1 attachment(s) for Comment - FDA-2016-D-2335-1566\n',
-        'Downloaded 1/1 attachment(s) for Comment - FDA-2016-D-2335-1566\n'
-    ]
-    assert captured.out == "".join(print_data)
+    messages = ' '.join(r.message for r in caplog.records)
+    assert 'Comment attachments scheduled' in messages
+    assert 'wrote artifact kind=attachment' in messages
 
 
 @responses.activate
@@ -439,8 +418,7 @@ def test_two_attachments_in_comment(mocker, key_manager):
 # Exception Tests
 def test_get_job_is_empty(key_manager):
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
-    with pytest.raises(NoJobsAvailableException):
-        client._get_job('testkey')
+    assert client._get_job('testkey') is None
 
 
 def test_client_perform_job_times_out(mock_requests, key_manager):
@@ -457,7 +435,7 @@ def test_client_perform_job_times_out(mock_requests, key_manager):
 
 
 @responses.activate
-def test_client_handles_api_timeout(capsys, key_manager):
+def test_client_handles_api_timeout(caplog, key_manager):
     mock_redis = ReadyRedis()
     client = Client(mock_redis, MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
@@ -467,12 +445,13 @@ def test_client_handles_api_timeout(capsys, key_manager):
     responses.get(f"http://regulations.gov/job{TEST_KEY_QUERY}",
                   body=ReadTimeout("Read Timeout"))
 
-    with pytest.raises(APITimeoutException):
-        client.job_operation(key_manager.get_next())
+    with caplog.at_level(logging.ERROR, logger='mirrclient.client'):
+        with pytest.raises(APITimeoutException):
+            client.job_operation(key_manager.get_next())
 
-    captured = capsys.readouterr()
-    assert 'job_id=1' in captured.out
-    assert 'http://regulations.gov/job' in captured.out
+    assert 'reason=timeout' in caplog.text
+    assert 'http://regulations.gov/job' in caplog.text
+    assert 'job_id' not in caplog.text
 
 
 # Document HTML Tests
@@ -499,7 +478,7 @@ def test_get_format_returns_html(key_manager):
 
 
 @responses.activate
-def test_client_downloads_document_html(capsys, mocker, key_manager):
+def test_client_downloads_document_html(caplog, mocker, key_manager):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
@@ -532,20 +511,10 @@ def test_client_downloads_document_html(capsys, mocker, key_manager):
                   'http://downloads.regulations.gov/' +
                   'USTR-2015-0010-0001/content.html',
                   json='\bx17', status=200)
-    client.job_operation(key_manager.get_next())
-    captured = capsys.readouterr()
-    print_data = [
-        'Job received: documents (api key id: testkey)\n',
-        'Regulations.gov link: http://regulations.gov/documents\n',
-        'API URL: http://regulations.gov/documents\n',
-        'Downloading Job 1\n',
-        ('SAVED document HTM '
-            '- http://downloads.regulations.gov/USTR-2015-0010-0001/'
-            'content.html to path:  '
-            '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
-            '1_content.html\n')
-    ]
-    assert captured.out == "".join(print_data)
+    with caplog.at_level(logging.DEBUG, logger='mirrclient.client'):
+        client.job_operation(key_manager.get_next())
+    messages = ' '.join(r.message for r in caplog.records)
+    assert 'wrote artifact kind=document type=html' in messages
 
 
 def test_build_savers_default_bucket_when_unset(monkeypatch):

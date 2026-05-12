@@ -8,7 +8,9 @@ The download **client** container loads AWS credentials from `client.env` and lo
 
 **`S3_BUCKET`** controls S3 uploads: omit it or leave it unset to use the default bucket name `mirrulations`; set it to a non-empty string to use that bucket; set it to an empty value (`S3_BUCKET=` with nothing after `=`) or whitespace-only to disable S3 and write only to disk.
 
-`PYTHONUNBUFFERED=TRUE` keeps Python logging unbuffered for Docker logs.
+`PYTHONUNBUFFERED=TRUE` keeps stderr unbuffered for Docker logs.
+
+**`LOG_LEVEL`** — optional (`INFO`, `DEBUG`, `WARNING`, …). Defaults to **`INFO`** in `mirrulations.client`.
 
 ## Work generator (`work_gen.env`)
 
@@ -20,4 +22,4 @@ Redis hostname and `PYTHONUNBUFFERED=TRUE`.
 
 ## Error cases
 
-If **`CLIENT_KEYS_PATH`** is missing or **`client_keys.json`** is invalid, the client exits at startup with an error message.
+If **`CLIENT_KEYS_PATH`** is missing, **`client_keys.json`** is invalid, or Redis is unreachable at bootstrap, the client logs at **CRITICAL** (fatal startup) then exits.

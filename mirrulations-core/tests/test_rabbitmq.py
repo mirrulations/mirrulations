@@ -1,9 +1,11 @@
 # pylint: disable=unused-argument
 from unittest.mock import MagicMock
-from mirrcore.job_queue_exceptions import JobQueueException
-from mirrcore.rabbitmq import RabbitMQ
+
 import pika
 import pytest
+
+from mirrcore.job_queue_exceptions import JobQueueException
+from mirrcore.rabbitmq import RabbitMQ
 
 
 class ChannelSpy:
@@ -75,3 +77,31 @@ def test_rabbit_error_interactions(monkeypatch):
     # JobQueueException in get()
     with pytest.raises(JobQueueException):
         rabbitmq.get()
+
+
+def test_wait_until_ready_retries_then_succeeds(monkeypatch):
+    attempts = {'n': 0}
+
+    def flaky_blocking(*args, **kwargs):
+        attempts['n'] += 1
+        if attempts['n'] < 3:
+            raise pika.exceptions.AMQPConnectionError('connection refused')
+        return PikaSpy()
+
+    monkeypatch.setattr(pika, 'BlockingConnection', flaky_blocking)
+    rabbit = RabbitMQ('jobs_waiting_queue')
+    rabbit.wait_until_ready(poll_interval=0)
+
+    assert attempts['n'] == 3
+    assert rabbit.connection is not None
+
+
+def test_wait_until_ready_timeout(monkeypatch):
+    def always_fail(*args, **kwargs):
+        raise pika.exceptions.AMQPConnectionError('refused')
+
+    monkeypatch.setattr(pika, 'BlockingConnection', always_fail)
+    rabbit = RabbitMQ('jobs_waiting_queue')
+
+    with pytest.raises(TimeoutError):
+        rabbit.wait_until_ready(poll_interval=0.01, timeout=0.05)

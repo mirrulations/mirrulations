@@ -1,5 +1,9 @@
 from unittest.mock import MagicMock
-from mirrcore.data_counts import DataCounts
+
+import pytest
+import requests
+
+from mirrcore.data_counts import DataCounts, DataNotFoundException
 
 
 def test_get_counts(mocker):
@@ -31,3 +35,21 @@ def test__get_total_elements():
         api_key="test")._DataCounts__get_total_elements(response)
 
     assert total_elements == 123
+
+
+def test__get_total_elements_raises_data_not_found_when_meta_missing():
+    counts = DataCounts(api_key='test')
+    with pytest.raises(DataNotFoundException, match='Improper JSON'):
+        counts._DataCounts__get_total_elements(  # pylint: disable=protected-access
+            {})
+
+
+def test__make_api_call_wraps_request_exception(mocker):
+    dc = DataCounts('api_key')
+    mocker.patch.object(
+        dc.regulations_api,
+        'download',
+        side_effect=requests.ConnectionError('unreachable'),
+    )
+    with pytest.raises(DataNotFoundException):
+        dc._DataCounts__make_api_call('dockets')  # pylint: disable=protected-access
