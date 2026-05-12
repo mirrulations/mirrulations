@@ -36,6 +36,20 @@ from pika.exceptions import AMQPConnectionError
 
 logger = logging.getLogger(__name__)
 
+BROWSER_DOWNLOAD_HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/124.0.0.0 Safari/537.36'
+    ),
+    'Accept': (
+        'text/html,application/xhtml+xml,application/xml;q=0.9,'
+        'image/avif,image/webp,*/*;q=0.8'
+    ),
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Referer': 'https://www.regulations.gov/',
+}
+
 
 class _CommentAttachmentSlot(NamedTuple):
     """One attachment URL/path pair during comment downloads."""
@@ -363,7 +377,8 @@ class Client:
         '''
         Downloads a single attachment for a comment and writes it.
         '''
-        response = requests.get(url, timeout=10)
+        response = requests.get(
+            url, headers=BROWSER_DOWNLOAD_HEADERS, timeout=10)
         dir_, filename = path.rsplit('/', 1)
         full = f'/data{dir_}/{filename}'
         self.saver.save_binary(full, response.content)
@@ -410,7 +425,8 @@ class Client:
         fetch = self._resolve_document_body_fetch(json_data)
         if fetch.download_url is None:
             return
-        response = requests.get(fetch.download_url, timeout=10)
+        response = requests.get(
+            fetch.download_url, headers=BROWSER_DOWNLOAD_HEADERS, timeout=10)
         self._persist_downloaded_document_body(response, key_id, fetch)
 
     def _get_format(self, json_data):
@@ -462,13 +478,23 @@ class Client:
 
     @staticmethod
     def _log_job_failed_http(kind, redacted_job_url, key_id, err):
-        status = err.response.status_code if err.response else ''
+        response = err.response
+        status = response.status_code if response is not None else ''
+        retry_after = ''
+        body_preview = ''
+        if response is not None:
+            retry_after = response.headers.get('Retry-After', '')
+            body_preview = response.text[:500]
         logger.error(
-            'job failed kind=%s phase=api url=%s key_id=%s status=%s',
+            'job failed kind=%s phase=api url=%s key_id=%s status=%s '
+            'error=%s retry_after=%s response_body=%r',
             kind,
             redacted_job_url,
             key_id,
             status,
+            err,
+            retry_after,
+            body_preview,
         )
 
     @staticmethod
