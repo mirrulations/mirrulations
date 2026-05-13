@@ -1,3 +1,9 @@
+import pytest
+
+from mirrcore.comment_attachments import (
+    comment_attachment_file_format_count,
+    iter_comment_attachment_file_formats,
+)
 from mirrcore.path_generator import PathGenerator
 from pytest import fixture
 
@@ -414,13 +420,17 @@ def test_get_comment_path_with_missing_agency_i_d_key(generator):
 # Comments Attachments
 def test_attachment_comment_paths(generator):
     json_pls = get_attachment_and_comment()
-    expected_path = ["/raw-data/FDA/FDA-2017-D-2335/binary-FDA-2017-D-2335" +
-                     "/comments_attachments/" +
-                     "FDA-2017-D-2335-1566_attachment_1.pdf"]
-    assert expected_path == generator.get_attachment_json_paths(json_pls)
+    expected = (
+        "/raw-data/FDA/FDA-2017-D-2335/binary-FDA-2017-D-2335/"
+        "comments_attachments/FDA-2017-D-2335-1566_attachment_1.pdf"
+    )
+    assert comment_attachment_file_format_count(json_pls) == 1
+    first_fmt = next(iter_comment_attachment_file_formats(json_pls))
+    assert generator.get_comment_attachment_path(json_pls, first_fmt) == (
+        expected)
 
 
-def test_null_file_format_for_attachment_comment_returns_nothing(generator):
+def test_null_file_format_for_attachment_comment_returns_nothing():
     comment_json = {
         "data": {
             "id": "FDA-2017-D-2335-1566",
@@ -435,4 +445,11 @@ def test_null_file_format_for_attachment_comment_returns_nothing(generator):
                 "fileFormats": None  # A file format with No attachments
             }
         }]}
-    assert generator.get_attachment_json_paths(comment_json) == []
+    assert comment_attachment_file_format_count(comment_json) == 0
+    assert not list(iter_comment_attachment_file_formats(comment_json))
+
+
+def test_get_comment_attachment_path_requires_file_url():
+    generator = PathGenerator()
+    with pytest.raises(ValueError):
+        generator.get_comment_attachment_path(get_attachment_and_comment(), {})
