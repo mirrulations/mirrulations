@@ -29,6 +29,10 @@ from mirrclient.key_manager import (
 )
 from mirrcore.redis_check import load_redis
 from mirrcore.path_generator import PathGenerator
+from mirrcore.comment_attachments import (
+    comment_attachment_file_format_count,
+    iter_comment_attachment_file_formats,
+)
 from mirrcore.job_queue import JobQueue
 from mirrcore.jobs_statistics import JobStatistics
 from mirrcore.job_queue_exceptions import JobQueueException
@@ -338,27 +342,20 @@ class Client:
         except requests.exceptions.ReadTimeout as exc:
             raise APITimeoutException from exc
 
-    @staticmethod
-    def _included_has_usable_file_formats(included):
-        blocks = included['attributes']['fileFormats']
-        return blocks and blocks not in ('null', None)
-
-    def _iter_comment_attachment_slots(self, comment_json, path_list, key_id):
-        """Yield each attachment slot in lockstep with ``path_list`` ordering."""
+    def _iter_comment_attachment_slots(self, comment_json, key_id):
+        """Yield each attachment URL/path pair during comment downloads."""
         attachment_entity = comment_json['data']['id']
-        idx = 0
-        for included in comment_json['included']:
-            if not self._included_has_usable_file_formats(included):
-                continue
-            for attachment in included['attributes']['fileFormats']:
-                yield _CommentAttachmentSlot(
-                    attachment['fileUrl'],
-                    path_list[idx],
-                    attachment_entity,
-                    key_id,
-                    idx + 1,
-                )
-                idx += 1
+        for idx, file_format in enumerate(
+                iter_comment_attachment_file_formats(comment_json)):
+            attach_path = self.path_generator.get_comment_attachment_path(
+                comment_json, file_format)
+            yield _CommentAttachmentSlot(
+                file_format['fileUrl'],
+                attach_path,
+                attachment_entity,
+                key_id,
+                idx + 1,
+            )
 
     def _persist_comment_attachment_and_record_stats(self, slot):
         """Fetch one attachment file, log it, and bump dashboard counters."""
@@ -386,15 +383,15 @@ class Client:
         key_id : str
             API credential id.
         '''
-        path_list = self.path_generator.get_attachment_json_paths(comment_json)
+        count = comment_attachment_file_format_count(comment_json)
         attachment_entity = comment_json['data']['id']
         logger.debug(
             'Comment attachments scheduled count=%s entity=%s',
-            len(path_list),
+            count,
             attachment_entity,
         )
         for slot in self._iter_comment_attachment_slots(
-                comment_json, path_list, key_id):
+                comment_json, key_id):
             self._persist_comment_attachment_and_record_stats(slot)
 
     def _download_single_attachment(self, url, path):

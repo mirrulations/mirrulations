@@ -96,30 +96,19 @@ class PathGenerator:
         return f'/{agency_i_d}/{docket_i_d}/text-{docket_i_d}/comments/' + \
                f'{item_i_d}.json'
 
-    def _parse_attachment_path(self, json, file_format, attachments):
-        agency_i_d, docket_i_d, item_i_d = self.get_attributes(json)
-        if "fileUrl" in file_format:
-            attachment_name = item_i_d + "_" + \
-                file_format["fileUrl"].split("/")[-1]
-            attachments.append(f'/raw-data/{agency_i_d}/{docket_i_d}/' +
-                               f'binary-{docket_i_d}/comments_' +
-                               f'attachments/{attachment_name}')
-        return attachments
+    def get_comment_attachment_path(self, json_data, file_format):
+        """
+        Storage path for one comment attachment.
 
-    def get_attachment_json_paths(self, json):
-        '''
-        Given a json, this function will return all attachment paths for
-        n number attachment links
-        '''
-
-        # contains list of paths for attachments
-        attachments = []
-        for attachment in json["included"]:
-            attributes = attachment["attributes"]
-            if attributes.get("fileFormats"):
-                for file_format in attributes["fileFormats"]:
-                    attachments = self._parse_attachment_path(json,
-                                                              file_format,
-                                                              attachments)
-
-        return attachments
+        ``file_format`` must be a ``fileFormats`` element that includes
+        ``fileUrl`` (typically taken from ``iter_comment_attachment_file_formats``
+        in ``mirrcore.comment_attachments``).
+        """
+        if 'fileUrl' not in file_format:
+            raise ValueError('file_format must contain fileUrl')
+        agency_i_d, docket_i_d, item_i_d = self.get_attributes(json_data)
+        tail = file_format['fileUrl'].split('/')[-1]
+        return (
+            f'/raw-data/{agency_i_d}/{docket_i_d}/binary-{docket_i_d}/comments_'
+            f'attachments/{item_i_d}_{tail}'
+        )

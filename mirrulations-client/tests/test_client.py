@@ -7,6 +7,7 @@ import pytest
 import requests_mock
 from requests.exceptions import ReadTimeout
 import boto3
+from mirrcore.comment_attachments import comment_attachment_file_format_count
 from mirrcore.path_generator import PathGenerator
 from mirrclient.client import Client, _build_savers, \
     is_client_keys_path_configured
@@ -260,7 +261,7 @@ def test_does_comment_have_attachment_does_have_attachment(key_manager):
 
 
 @responses.activate
-def test_handles_none_in_comment_file_formats(path_generator, key_manager):
+def test_handles_none_in_comment_file_formats(key_manager):
     """
     Test for handling of the NoneType Error caused by null fileformats
     """
@@ -288,8 +289,7 @@ def test_handles_none_in_comment_file_formats(path_generator, key_manager):
                   json=test_json, status=200)
     client.job_operation(key_manager.get_next())
 
-    attachment_paths = path_generator.get_attachment_json_paths(test_json)
-    assert attachment_paths == []
+    assert comment_attachment_file_format_count(test_json) == 0
 
 
 @responses.activate
