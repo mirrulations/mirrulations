@@ -517,6 +517,74 @@ def test_client_downloads_document_html(caplog, mocker, key_manager):
     assert 'wrote artifact kind=document type=html' in messages
 
 
+def test_primary_json_corpus_path_docket(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    job_result = {
+        'data': {
+            'id': 'USTR-2015-0010',
+            'type': 'dockets',
+            'attributes': {
+                'agencyId': 'USTR',
+                'docketId': 'USTR-2015-0010',
+            },
+        },
+    }
+    assert client._primary_json_corpus_path(job_result) == (
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/docket/USTR-2015-0010.json'
+    )
+
+
+def test_primary_json_corpus_path_comment_and_document(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    comment = {
+        'data': {
+            'id': 'USTR-2015-0010-0002',
+            'type': 'comments',
+            'attributes': {
+                'agencyId': 'USTR',
+                'docketId': 'USTR-2015-0010',
+            },
+        },
+    }
+    assert client._primary_json_corpus_path(comment) == (
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/comments/'
+        'USTR-2015-0010-0002.json'
+    )
+    document = {
+        'data': {
+            'id': 'USTR-2015-0010-0015',
+            'type': 'documents',
+            'attributes': {
+                'agencyId': 'USTR',
+                'docketId': 'USTR-2015-0010',
+            },
+        },
+    }
+    assert client._primary_json_corpus_path(document) == (
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
+        'USTR-2015-0010-0015.json'
+    )
+
+
+def test_primary_json_corpus_path_missing_or_invalid_payload(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    assert client._primary_json_corpus_path({}) == '/unknown/unknown.json'
+    assert client._primary_json_corpus_path({'data': []}) == (
+        '/unknown/unknown.json'
+    )
+    assert client._primary_json_corpus_path({'data': {'type': -1}}) == (
+        '/unknown/unknown.json'
+    )
+
+
+def test_primary_json_corpus_path_unknown_type(key_manager):
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    unknown = {'data': {'type': 'unknown'}}
+    assert client._primary_json_corpus_path(unknown) == (
+        '/raw-data/unknown/unknown.json'
+    )
+
+
 def test_build_savers_default_bucket_when_unset(monkeypatch):
     monkeypatch.delenv('S3_BUCKET', raising=False)
     savers = _build_savers()
