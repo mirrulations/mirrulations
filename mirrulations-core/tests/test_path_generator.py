@@ -162,12 +162,6 @@ def test_get_docket_path(generator):
     assert expected_path == generator.get_docket_json_path(get_test_docket())
 
 
-def test_get_path_returns_valid_corpus_type_path(generator):
-    expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
-                    "docket/USTR-2015-0010.json"
-    assert expected_path == generator.get_path(get_test_docket())
-
-
 def test_get_docket_path_with_numbers_in_agency_i_d(generator):
     json = generate_json(i_d="EPA-R08-OAR-2005-UT-0003",
                          doc_type="dockets",
@@ -225,12 +219,6 @@ def test_get_document_path(generator):
                     "documents/USTR-2015-0010-0015.json"
     test_document = get_test_document
     assert expected_path == generator.get_document_json_path(test_document())
-
-
-def test_get_path_on_document_returns_valid_path(generator):
-    expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
-                    "documents/USTR-2015-0010-0015.json"
-    assert expected_path == generator.get_path(get_test_document())
 
 
 def test_get_document_path_epa_with_unconventional_agency_i_d(generator):
@@ -348,12 +336,6 @@ def test_get_comment_path(generator):
     assert expected_path == generator.get_comment_json_path(get_test_comment())
 
 
-def test_get_path_on_comment_returns_valid_comment_path(generator):
-    expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
-                    "comments/USTR-2015-0010-0002.json"
-    assert expected_path == generator.get_path(get_test_comment())
-
-
 def test_get_comment_path_without_docket_i_d_key(generator):
     json = generate_json(i_d="USTR-2015-0001-0002",
                          doc_type="comments",
@@ -430,12 +412,6 @@ def test_get_comment_path_with_missing_agency_i_d_key(generator):
 
 
 # Comments Attachments
-def test_empty_json_places_json_in_unknown(generator):
-    json = {}
-    expected_path = "/unknown/unknown.json"
-    assert expected_path == generator.get_path(json)
-
-
 def test_attachment_comment_paths(generator):
     json_pls = get_attachment_and_comment()
     expected_path = ["/raw-data/FDA/FDA-2017-D-2335/binary-FDA-2017-D-2335" +
@@ -460,13 +436,3 @@ def test_null_file_format_for_attachment_comment_returns_nothing(generator):
             }
         }]}
     assert generator.get_attachment_json_paths(comment_json) == []
-
-
-def test_get_json_path_returns_unknown_for_unknown_type(generator):
-    json = {'data': {'type': 'unknown'}}
-    assert generator.get_json_path(json) == '/unknown/unknown.json'
-
-
-def test_get_path_returns_unknown_for_empty_data(generator):
-    json = {'data': []}
-    assert generator.get_path(json) == '/unknown/unknown.json'

@@ -227,6 +227,30 @@ class Client:
 
         return job
 
+    def _primary_json_corpus_path(self, job_result):
+        """
+        Full corpus path for the primary API JSON object (``/raw-data`` prefix).
+
+        Mirrors the former ``PathGenerator.get_path`` contract: missing or empty
+        ``data``, or ``data['type'] == -1``, map to ``/unknown/unknown.json``;
+        unknown ``type`` yields ``/raw-data/unknown/unknown.json``.
+        """
+        if 'data' not in job_result or job_result['data'] == []:
+            return '/unknown/unknown.json'
+        payload = job_result['data']
+        if payload.get('type') == -1:
+            return '/unknown/unknown.json'
+        pg = self.path_generator
+        handler = {
+            'comments': pg.get_comment_json_path,
+            'dockets': pg.get_docket_json_path,
+            'documents': pg.get_document_json_path,
+        }.get(payload.get('type'))
+        relative = (
+            handler(job_result) if handler is not None else '/unknown/unknown.json'
+        )
+        return '/raw-data' + relative
+
     def _download_job(self, job, job_result, key_id):
         """
         Downloads the current job and saves the data using the Saver.
@@ -253,7 +277,7 @@ class Client:
             job['job_type'],
             key_id,
         )
-        data['directory'] = self.path_generator.get_path(job_result)
+        data['directory'] = self._primary_json_corpus_path(job_result)
         self.cache.increase_jobs_done(data['job_type'])
 
         self._save_primary_json_and_log(job, data, key_id)
