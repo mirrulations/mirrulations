@@ -63,6 +63,7 @@ class _CommentAttachmentSlot(NamedTuple):
     attachment_entity: str
     key_id: str
     attachment_index: int
+    file_format: dict
 
 
 class _DocumentBodyFetch(NamedTuple):
@@ -161,18 +162,22 @@ class Client:
         self.key_manager = manager
 
     @staticmethod
-    def _log_artifact_info(  # pylint: disable=too-many-arguments
+    def _log_artifact_info(  # pylint: disable=too-many-arguments,too-many-locals
             *,
             kind,
             entity,
             key_id,
             artifact,
             filename,
-            attachment_index=None):
+            attachment_index=None,
+            http_status=None):
+        verb = 'wrote tombstone' if http_status is not None else 'wrote artifact'
         msg = (
-            f"wrote artifact kind={kind} type={artifact} entity={entity} "
+            f"{verb} kind={kind} type={artifact} entity={entity} "
             f"file={filename} key_id={key_id}"
         )
+        if http_status is not None:
+            msg += f" http_status={http_status}"
         if attachment_index is not None:
             msg += f" attachment={attachment_index}"
         logger.info('%s', msg)
@@ -352,21 +357,41 @@ class Client:
                 attachment_entity,
                 key_id,
                 idx + 1,
+                file_format,
             )
 
-    def _persist_comment_attachment_and_record_stats(self, slot):
-        """Fetch one attachment file, log it, and bump dashboard counters."""
-        self._download_single_attachment(slot.url, slot.attach_path)
+    def _persist_comment_attachment_and_record_stats(
+            self, comment_json, slot):
+        """Fetch one attachment; on success save bytes, else tombstone; log."""
+        response = self._download_single_attachment(slot.url)
         _, fname = slot.attach_path.rsplit('/', 1)
-        self._log_artifact_info(
-            kind='attachment',
-            entity=slot.attachment_entity,
-            key_id=slot.key_id,
-            artifact='attachment',
-            filename=fname,
-            attachment_index=slot.attachment_index,
-        )
-        self.cache.increase_jobs_done('attachment', slot.url.endswith('.pdf'))
+        if response.ok:
+            self.saver.save_binary(slot.attach_path, response.content)
+            self._log_artifact_info(
+                kind='attachment',
+                entity=slot.attachment_entity,
+                key_id=slot.key_id,
+                artifact='attachment',
+                filename=fname,
+                attachment_index=slot.attachment_index,
+            )
+        else:
+            tomb_path = (
+                self.path_generator.get_comment_attachment_tombstone_path(
+                    comment_json, slot.file_format))
+            self.saver.save_tombstone(tomb_path, response.status_code)
+            _, tfname = tomb_path.rsplit('/', 1)
+            self._log_artifact_info(
+                kind='attachment',
+                entity=slot.attachment_entity,
+                key_id=slot.key_id,
+                artifact='attachment',
+                filename=tfname,
+                attachment_index=slot.attachment_index,
+                http_status=response.status_code,
+            )
+        self.cache.increase_jobs_done(
+            'attachment', slot.url.endswith('.pdf'))
 
     def _download_all_attachments_from_comment(self, comment_json, key_id):
         '''
@@ -389,15 +414,13 @@ class Client:
         )
         for slot in self._iter_comment_attachment_slots(
                 comment_json, key_id):
-            self._persist_comment_attachment_and_record_stats(slot)
+            self._persist_comment_attachment_and_record_stats(
+                comment_json, slot)
 
-    def _download_single_attachment(self, url, path):
-        '''
-        Downloads a single attachment for a comment and writes it.
-        '''
-        response = requests.get(
+    def _download_single_attachment(self, url):
+        """GET attachment bytes; caller branches on ``response.ok``."""
+        return requests.get(
             url, headers=BROWSER_DOWNLOAD_HEADERS, timeout=10)
-        self.saver.save_binary(path, response.content)
 
     def _does_comment_have_attachment(self, comment_json):
         """
@@ -423,17 +446,37 @@ class Client:
             json_data['data']['id'],
         )
 
-    def _persist_downloaded_document_body(self, response, key_id, fetch):
-        """Write downloaded document body bytes and record stats."""
+    def _persist_downloaded_document_body(  # pylint: disable=too-many-arguments
+            self, response, key_id, fetch, json_data):
+        """Save HTM/HTML body or tombstone from ``response``; log and stats."""
         _, filename = fetch.storage_path.rsplit('/', 1)
-        self.saver.save_binary(fetch.storage_path, response.content)
-        self._log_artifact_info(
-            kind='document',
-            entity=fetch.entity_id,
-            key_id=key_id,
-            artifact=fetch.file_format,
-            filename=filename,
-        )
+        if response.ok:
+            self.saver.save_binary(fetch.storage_path, response.content)
+            self._log_artifact_info(
+                kind='document',
+                entity=fetch.entity_id,
+                key_id=key_id,
+                artifact=fetch.file_format,
+                filename=filename,
+            )
+        else:
+            if fetch.file_format == 'html':
+                tomb_path = (
+                    self.path_generator.get_document_html_tombstone_path(
+                        json_data))
+            else:
+                tomb_path = self.path_generator.get_document_htm_tombstone_path(
+                    json_data)
+            self.saver.save_tombstone(tomb_path, response.status_code)
+            _, tfname = tomb_path.rsplit('/', 1)
+            self._log_artifact_info(
+                kind='document',
+                entity=fetch.entity_id,
+                key_id=key_id,
+                artifact=fetch.file_format,
+                filename=tfname,
+                http_status=response.status_code,
+            )
         self.cache.increase_jobs_done('attachment')
 
     def _download_htm(self, json_data, key_id):
@@ -442,7 +485,8 @@ class Client:
             return
         response = requests.get(
             fetch.download_url, headers=BROWSER_DOWNLOAD_HEADERS, timeout=10)
-        self._persist_downloaded_document_body(response, key_id, fetch)
+        self._persist_downloaded_document_body(
+            response, key_id, fetch, json_data)
 
     def _get_format(self, json_data):
         file_formats = json_data["data"]["attributes"]["fileFormats"]
