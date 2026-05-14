@@ -177,6 +177,31 @@ class S3Saver():
                 f"S3 put_object failed for s3://{self.bucket_name}/{path}"
             ) from exc
 
+    def save_tombstone(self, path, status_code):
+        """Store ``HTTP {status_code}`` as UTF-8 bytes with
+           ``ContentType: text/plain``.
+        """
+        key = _s3_object_key(path)
+        if self.s3_client is False:
+            raise SaveError(
+                "No AWS credentials provided; cannot write to S3."
+            ) from None
+        body = f'HTTP {status_code}'.encode('utf-8')
+        try:
+            response = self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=key,
+                Body=body,
+                ContentType='text/plain',
+            )
+            _log.debug(
+                'S3 wrote tombstone key=%s bucket=%s', key, self.bucket_name)
+            return response
+        except ClientError as exc:
+            raise SaveError(
+                f"S3 put_object failed for s3://{self.bucket_name}/{key}"
+            ) from exc
+
     def save_text(self, path, text):
         """
         Saves extracted text to Amazon S3 bucket

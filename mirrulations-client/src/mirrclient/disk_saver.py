@@ -108,6 +108,18 @@ class DiskSaver():
             raise SaveError(
                 f'Disk save_text failed path={path}: {exc}') from exc
 
+    def save_tombstone(self, path, status_code):
+        """Write UTF-8 tombstone body: a single line ``HTTP {status_code}``."""
+        try:
+            self._prepare_parent_dir_for_path(path)
+            line = f'HTTP {status_code}'
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(line)
+            _log.debug('Disk wrote tombstone path=%s', path)
+        except Exception as exc:
+            raise SaveError(
+                f'Disk save_tombstone failed path={path}: {exc}') from exc
+
     def open_json_file(self, path):
         with open(path, encoding='utf8') as file:
             saved_data = load(file)

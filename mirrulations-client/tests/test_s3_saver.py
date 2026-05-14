@@ -116,6 +116,37 @@ def test_save_text_to_s3_no_credentials_raises():
         S3Saver().save_text("test", "text")
 
 
+def test_save_tombstone_to_s3_no_credentials_raises():
+    del os.environ['AWS_ACCESS_KEY']
+    del os.environ['AWS_SECRET_ACCESS_KEY']
+    with pytest.raises(SaveError, match='No AWS credentials'):
+        S3Saver().save_tombstone('raw-data/x/doc_UNAVAILABLE', 404)
+
+
+@mock_aws
+def test_save_tombstone_put_object_body_and_content_type():
+    conn = create_mock_mirrulations_bucket()
+    s3_saver = S3Saver(bucket_name="test-mirrulations1")
+    s3_saver.save_tombstone('/raw-data/agency/docket_UNAVAILABLE', 502)
+    key = 'raw-data/agency/docket_UNAVAILABLE'
+    got = conn.Object('test-mirrulations1', key).get()
+    assert got['Body'].read().decode('utf-8') == 'HTTP 502'
+    assert got['ContentType'] == 'text/plain'
+
+
+@mock_aws
+def test_save_tombstone_overwrites_existing():
+    conn = create_mock_mirrulations_bucket()
+    bucket = conn.Bucket('test-mirrulations1')
+    key = 'raw-data/x/t_UNAVAILABLE'
+    bucket.put_object(Key=key, Body=b'HTTP 500', ContentType='text/plain')
+    s3_saver = S3Saver(bucket_name='test-mirrulations1')
+    s3_saver.save_tombstone(f'/{key}', 503)
+    got = conn.Object('test-mirrulations1', key).get()
+    assert got['Body'].read().decode('utf-8') == 'HTTP 503'
+    assert got['ContentType'] == 'text/plain'
+
+
 @mock_aws
 def test_save_json_access_denied_raises_and_no_write():
     conn = create_mock_mirrulations_bucket()
