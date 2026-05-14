@@ -1,14 +1,13 @@
 # pylint: disable=too-many-public-methods
 
+from pathlib import Path
+from urllib.parse import urlparse
+
 
 class PathGenerator:
     """
     Maps a concrete Regulations.gov payload (docket, document, comment JSON,
     attachments, document body) to a storage path segment.
-
-    Primary API JSON corpus paths (``/raw-data`` + relative path) are assembled
-    in the client, which dispatches on ``data['type']`` and calls the appropriate
-    ``get_*_json_path`` method here.
     """
 
     def _get_nested_keys_in_json(self, json_data, nested_keys, default_value):
@@ -25,7 +24,7 @@ class PathGenerator:
             json_subset = json_subset[key]
         return json_subset
 
-    def parse_docket_id(self, item_i_d):
+    def _parse_docket_id(self, item_i_d):
         if item_i_d is None:
             return "unknown"
 
@@ -41,7 +40,7 @@ class PathGenerator:
             agency_id = 'unknown'
         return docket_id, agency_id
 
-    def get_attributes(self, json_data, is_docket=False):
+    def _get_attributes(self, json_data, is_docket=False):
         '''
         Returns the agency, docket id, and item id from a loaded json object.
         '''
@@ -58,7 +57,7 @@ class PathGenerator:
                 json_data, ['data', 'attributes', 'docketId'], None)
 
             if docket_id is None:
-                docket_id = self.parse_docket_id(item_i_d)
+                docket_id = self._parse_docket_id(item_i_d)
         if not is_docket and item_i_d is None:
             item_i_d = 'unknown'
         docket_id, agency_id = self._check_for_none_values(docket_id,
@@ -67,34 +66,37 @@ class PathGenerator:
         return agency_id, docket_id, item_i_d
 
     def get_docket_json_path(self, json):
-        agency_i_d, docket_i_d, _ = self.get_attributes(json,
-                                                        is_docket=True)
-        return f'/{agency_i_d}/{docket_i_d}/text-{docket_i_d}/docket/' + \
-               f'{docket_i_d}.json'
+        agency_i_d, docket_i_d, _ = self._get_attributes(json,
+                                                         is_docket=True)
+        return (
+            f'/raw-data/{agency_i_d}/{docket_i_d}/text-{docket_i_d}/docket/'
+            f'{docket_i_d}.json')
 
     def get_document_json_path(self, json):
-        agency_i_d, docket_i_d, item_i_d = self.get_attributes(json)
+        agency_i_d, docket_i_d, item_i_d = self._get_attributes(json)
 
-        return f'/{agency_i_d}/{docket_i_d}/text-{docket_i_d}/documents' + \
-               f'/{item_i_d}.json'
+        return (
+            f'/raw-data/{agency_i_d}/{docket_i_d}/text-{docket_i_d}/documents'
+            f'/{item_i_d}.json')
 
     def get_document_htm_path(self, json):
-        agency_id, docket_id, item_id = self.get_attributes(json)
+        agency_id, docket_id, item_id = self._get_attributes(json)
 
         return f'/raw-data/{agency_id}/{docket_id}/text-{docket_id}/' + \
                f'documents/{item_id}_content.htm'
 
     def get_document_html_path(self, json):
-        agency_id, docket_id, item_id = self.get_attributes(json)
+        agency_id, docket_id, item_id = self._get_attributes(json)
 
         return f'/raw-data/{agency_id}/{docket_id}/text-{docket_id}/' + \
                f'documents/{item_id}_content.html'
 
     def get_comment_json_path(self, json):
-        agency_i_d, docket_i_d, item_i_d = self.get_attributes(json)
+        agency_i_d, docket_i_d, item_i_d = self._get_attributes(json)
 
-        return f'/{agency_i_d}/{docket_i_d}/text-{docket_i_d}/comments/' + \
-               f'{item_i_d}.json'
+        return (
+            f'/raw-data/{agency_i_d}/{docket_i_d}/text-{docket_i_d}/comments/'
+            f'{item_i_d}.json')
 
     def get_comment_attachment_path(self, json_data, file_format):
         """
@@ -106,9 +108,48 @@ class PathGenerator:
         """
         if 'fileUrl' not in file_format:
             raise ValueError('file_format must contain fileUrl')
-        agency_i_d, docket_i_d, item_i_d = self.get_attributes(json_data)
+        agency_i_d, docket_i_d, item_i_d = self._get_attributes(json_data)
         tail = file_format['fileUrl'].split('/')[-1]
         return (
             f'/raw-data/{agency_i_d}/{docket_i_d}/binary-{docket_i_d}/comments_'
             f'attachments/{item_i_d}_{tail}'
         )
+
+    def get_comment_json_tombstone_path(self, job):
+        comment_id = urlparse(job['url']).path.rstrip('/').split('/')[-1]
+        agency = comment_id.split('-')[0]
+        docket_id = comment_id.rsplit('-', 1)[0]
+        return (
+            f'/raw-data/{agency}/{docket_id}/text-{docket_id}/comments/'
+            f'{comment_id}_UNAVAILABLE')
+
+    def get_docket_json_tombstone_path(self, job):
+        docket_id = urlparse(job['url']).path.rstrip('/').split('/')[-1]
+        agency = docket_id.split('-')[0]
+        return (
+            f'/raw-data/{agency}/{docket_id}/text-{docket_id}/docket/'
+            f'{docket_id}_UNAVAILABLE')
+
+    def get_document_json_tombstone_path(self, job):
+        document_id = urlparse(job['url']).path.rstrip('/').split('/')[-1]
+        agency = document_id.split('-')[0]
+        docket_id = document_id.rsplit('-', 1)[0]
+        return (
+            f'/raw-data/{agency}/{docket_id}/text-{docket_id}/documents/'
+            f'{document_id}_UNAVAILABLE')
+
+    def _tombstone_path_from_success_path(self, success_path):
+        p = Path(success_path)
+        return str(p.with_name(f'{p.stem}_UNAVAILABLE'))
+
+    def get_comment_attachment_tombstone_path(self, json_data, file_format):
+        return self._tombstone_path_from_success_path(
+            self.get_comment_attachment_path(json_data, file_format))
+
+    def get_document_htm_tombstone_path(self, json_data):
+        return self._tombstone_path_from_success_path(
+            self.get_document_htm_path(json_data))
+
+    def get_document_html_tombstone_path(self, json_data):
+        return self._tombstone_path_from_success_path(
+            self.get_document_html_path(json_data))

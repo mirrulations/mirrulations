@@ -250,10 +250,9 @@ class Client:
             'dockets': pg.get_docket_json_path,
             'documents': pg.get_document_json_path,
         }.get(payload.get('type'))
-        relative = (
-            handler(job_result) if handler is not None else '/unknown/unknown.json'
-        )
-        return '/raw-data' + relative
+        if handler is not None:
+            return handler(job_result)
+        return '/raw-data/unknown/unknown.json'
 
     def _download_job(self, job, job_result, key_id):
         """

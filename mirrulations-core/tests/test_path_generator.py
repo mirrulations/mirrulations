@@ -138,24 +138,27 @@ def generate_json(i_d=str, doc_type=str, agency_i_d=str, docket_i_d=None):
 
 
 def test_get_comment_attributes(generator):
+    # pylint: disable=protected-access
     agency_i_d, docket_i_d, item_i_d = generator \
-                                        .get_attributes(get_test_comment())
+                                        ._get_attributes(get_test_comment())
     assert "USTR-2015-0010-0002" == item_i_d
     assert "USTR-2015-0010" == docket_i_d
     assert "USTR" == agency_i_d
 
 
 def test_get_document_attributes(generator):
+    # pylint: disable=protected-access
     agency_i_d, docket_i_d, item_i_d = generator \
-                                    .get_attributes(get_test_document())
+                                    ._get_attributes(get_test_document())
     assert "USTR-2015-0010-0015" == item_i_d
     assert "USTR-2015-0010" == docket_i_d
     assert "USTR" == agency_i_d
 
 
 def test_get_docket_attributes(generator):
+    # pylint: disable=protected-access
     agency_i_d, docket_i_d, item_i_d = generator \
-                                        .get_attributes(get_test_docket())
+                                        ._get_attributes(get_test_docket())
     assert "USTR-2015-0010" == item_i_d
     assert "USTR-2015-0010" == docket_i_d
     assert "USTR" == agency_i_d
@@ -163,7 +166,7 @@ def test_get_docket_attributes(generator):
 
 # Docket Tests
 def test_get_docket_path(generator):
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "docket/USTR-2015-0010.json"
     assert expected_path == generator.get_docket_json_path(get_test_docket())
 
@@ -173,7 +176,7 @@ def test_get_docket_path_with_numbers_in_agency_i_d(generator):
                          doc_type="dockets",
                          agency_i_d="EPA",
                          docket_i_d="EPA-R08-OAR-2005-UT-0003")
-    expected_path = "/EPA/EPA-R08-OAR-2005-UT-0003/" + \
+    expected_path = "/raw-data/EPA/EPA-R08-OAR-2005-UT-0003/" + \
                     "text-EPA-R08-OAR-2005-UT-0003/" + \
                     "docket/EPA-R08-OAR-2005-UT-0003.json"
     assert expected_path == generator.get_docket_json_path(json)
@@ -183,7 +186,7 @@ def test_get_docket_path_epa_with_unconventional_agency_i_d(generator):
     json = generate_json(i_d="EPA-HQ-OPP-2011-0939",
                          doc_type="dockets",
                          agency_i_d="EPA")
-    expected_path = "/EPA/EPA-HQ-OPP-2011-0939/text-EPA-HQ-OPP-2011-0939/" + \
+    expected_path = "/raw-data/EPA/EPA-HQ-OPP-2011-0939/text-EPA-HQ-OPP-2011-0939/" + \
                     "docket/EPA-HQ-OPP-2011-0939.json"
     assert expected_path == generator.get_docket_json_path(json)
 
@@ -193,7 +196,7 @@ def test_get_docket_path_from_frdoc_docket(generator):
                          doc_type="dockets",
                          agency_i_d="VETS",
                          docket_i_d="VETS_FRDOC_0001")
-    expected_path = "/VETS/VETS_FRDOC_0001/text-VETS_FRDOC_0001/" + \
+    expected_path = "/raw-data/VETS/VETS_FRDOC_0001/text-VETS_FRDOC_0001/" + \
                     "docket/VETS_FRDOC_0001.json"
     assert expected_path == generator.get_docket_json_path(json)
 
@@ -205,7 +208,7 @@ def test_get_docket_path_with_missing_id_key_but_has_agency_id_key(generator):
             "agencyId": "VETS",
         }
     }}
-    expected_path = "/VETS/unknown/text-unknown/docket/unknown.json"
+    expected_path = "/raw-data/VETS/unknown/text-unknown/docket/unknown.json"
     assert expected_path == generator.get_docket_json_path(json)
 
 
@@ -215,13 +218,13 @@ def test_get_docket_path_with_missing_agency_id_and_missing_id_keys(generator):
         "attributes": {
         }
     }}
-    expected_path = "/unknown/unknown/text-unknown/docket/unknown.json"
+    expected_path = "/raw-data/unknown/unknown/text-unknown/docket/unknown.json"
     assert expected_path == generator.get_docket_json_path(json)
 
 
 # Documents
 def test_get_document_path(generator):
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "documents/USTR-2015-0010-0015.json"
     test_document = get_test_document
     assert expected_path == generator.get_document_json_path(test_document())
@@ -232,7 +235,7 @@ def test_get_document_path_epa_with_unconventional_agency_i_d(generator):
                          doc_type="documents",
                          agency_i_d="EPA",
                          docket_i_d="EPA-HQ-OPP-2011-0939")
-    expected_path = "/EPA/EPA-HQ-OPP-2011-0939/text-EPA-HQ-OPP-2011-0939/" + \
+    expected_path = "/raw-data/EPA/EPA-HQ-OPP-2011-0939/text-EPA-HQ-OPP-2011-0939/" + \
                     "documents/EPA-HQ-OPP-2011-0939-0001.json"
     assert expected_path == generator.get_document_json_path(json)
 
@@ -241,7 +244,7 @@ def test_get_document_path_without_docket_i_d_key(generator):
     json = generate_json(i_d="USTR-2015-0001-0001",
                          doc_type="documents",
                          agency_i_d="USTR")
-    expected_path = "/USTR/USTR-2015-0001/text-USTR-2015-0001/" + \
+    expected_path = "/raw-data/USTR/USTR-2015-0001/text-USTR-2015-0001/" + \
                     "documents/USTR-2015-0001-0001.json"
     assert expected_path == generator.get_document_json_path(json)
 
@@ -257,7 +260,7 @@ def test_get_document_path_full_json(generator):
             "type": "documents"
         }
     }
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "documents/USTR-2015-0010-0015.json"
     assert expected_path == generator.get_document_json_path(json_file)
 
@@ -267,7 +270,7 @@ def test_get_document_path_from_frdoc_document(generator):
                          doc_type="documents",
                          agency_i_d="VETS",
                          docket_i_d="VETS_FRDOC_0001")
-    expected_path = "/VETS/VETS_FRDOC_0001/text-VETS_FRDOC_0001/" + \
+    expected_path = "/raw-data/VETS/VETS_FRDOC_0001/text-VETS_FRDOC_0001/" + \
                     "documents/VETS_FRDOC_0001-0001.json"
     assert expected_path == generator.get_document_json_path(json)
 
@@ -276,7 +279,7 @@ def test_get_frdoc_document_path_without_docket_i_d_key(generator):
     json = generate_json(i_d="VETS_FRDOC_0001-0021",
                          doc_type="documents",
                          agency_i_d="VETS")
-    expected_path = "/VETS/VETS_FRDOC_0001/text-VETS_FRDOC_0001/" + \
+    expected_path = "/raw-data/VETS/VETS_FRDOC_0001/text-VETS_FRDOC_0001/" + \
                     "documents/VETS_FRDOC_0001-0021.json"
     assert expected_path == generator.get_document_json_path(json)
 
@@ -289,7 +292,7 @@ def test_get_document_path_with_missing_id_key_but_has_agency_i_d(generator):
                 "agencyId": "VETS",
             }
         }}
-    expected_path = "/VETS/unknown/text-unknown/documents/unknown.json"
+    expected_path = "/raw-data/VETS/unknown/text-unknown/documents/unknown.json"
     assert expected_path == generator.get_document_json_path(json)
 
 
@@ -303,7 +306,7 @@ def test_get_document_path_with_missing_docket_i_d_key(generator):
             }
         }}
     # Here we must parse the id
-    expected_path = "/VETS/VETS-2010-0001/text-VETS-2010-0001/documents/" + \
+    expected_path = "/raw-data/VETS/VETS-2010-0001/text-VETS-2010-0001/documents/" + \
                     "VETS-2010-0001-0011.json"
     assert expected_path == generator.get_document_json_path(json)
 
@@ -316,7 +319,7 @@ def test_get_document_path_with_missing_agency_i_d_key(generator):
             "attributes": {
             }
         }}
-    expected_path = "/unknown/VETS-2010-0001/text-VETS-2010-0001/" + \
+    expected_path = "/raw-data/unknown/VETS-2010-0001/text-VETS-2010-0001/" + \
                     "documents/VETS-2010-0001-0010.json"
     assert expected_path == generator.get_document_json_path(json)
 
@@ -337,7 +340,7 @@ def test_get_document_path_for_html(generator):
 
 # Comments
 def test_get_comment_path(generator):
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "comments/USTR-2015-0010-0002.json"
     assert expected_path == generator.get_comment_json_path(get_test_comment())
 
@@ -346,7 +349,7 @@ def test_get_comment_path_without_docket_i_d_key(generator):
     json = generate_json(i_d="USTR-2015-0001-0002",
                          doc_type="comments",
                          agency_i_d="USTR")
-    expected_path = "/USTR/USTR-2015-0001/text-USTR-2015-0001/" + \
+    expected_path = "/raw-data/USTR/USTR-2015-0001/text-USTR-2015-0001/" + \
                     "comments/USTR-2015-0001-0002.json"
     assert expected_path == generator.get_comment_json_path(json)
 
@@ -363,7 +366,7 @@ def test_get_comment_path_full_json(generator):
             "type": "comments"
         }
         }
-    expected_path = "/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
+    expected_path = "/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/" + \
                     "comments/USTR-2015-0010-0002.json"
     assert expected_path == generator.get_comment_json_path(json_file)
 
@@ -372,7 +375,7 @@ def test_get_frdoc_comment_path_without_docket_i_d_key(generator):
     json = generate_json(i_d="CPPBSD_FRDOC_0001-0076",
                          doc_type="comments",
                          agency_i_d="CPPBSD")
-    expected_path = "/CPPBSD/CPPBSD_FRDOC_0001/text-CPPBSD_FRDOC_0001/" + \
+    expected_path = "/raw-data/CPPBSD/CPPBSD_FRDOC_0001/text-CPPBSD_FRDOC_0001/" + \
                     "comments/CPPBSD_FRDOC_0001-0076.json"
     assert expected_path == generator.get_comment_json_path(json)
 
@@ -385,7 +388,7 @@ def test_get_comment_path_with_missing_id_key_but_has_agency_i_d(generator):
                 "agencyId": "VETS",
             }
         }}
-    expected_path = "/VETS/unknown/text-unknown/comments/unknown.json"
+    expected_path = "/raw-data/VETS/unknown/text-unknown/comments/unknown.json"
     assert expected_path == generator.get_comment_json_path(json)
 
 
@@ -399,7 +402,7 @@ def test_get_comment_path_with_missing_docket_i_d_key(generator):
             }
         }}
     # Parsing
-    expected_path = "/VETS/VETS-2010-0001/text-VETS-2010-0001/" + \
+    expected_path = "/raw-data/VETS/VETS-2010-0001/text-VETS-2010-0001/" + \
                     "comments/VETS-2010-0001-0010.json"
     assert expected_path == generator.get_comment_json_path(json)
 
@@ -412,7 +415,7 @@ def test_get_comment_path_with_missing_agency_i_d_key(generator):
             "attributes": {
             }
         }}
-    expected_path = "/unknown/VETS-2010-0001/text-VETS-2010-0001/" + \
+    expected_path = "/raw-data/unknown/VETS-2010-0001/text-VETS-2010-0001/" + \
                     "comments/VETS-2010-0001-0010.json"
     assert expected_path == generator.get_comment_json_path(json)
 
@@ -453,3 +456,83 @@ def test_get_comment_attachment_path_requires_file_url():
     generator = PathGenerator()
     with pytest.raises(ValueError):
         generator.get_comment_attachment_path(get_attachment_and_comment(), {})
+
+
+# Tombstone paths
+def _comment_job():
+    return {
+        'url': 'https://api.regulations.gov/v4/comments/USTR-2015-0010-0002',
+    }
+
+
+def _docket_job():
+    return {
+        'url': 'https://api.regulations.gov/v4/dockets/USTR-2015-0010',
+    }
+
+
+def _document_job():
+    return {
+        'url': 'https://api.regulations.gov/v4/documents/USTR-2015-0010-0015',
+    }
+
+
+def test_comment_json_tombstone_path(generator):
+    expected = (
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/comments/'
+        'USTR-2015-0010-0002_UNAVAILABLE'
+    )
+    assert generator.get_comment_json_tombstone_path(
+        _comment_job()) == expected
+
+
+def test_comment_json_tombstone_path_with_query_string(generator):
+    job = {
+        'url': (
+            'https://api.regulations.gov/v4/comments/USTR-2015-0010-0002'
+            '?api_key=secret'
+        ),
+    }
+    assert generator.get_comment_json_tombstone_path(job) == (
+        generator.get_comment_json_tombstone_path(_comment_job()))
+
+
+def test_docket_json_tombstone_path(generator):
+    expected = (
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/docket/'
+        'USTR-2015-0010_UNAVAILABLE'
+    )
+    assert generator.get_docket_json_tombstone_path(
+        _docket_job()) == expected
+
+
+def test_document_json_tombstone_path(generator):
+    expected = (
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
+        'USTR-2015-0010-0015_UNAVAILABLE'
+    )
+    assert generator.get_document_json_tombstone_path(
+        _document_job()) == expected
+
+
+def test_comment_attachment_tombstone_path(generator):
+    json_pls = get_attachment_and_comment()
+    first_fmt = next(iter_comment_attachment_file_formats(json_pls))
+    tomb = generator.get_comment_attachment_tombstone_path(json_pls, first_fmt)
+    assert tomb == (
+        '/raw-data/FDA/FDA-2017-D-2335/binary-FDA-2017-D-2335/'
+        'comments_attachments/FDA-2017-D-2335-1566_attachment_1_UNAVAILABLE'
+    )
+
+
+def test_document_htm_and_html_tombstone_paths(generator):
+    htm_doc = get_test_document_htm()
+    assert generator.get_document_htm_tombstone_path(htm_doc) == (
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
+        'USTR-2015-0010-0001_content_UNAVAILABLE'
+    )
+    html_doc = get_test_document_html()
+    assert generator.get_document_html_tombstone_path(html_doc) == (
+        '/raw-data/CMS/CMS-2025-0304/text-CMS-2025-0304/documents/'
+        'CMS-2025-0304-1544_content_UNAVAILABLE'
+    )
