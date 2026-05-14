@@ -28,7 +28,7 @@ def test_put_results_calls_saver_save_json(key_manager, mocker):
     }
     client._put_results(data)
     mock_save.assert_called_once_with(
-        '/data/agency/docket/text-x/comments/C-1.json',
+        '/agency/docket/text-x/comments/C-1.json',
         data,
     )
 
@@ -48,7 +48,7 @@ def test_download_single_attachment_fetches_and_writes(key_manager, mocker):
         timeout=10,
     )
     mock_bin.assert_called_once_with(
-        '/data/raw-data/A/D/binary-D/attachments/f.pdf',
+        '/raw-data/A/D/binary-D/attachments/f.pdf',
         b'body',
     )
 
@@ -101,7 +101,7 @@ def test_download_htm_fetches_with_browser_headers(key_manager, mocker):
         timeout=10,
     )
     mock_save.assert_called_once_with(
-        '/data/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/'
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/'
         'documents/USTR-2015-0010-0001_content.html',
         b'<html></html>',
     )

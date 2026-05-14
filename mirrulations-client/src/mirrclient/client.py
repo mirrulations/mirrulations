@@ -313,9 +313,7 @@ class Client:
         Ensures data format matches expected format
         If results are valid, writes them to disk / S3
         """
-        dir_, filename = data['directory'].rsplit('/', 1)
-        path = f'/data{dir_}/{filename}'
-        self.saver.save_json(path, data)
+        self.saver.save_json(data['directory'], data)
 
     def _perform_job(self, job_url: str, api_cred: KeyCredential):
         """
@@ -399,9 +397,7 @@ class Client:
         '''
         response = requests.get(
             url, headers=BROWSER_DOWNLOAD_HEADERS, timeout=10)
-        dir_, filename = path.rsplit('/', 1)
-        full = f'/data{dir_}/{filename}'
-        self.saver.save_binary(full, response.content)
+        self.saver.save_binary(path, response.content)
 
     def _does_comment_have_attachment(self, comment_json):
         """
@@ -429,9 +425,8 @@ class Client:
 
     def _persist_downloaded_document_body(self, response, key_id, fetch):
         """Write downloaded document body bytes and record stats."""
-        dir_, filename = fetch.storage_path.rsplit('/', 1)
-        full = f'/data{dir_}/{filename}'
-        self.saver.save_binary(full, response.content)
+        _, filename = fetch.storage_path.rsplit('/', 1)
+        self.saver.save_binary(fetch.storage_path, response.content)
         self._log_artifact_info(
             kind='document',
             entity=fetch.entity_id,

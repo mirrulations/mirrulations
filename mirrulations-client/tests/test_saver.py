@@ -66,7 +66,7 @@ def test_saver_saves_json_to_multiple_places():
             mocked_file().write.assert_called_once_with(
                 dumps(test_data['results']))
             body = conn.Object("test-mirrulations1",
-                               "/USTR/file.json").get()["Body"].read()\
+                               "USTR/file.json").get()["Body"].read()\
                 .decode("utf-8").strip('/"')
             assert body == test_data["results"]
 
@@ -88,7 +88,7 @@ def test_saver_saves_binary_to_multiple_places():
             mocked_file.assert_called_once_with(test_path, 'wb')
             mocked_file().write.assert_called_once_with(test_data)
             body = conn.Object("test-mirrulations1",
-                               "/USTR/file.pdf").get()["Body"].read()\
+                               "USTR/file.pdf").get()["Body"].read()\
                 .decode("utf-8")
             assert body == '\x17'
 
@@ -111,6 +111,6 @@ def test_saver_saves_text_to_multiple_places():
                                                 encoding="utf-8")
             mocked_file().write.assert_called_once_with(test_data)
             body = conn.Object("test-mirrulations1",
-                               "/USTR/file.txt").get()["Body"].read()\
+                               "USTR/file.txt").get()["Body"].read()\
                 .decode("utf-8")
             assert body == test_data

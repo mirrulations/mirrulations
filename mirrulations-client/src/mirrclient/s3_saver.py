@@ -10,6 +10,13 @@ from mirrclient.exceptions import SaveError
 _log = logging.getLogger(__name__)
 
 
+def _s3_object_key(path):
+    """Strip leading slash; drop legacy ``/data/`` prefix from older clients."""
+    if path.startswith('/data/'):
+        path = path[6:]
+    return path.lstrip('/')
+
+
 class S3Saver():
     """
     A class which handles saving to an S3 bucket
@@ -81,7 +88,7 @@ class S3Saver():
         data : dict
             The json as a dict to save.
         """
-        path = path.replace("/data/", "")
+        path = _s3_object_key(path)
         if self.s3_client is False:
             raise SaveError(
                 "No AWS credentials provided; cannot write to S3."
@@ -112,7 +119,7 @@ class S3Saver():
         binary : bytes
             The binary response.content returns
         """
-        path = path.replace("/data/", "")
+        path = _s3_object_key(path)
         if self.s3_client is False:
             raise SaveError(
                 "No AWS credentials provided; cannot write to S3."
@@ -142,7 +149,7 @@ class S3Saver():
         text : str
             Extracted text to be saved
         """
-        path = path.replace("/data/", "")
+        path = _s3_object_key(path)
         if self.s3_client is False:
             raise SaveError(
                 "No AWS credentials provided; cannot write to S3."
