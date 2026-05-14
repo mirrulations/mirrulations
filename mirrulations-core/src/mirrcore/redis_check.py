@@ -9,7 +9,7 @@ def is_redis_available(database):
         return False
 
 
-def load_redis(wait_time=30):
+def load_redis(wait_time=1):
     '''
     Returns an instance of a Redis client.
     Blocks until Redis is confirmed to be running.

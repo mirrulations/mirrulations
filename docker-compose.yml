@@ -83,7 +83,7 @@ services:
       dockerfile: mirrulations-client/Dockerfile
     env_file: env_files/client.env
     volumes:
-      - ~/data/data:/data
+      - ~/data/data/raw-data:/raw-data
       - ./env_files/client_keys.json:/config/client_keys.json:ro
     restart: always
     logging:

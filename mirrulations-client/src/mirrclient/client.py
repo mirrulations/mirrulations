@@ -63,6 +63,7 @@ class _CommentAttachmentSlot(NamedTuple):
     attachment_entity: str
     key_id: str
     attachment_index: int
+    file_format: dict
 
 
 class _DocumentBodyFetch(NamedTuple):
@@ -161,18 +162,22 @@ class Client:
         self.key_manager = manager
 
     @staticmethod
-    def _log_artifact_info(  # pylint: disable=too-many-arguments
+    def _log_artifact_info(  # pylint: disable=too-many-arguments,too-many-locals
             *,
             kind,
             entity,
             key_id,
             artifact,
             filename,
-            attachment_index=None):
+            attachment_index=None,
+            http_status=None):
+        verb = 'wrote tombstone' if http_status is not None else 'wrote artifact'
         msg = (
-            f"wrote artifact kind={kind} type={artifact} entity={entity} "
+            f"{verb} kind={kind} type={artifact} entity={entity} "
             f"file={filename} key_id={key_id}"
         )
+        if http_status is not None:
+            msg += f" http_status={http_status}"
         if attachment_index is not None:
             msg += f" attachment={attachment_index}"
         logger.info('%s', msg)
@@ -250,10 +255,62 @@ class Client:
             'dockets': pg.get_docket_json_path,
             'documents': pg.get_document_json_path,
         }.get(payload.get('type'))
-        relative = (
-            handler(job_result) if handler is not None else '/unknown/unknown.json'
+        if handler is not None:
+            return handler(job_result)
+        return '/raw-data/unknown/unknown.json'
+
+    def _primary_json_corpus_path_from_job(self, job):
+        """Canonical primary ``.json`` path from ``job`` when the body is not parsed."""
+        pg = self.path_generator
+        handler = {
+            'comments': pg.get_comment_json_path_from_job,
+            'dockets': pg.get_docket_json_path_from_job,
+            'documents': pg.get_document_json_path_from_job,
+        }.get(job.get('job_type'))
+        if handler is not None:
+            return handler(job)
+        return '/raw-data/unknown/unknown.json'
+
+    def _primary_json_tombstone_path_for_job(self, job):
+        """Primary API JSON tombstone path from ``job`` (HTTP error responses)."""
+        pg = self.path_generator
+        if job.get('job_type') == 'comments':
+            return pg.get_comment_json_tombstone_path(job)
+        if job.get('job_type') == 'dockets':
+            return pg.get_docket_json_tombstone_path(job)
+        if job.get('job_type') == 'documents':
+            return pg.get_document_json_tombstone_path(job)
+        return '/raw-data/unknown/unknown_UNAVAILABLE'
+
+    def _persist_primary_api_tombstone(self, job, response, key_id):
+        """Write primary JSON tombstone for non-OK API response; log and count."""
+        path = self._primary_json_tombstone_path_for_job(job)
+        self.saver.save_tombstone(path, response.status_code)
+        _, fname = path.rsplit('/', 1)
+        self._log_artifact_info(
+            kind=kind_singular(job['job_type']),
+            entity=entity_from_job_url(job['url']),
+            key_id=key_id,
+            artifact='json',
+            filename=fname,
+            http_status=response.status_code,
         )
-        return '/raw-data' + relative
+        self.cache.increase_jobs_done(job['job_type'])
+
+    def _persist_primary_api_unparseable_body(self, job, response, key_id):
+        """Save raw response bytes at canonical ``.json`` path when JSON parse fails."""
+        path = self._primary_json_corpus_path_from_job(job)
+        self.saver.save_binary(path, response.content)
+        _, fname = path.rsplit('/', 1)
+        logger.info(
+            'wrote unparseable api body kind=%s type=json entity=%s file=%s '
+            'key_id=%s',
+            kind_singular(job['job_type']),
+            entity_from_job_url(job['url']),
+            fname,
+            key_id,
+        )
+        self.cache.increase_jobs_done(job['job_type'])
 
     def _download_job(self, job, job_result, key_id):
         """
@@ -282,10 +339,10 @@ class Client:
             key_id,
         )
         data['directory'] = self._primary_json_corpus_path(job_result)
-        self.cache.increase_jobs_done(data['job_type'])
 
         self._save_primary_json_and_log(job, data, key_id)
         self._maybe_download_followups(job_result, data['job_type'], key_id)
+        self.cache.increase_jobs_done(data['job_type'])
 
     def _save_primary_json_and_log(self, job, data, key_id):
         """Persist API JSON for this job and emit the artifact INFO line."""
@@ -314,9 +371,7 @@ class Client:
         Ensures data format matches expected format
         If results are valid, writes them to disk / S3
         """
-        dir_, filename = data['directory'].rsplit('/', 1)
-        path = f'/data{dir_}/{filename}'
-        self.saver.save_json(path, data)
+        self.saver.save_json(data['directory'], data)
 
     def _perform_job(self, job_url: str, api_cred: KeyCredential):
         """
@@ -355,21 +410,41 @@ class Client:
                 attachment_entity,
                 key_id,
                 idx + 1,
+                file_format,
             )
 
-    def _persist_comment_attachment_and_record_stats(self, slot):
-        """Fetch one attachment file, log it, and bump dashboard counters."""
-        self._download_single_attachment(slot.url, slot.attach_path)
+    def _persist_comment_attachment_and_record_stats(
+            self, comment_json, slot):
+        """Fetch one attachment; on success save bytes, else tombstone; log."""
+        response = self._download_single_attachment(slot.url)
         _, fname = slot.attach_path.rsplit('/', 1)
-        self._log_artifact_info(
-            kind='attachment',
-            entity=slot.attachment_entity,
-            key_id=slot.key_id,
-            artifact='attachment',
-            filename=fname,
-            attachment_index=slot.attachment_index,
-        )
-        self.cache.increase_jobs_done('attachment', slot.url.endswith('.pdf'))
+        if response.ok:
+            self.saver.save_binary(slot.attach_path, response.content)
+            self._log_artifact_info(
+                kind='attachment',
+                entity=slot.attachment_entity,
+                key_id=slot.key_id,
+                artifact='attachment',
+                filename=fname,
+                attachment_index=slot.attachment_index,
+            )
+        else:
+            tomb_path = (
+                self.path_generator.get_comment_attachment_tombstone_path(
+                    comment_json, slot.file_format))
+            self.saver.save_tombstone(tomb_path, response.status_code)
+            _, tfname = tomb_path.rsplit('/', 1)
+            self._log_artifact_info(
+                kind='attachment',
+                entity=slot.attachment_entity,
+                key_id=slot.key_id,
+                artifact='attachment',
+                filename=tfname,
+                attachment_index=slot.attachment_index,
+                http_status=response.status_code,
+            )
+        self.cache.increase_jobs_done(
+            'attachment', slot.url.endswith('.pdf'))
 
     def _download_all_attachments_from_comment(self, comment_json, key_id):
         '''
@@ -392,17 +467,13 @@ class Client:
         )
         for slot in self._iter_comment_attachment_slots(
                 comment_json, key_id):
-            self._persist_comment_attachment_and_record_stats(slot)
+            self._persist_comment_attachment_and_record_stats(
+                comment_json, slot)
 
-    def _download_single_attachment(self, url, path):
-        '''
-        Downloads a single attachment for a comment and writes it.
-        '''
-        response = requests.get(
+    def _download_single_attachment(self, url):
+        """GET attachment bytes; caller branches on ``response.ok``."""
+        return requests.get(
             url, headers=BROWSER_DOWNLOAD_HEADERS, timeout=10)
-        dir_, filename = path.rsplit('/', 1)
-        full = f'/data{dir_}/{filename}'
-        self.saver.save_binary(full, response.content)
 
     def _does_comment_have_attachment(self, comment_json):
         """
@@ -428,18 +499,37 @@ class Client:
             json_data['data']['id'],
         )
 
-    def _persist_downloaded_document_body(self, response, key_id, fetch):
-        """Write downloaded document body bytes and record stats."""
-        dir_, filename = fetch.storage_path.rsplit('/', 1)
-        full = f'/data{dir_}/{filename}'
-        self.saver.save_binary(full, response.content)
-        self._log_artifact_info(
-            kind='document',
-            entity=fetch.entity_id,
-            key_id=key_id,
-            artifact=fetch.file_format,
-            filename=filename,
-        )
+    def _persist_downloaded_document_body(  # pylint: disable=too-many-arguments
+            self, response, key_id, fetch, json_data):
+        """Save HTM/HTML body or tombstone from ``response``; log and stats."""
+        _, filename = fetch.storage_path.rsplit('/', 1)
+        if response.ok:
+            self.saver.save_binary(fetch.storage_path, response.content)
+            self._log_artifact_info(
+                kind='document',
+                entity=fetch.entity_id,
+                key_id=key_id,
+                artifact=fetch.file_format,
+                filename=filename,
+            )
+        else:
+            if fetch.file_format == 'html':
+                tomb_path = (
+                    self.path_generator.get_document_html_tombstone_path(
+                        json_data))
+            else:
+                tomb_path = self.path_generator.get_document_htm_tombstone_path(
+                    json_data)
+            self.saver.save_tombstone(tomb_path, response.status_code)
+            _, tfname = tomb_path.rsplit('/', 1)
+            self._log_artifact_info(
+                kind='document',
+                entity=fetch.entity_id,
+                key_id=key_id,
+                artifact=fetch.file_format,
+                filename=tfname,
+                http_status=response.status_code,
+            )
         self.cache.increase_jobs_done('attachment')
 
     def _download_htm(self, json_data, key_id):
@@ -448,7 +538,8 @@ class Client:
             return
         response = requests.get(
             fetch.download_url, headers=BROWSER_DOWNLOAD_HEADERS, timeout=10)
-        self._persist_downloaded_document_body(response, key_id, fetch)
+        self._persist_downloaded_document_body(
+            response, key_id, fetch, json_data)
 
     def _get_format(self, json_data):
         file_formats = json_data["data"]["attributes"]["fileFormats"]
@@ -482,11 +573,18 @@ class Client:
         return True
 
     def _run_fetched_job_pipeline(self, job, api_cred):
-        """HTTP GET job URL, validate status, parse JSON, persist artifacts."""
+        """HTTP GET job URL; persist primary JSON, tombstone, or raw body."""
         response = self._perform_job(job['url'], api_cred)
-        response.raise_for_status()
-        result = response.json()
-        self._download_job(job, result, api_cred.id)
+        key_id = api_cred.id
+        if not response.ok:
+            self._persist_primary_api_tombstone(job, response, key_id)
+            return
+        try:
+            result = response.json()
+        except ValueError:
+            self._persist_primary_api_unparseable_body(job, response, key_id)
+            return
+        self._download_job(job, result, key_id)
 
     @staticmethod
     def _log_job_failed_timeout(kind, redacted_job_url, key_id):
@@ -528,15 +626,6 @@ class Client:
             err,
         )
 
-    @staticmethod
-    def _log_job_failed_invalid_json(kind, redacted_job_url, key_id):
-        logger.error(
-            'job failed kind=%s phase=api url=%s key_id=%s reason=invalid_response',
-            kind,
-            redacted_job_url,
-            key_id,
-        )
-
     def _handle_job_api_and_storage(self, job, api_cred, failure_log):
         """Run HTTP fetch + persist; map failures to structured ERROR logs."""
         try:
@@ -548,27 +637,12 @@ class Client:
                 failure_log.key_id,
             )
             raise
-        except requests.exceptions.HTTPError as err:
-            self._log_job_failed_http(
-                failure_log.kind,
-                failure_log.redacted_job_url,
-                failure_log.key_id,
-                err,
-            )
-            raise
         except requests.exceptions.RequestException as err:
             self._log_job_failed_request(
                 failure_log.kind,
                 failure_log.redacted_job_url,
                 failure_log.key_id,
                 err,
-            )
-            raise
-        except ValueError:
-            self._log_job_failed_invalid_json(
-                failure_log.kind,
-                failure_log.redacted_job_url,
-                failure_log.key_id,
             )
             raise
 
@@ -644,8 +718,8 @@ if __name__ == '__main__':
                 redis_is_healthy = False
         except APITimeoutException:
             pass
-        except requests.exceptions.HTTPError:
-            pass
+        except requests.exceptions.HTTPError as exc:
+            logger.debug('Unexpected HTTPError after job: %s', exc)
         except (JobQueueException, AMQPConnectionError):
             if rabbit_is_healthy:
                 logger.warning(_RABBITMQ_DOWN_MSG)

@@ -208,3 +208,19 @@ def test_do_not_save_duplicate_data(caplog):
                     mock_save.assert_not_called()
                     msgs = '\n'.join(r.message for r in caplog.records)
                     assert 'unchanged skip write' in msgs
+
+
+def test_save_tombstone_writes_single_http_line(tmp_path):
+    saver = DiskSaver()
+    path = tmp_path / 'nested' / 'doc_UNAVAILABLE'
+    saver.save_tombstone(str(path), 404)
+    assert path.read_text(encoding='utf-8') == 'HTTP 404'
+
+
+def test_save_tombstone_overwrites_existing(tmp_path):
+    saver = DiskSaver()
+    path = tmp_path / 't_UNAVAILABLE'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('HTTP 500', encoding='utf-8')
+    saver.save_tombstone(str(path), 503)
+    assert path.read_text(encoding='utf-8') == 'HTTP 503'

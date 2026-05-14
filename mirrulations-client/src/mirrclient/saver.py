@@ -65,3 +65,11 @@ class Saver:
         """
         for saver in self.savers:
             saver.save_text(path, text)
+
+    def save_tombstone(self, path, status_code):
+        """
+        Write a one-line ``HTTP {status_code}`` tombstone at ``path`` on each
+        backend (same contract as ``DiskSaver`` / ``S3Saver``).
+        """
+        for saver in self.savers:
+            saver.save_tombstone(path, status_code)

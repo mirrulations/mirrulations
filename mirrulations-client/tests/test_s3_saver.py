@@ -116,6 +116,37 @@ def test_save_text_to_s3_no_credentials_raises():
         S3Saver().save_text("test", "text")
 
 
+def test_save_tombstone_to_s3_no_credentials_raises():
+    del os.environ['AWS_ACCESS_KEY']
+    del os.environ['AWS_SECRET_ACCESS_KEY']
+    with pytest.raises(SaveError, match='No AWS credentials'):
+        S3Saver().save_tombstone('raw-data/x/doc_UNAVAILABLE', 404)
+
+
+@mock_aws
+def test_save_tombstone_put_object_body_and_content_type():
+    conn = create_mock_mirrulations_bucket()
+    s3_saver = S3Saver(bucket_name="test-mirrulations1")
+    s3_saver.save_tombstone('/raw-data/agency/docket_UNAVAILABLE', 502)
+    key = 'raw-data/agency/docket_UNAVAILABLE'
+    got = conn.Object('test-mirrulations1', key).get()
+    assert got['Body'].read().decode('utf-8') == 'HTTP 502'
+    assert got['ContentType'] == 'text/plain'
+
+
+@mock_aws
+def test_save_tombstone_overwrites_existing():
+    conn = create_mock_mirrulations_bucket()
+    bucket = conn.Bucket('test-mirrulations1')
+    key = 'raw-data/x/t_UNAVAILABLE'
+    bucket.put_object(Key=key, Body=b'HTTP 500', ContentType='text/plain')
+    s3_saver = S3Saver(bucket_name='test-mirrulations1')
+    s3_saver.save_tombstone(f'/{key}', 503)
+    got = conn.Object('test-mirrulations1', key).get()
+    assert got['Body'].read().decode('utf-8') == 'HTTP 503'
+    assert got['ContentType'] == 'text/plain'
+
+
 @mock_aws
 def test_save_json_access_denied_raises_and_no_write():
     conn = create_mock_mirrulations_bucket()
@@ -156,3 +187,49 @@ def test_save_text_access_denied_raises_and_no_write():
         with pytest.raises(SaveError, match='put_object failed'):
             s3_saver.save_text("data/forbidden.txt", "test")
     assert len(list(conn.Bucket("test-mirrulations1").objects.all())) == 0
+
+
+@mock_aws
+def test_s3_saver_creates_file_with_one_in_name_when_json_exists():
+    """When a JSON key already exists, S3Saver writes the new payload
+       at ``…(1).json``.
+    """
+    conn = create_mock_mirrulations_bucket()
+    bucket = conn.Bucket("test-mirrulations1")
+    bucket.put_object(Key="raw-data/x/doc.json", Body=b'{}')
+    s3_saver = S3Saver(bucket_name="test-mirrulations1")
+    payload = {"results": {"data": "new"}}
+    s3_saver.save_json("raw-data/x/doc.json", payload)
+    keys = {obj.key for obj in bucket.objects.all()}
+    assert keys == {"raw-data/x/doc.json", "raw-data/x/doc(1).json"}
+    body = conn.Object("test-mirrulations1", "raw-data/x/doc(1).json").get()[
+        "Body"].read().decode("utf-8")
+    assert body == '{"data": "new"}'
+
+
+@mock_aws
+def test_s3_saver_creates_file_with_four_in_name_when_one_two_three_exist():
+    """When canonical and ``(1)``…``(3)`` exist, S3Saver writes at ``…(4).json``."""
+    conn = create_mock_mirrulations_bucket()
+    bucket = conn.Bucket("test-mirrulations1")
+    for key in (
+        "a/b/item.json",
+        "a/b/item(1).json",
+        "a/b/item(2).json",
+        "a/b/item(3).json",
+    ):
+        bucket.put_object(Key=key, Body=b'{}')
+    s3_saver = S3Saver(bucket_name="test-mirrulations1")
+    payload = {"results": {"slot": 4}}
+    s3_saver.save_json("a/b/item.json", payload)
+    keys = {obj.key for obj in bucket.objects.all()}
+    assert keys == {
+        "a/b/item.json",
+        "a/b/item(1).json",
+        "a/b/item(2).json",
+        "a/b/item(3).json",
+        "a/b/item(4).json",
+    }
+    body = conn.Object("test-mirrulations1", "a/b/item(4).json").get()[
+        "Body"].read().decode("utf-8")
+    assert body == '{"slot": 4}'

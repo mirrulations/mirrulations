@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """Focused tests for client helpers (no autouse disk mocks from test_client)."""
 
 import logging
@@ -7,10 +8,34 @@ from unittest.mock import MagicMock
 import pytest
 import requests
 
-from mirrclient.client import BROWSER_DOWNLOAD_HEADERS, Client
+from mirrcore.comment_attachments import iter_comment_attachment_file_formats
+from mirrcore.path_generator import PathGenerator
+from mirrclient.client import (
+    BROWSER_DOWNLOAD_HEADERS,
+    Client,
+    _CommentAttachmentSlot,
+)
 from mirrclient.key_manager import KeyManager
 from mirrmock.mock_job_queue import MockJobQueue
 from mirrmock.mock_redis import ReadyRedis
+
+_COMMENT_WITH_ATTACHMENT = {
+    'data': {
+        'id': 'FDA-2017-D-2335-1566',
+        'type': 'comments',
+        'attributes': {
+            'agencyId': 'FDA',
+            'docketId': 'FDA-2017-D-2335',
+        },
+    },
+    'included': [{
+        'attributes': {
+            'fileFormats': [{
+                'fileUrl': 'https://downloads.regulations.gov/x.pdf',
+            }],
+        },
+    }],
+}
 
 
 @pytest.fixture(name='key_manager')
@@ -28,28 +53,25 @@ def test_put_results_calls_saver_save_json(key_manager, mocker):
     }
     client._put_results(data)
     mock_save.assert_called_once_with(
-        '/data/agency/docket/text-x/comments/C-1.json',
+        '/agency/docket/text-x/comments/C-1.json',
         data,
     )
 
 
-def test_download_single_attachment_fetches_and_writes(key_manager, mocker):
+def test_download_single_attachment_fetches_and_returns_response(
+        key_manager, mocker):
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    fake_resp = MagicMock(ok=True, status_code=200, content=b'body')
     mock_get = mocker.patch(
         'mirrclient.client.requests.get',
-        return_value=MagicMock(content=b'body'),
+        return_value=fake_resp,
     )
-    mock_bin = mocker.patch.object(client.saver, 'save_binary')
-    attach_path = '/raw-data/A/D/binary-D/attachments/f.pdf'
-    client._download_single_attachment('https://example.com/f.pdf', attach_path)
+    out = client._download_single_attachment('https://example.com/f.pdf')
+    assert out is fake_resp
     mock_get.assert_called_once_with(
         'https://example.com/f.pdf',
         headers=BROWSER_DOWNLOAD_HEADERS,
         timeout=10,
-    )
-    mock_bin.assert_called_once_with(
-        '/data/raw-data/A/D/binary-D/attachments/f.pdf',
-        b'body',
     )
 
 
@@ -76,7 +98,8 @@ def test_download_htm_fetches_with_browser_headers(key_manager, mocker):
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     mock_get = mocker.patch(
         'mirrclient.client.requests.get',
-        return_value=MagicMock(content=b'<html></html>'),
+        return_value=MagicMock(
+            ok=True, status_code=200, content=b'<html></html>'),
     )
     mock_save = mocker.patch.object(client.saver, 'save_binary')
     doc = {
@@ -101,10 +124,95 @@ def test_download_htm_fetches_with_browser_headers(key_manager, mocker):
         timeout=10,
     )
     mock_save.assert_called_once_with(
-        '/data/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/'
+        '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/'
         'documents/USTR-2015-0010-0001_content.html',
         b'<html></html>',
     )
+
+
+def test_persist_comment_attachment_saves_tombstone_when_http_not_ok(
+        key_manager, mocker):
+    # pylint: disable=too-many-locals
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    pg = PathGenerator()
+    comment_json = _COMMENT_WITH_ATTACHMENT
+    ff = next(iter_comment_attachment_file_formats(comment_json))
+    attach_path = pg.get_comment_attachment_path(comment_json, ff)
+    slot = _CommentAttachmentSlot(
+        ff['fileUrl'],
+        attach_path,
+        comment_json['data']['id'],
+        'key1',
+        1,
+        ff,
+    )
+    resp = MagicMock(ok=False, status_code=404, content=b'nope')
+    mocker.patch.object(client, '_download_single_attachment', return_value=resp)
+    mock_tomb = mocker.patch.object(client.saver, 'save_tombstone')
+    mock_bin = mocker.patch.object(client.saver, 'save_binary')
+    client._persist_comment_attachment_and_record_stats(comment_json, slot)
+    mock_bin.assert_not_called()
+    expected_tomb = pg.get_comment_attachment_tombstone_path(comment_json, ff)
+    mock_tomb.assert_called_once_with(expected_tomb, 404)
+
+
+def test_persist_document_body_saves_tombstone_when_http_not_ok(
+        key_manager, mocker):
+    # pylint: disable=too-many-locals
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    pg = PathGenerator()
+    doc = {
+        'data': {
+            'id': 'USTR-2015-0010-0001',
+            'attributes': {
+                'agencyId': 'USTR',
+                'docketId': 'USTR-2015-0010',
+                'fileFormats': [
+                    {
+                        'format': 'html',
+                        'fileUrl': 'https://example.com/content.html',
+                    },
+                ],
+            },
+        },
+    }
+    fetch = client._resolve_document_body_fetch(doc)
+    resp = MagicMock(ok=False, status_code=502, content=b'')
+    mock_tomb = mocker.patch.object(client.saver, 'save_tombstone')
+    mock_bin = mocker.patch.object(client.saver, 'save_binary')
+    client._persist_downloaded_document_body(resp, 'kid', fetch, doc)
+    mock_bin.assert_not_called()
+    expected = pg.get_document_html_tombstone_path(doc)
+    mock_tomb.assert_called_once_with(expected, 502)
+
+
+def test_persist_comment_attachment_tombstone_emits_info(
+        caplog, key_manager, mocker):
+    # pylint: disable=too-many-locals
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    pg = PathGenerator()
+    comment_json = _COMMENT_WITH_ATTACHMENT
+    ff = next(iter_comment_attachment_file_formats(comment_json))
+    attach_path = pg.get_comment_attachment_path(comment_json, ff)
+    slot = _CommentAttachmentSlot(
+        ff['fileUrl'],
+        attach_path,
+        comment_json['data']['id'],
+        'kid',
+        1,
+        ff,
+    )
+    mocker.patch.object(
+        client,
+        '_download_single_attachment',
+        return_value=MagicMock(ok=False, status_code=503, content=b''),
+    )
+    mocker.patch.object(client.saver, 'save_tombstone')
+    caplog.set_level(logging.INFO, logger='mirrclient.client')
+    client._persist_comment_attachment_and_record_stats(comment_json, slot)
+    assert any(
+        'wrote tombstone' in r.message and 'http_status=503' in r.message
+        for r in caplog.records)
 
 
 def test_job_operation_logs_request_exception(caplog, key_manager, mocker):
@@ -126,22 +234,60 @@ def test_job_operation_logs_request_exception(caplog, key_manager, mocker):
     assert 'unavailable' in messages
 
 
-def test_job_operation_logs_valueerror_on_bad_json(caplog, key_manager, mocker):
+def test_job_operation_saves_binary_when_ok_but_body_not_json(
+        caplog, key_manager, mocker):
+    # pylint: disable=too-many-locals
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
-    client.job_queue.add_job({
+    job = {
         'job_id': 1,
-        'url': 'http://regulations.gov/dockets/X',
+        'url': 'https://api.regulations.gov/v4/dockets/USTR-2015-0010',
         'job_type': 'dockets',
-    })
+    }
+    client.job_queue.add_job(job)
     response = MagicMock()
-    response.raise_for_status = MagicMock()
+    response.ok = True
+    response.status_code = 200
+    response.content = b'not valid json'
     response.json.side_effect = ValueError('not json')
     mocker.patch.object(client, '_perform_job', return_value=response)
-    with caplog.at_level(logging.ERROR, logger='mirrclient.client'):
-        with pytest.raises(ValueError):
-            client.job_operation(key_manager.get_next())
-    messages = ' '.join(r.message for r in caplog.records)
-    assert 'invalid_response' in messages
+    mock_save_binary = mocker.patch.object(client.saver, 'save_binary')
+    mock_inc = mocker.patch.object(client.cache, 'increase_jobs_done')
+    with caplog.at_level(logging.INFO, logger='mirrclient.client'):
+        client.job_operation(key_manager.get_next())
+    expected_path = PathGenerator().get_docket_json_path_from_job(job)
+    mock_save_binary.assert_called_once_with(expected_path, b'not valid json')
+    mock_inc.assert_called_once_with('dockets')
+    assert any(
+        'wrote unparseable api body' in r.message for r in caplog.records)
+
+
+def test_job_operation_saves_tombstone_when_primary_api_http_not_ok(
+        caplog, key_manager, mocker):
+    # pylint: disable=too-many-locals
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    job = {
+        'job_id': 1,
+        'url': 'https://api.regulations.gov/v4/dockets/USTR-2015-0010',
+        'job_type': 'dockets',
+    }
+    client.job_queue.add_job(job)
+    response = MagicMock()
+    response.ok = False
+    response.status_code = 503
+    response.content = b'upstream down'
+    mocker.patch.object(client, '_perform_job', return_value=response)
+    mock_tomb = mocker.patch.object(client.saver, 'save_tombstone')
+    mock_bin = mocker.patch.object(client.saver, 'save_binary')
+    mock_inc = mocker.patch.object(client.cache, 'increase_jobs_done')
+    with caplog.at_level(logging.INFO, logger='mirrclient.client'):
+        client.job_operation(key_manager.get_next())
+    expected = PathGenerator().get_docket_json_tombstone_path(job)
+    mock_tomb.assert_called_once_with(expected, 503)
+    mock_bin.assert_not_called()
+    mock_inc.assert_called_once_with('dockets')
+    assert any(
+        'wrote tombstone' in r.message and 'http_status=503' in r.message
+        for r in caplog.records)
 
 
 def _http_error_with_response(status_code, body=b'', headers=None):

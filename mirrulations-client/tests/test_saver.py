@@ -66,7 +66,7 @@ def test_saver_saves_json_to_multiple_places():
             mocked_file().write.assert_called_once_with(
                 dumps(test_data['results']))
             body = conn.Object("test-mirrulations1",
-                               "/USTR/file.json").get()["Body"].read()\
+                               "USTR/file.json").get()["Body"].read()\
                 .decode("utf-8").strip('/"')
             assert body == test_data["results"]
 
@@ -88,7 +88,7 @@ def test_saver_saves_binary_to_multiple_places():
             mocked_file.assert_called_once_with(test_path, 'wb')
             mocked_file().write.assert_called_once_with(test_data)
             body = conn.Object("test-mirrulations1",
-                               "/USTR/file.pdf").get()["Body"].read()\
+                               "USTR/file.pdf").get()["Body"].read()\
                 .decode("utf-8")
             assert body == '\x17'
 
@@ -111,6 +111,27 @@ def test_saver_saves_text_to_multiple_places():
                                                 encoding="utf-8")
             mocked_file().write.assert_called_once_with(test_data)
             body = conn.Object("test-mirrulations1",
-                               "/USTR/file.txt").get()["Body"].read()\
+                               "USTR/file.txt").get()["Body"].read()\
                 .decode("utf-8")
             assert body == test_data
+
+
+@mock_aws
+def test_saver_save_tombstone_delegates_to_disk_and_s3():
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="test-mirrulations1")
+    with patch('mirrclient.disk_saver.open', mock_open()) as mocked_file:
+        with patch('os.makedirs') as mock_dir:
+            saver = Saver(savers=[
+                DiskSaver(),
+                S3Saver(bucket_name="test-mirrulations1"),
+            ])
+            saver.save_tombstone('/USTR/x_UNAVAILABLE', 418)
+    mock_dir.assert_called_once_with('/USTR')
+    mocked_file.assert_called_once_with(
+        '/USTR/x_UNAVAILABLE', 'w', encoding='utf-8')
+    mocked_file().write.assert_called_once_with('HTTP 418')
+    s3_body = conn.Object(
+        "test-mirrulations1", "USTR/x_UNAVAILABLE").get()["Body"].read().decode(
+            "utf-8")
+    assert s3_body == 'HTTP 418'

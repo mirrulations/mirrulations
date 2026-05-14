@@ -10,6 +10,17 @@ from mirrclient.exceptions import SaveError
 _log = logging.getLogger(__name__)
 
 
+def _s3_object_key(path):
+    """Strip leading slash; drop legacy ``/data/`` prefix from older clients."""
+    if path.startswith('/data/'):
+        path = path[6:]
+    return path.lstrip('/')
+
+
+def _head_missing_error_code(code):
+    return code in ('404', 'NoSuchKey', 'NotFound')
+
+
 class S3Saver():
     """
     A class which handles saving to an S3 bucket
@@ -67,10 +78,45 @@ class S3Saver():
         return (self.access_key is not None and
                 self.secret_access_key is not None)
 
+    def _s3_object_exists(self, key):
+        """Return True if ``key`` is present; False if absent.
+           Other errors -> SaveError.
+        """
+        try:
+            self.s3_client.head_object(Bucket=self.bucket_name, Key=key)
+            return True
+        except ClientError as exc:
+            code = exc.response.get('Error', {}).get('Code', '')
+            if _head_missing_error_code(code):
+                return False
+            raise SaveError(
+                f"S3 head_object failed for s3://{self.bucket_name}/{key}"
+            ) from exc
+
+    def _resolve_json_write_key(self, key):
+        """
+        Use ``key`` when free. If it exists, use the next free ``stem(n).json``.
+        Keys that do not end with ``.json`` are written as-is (overwrite).
+        """
+        if not key.endswith('.json'):
+            return key
+        if not self._s3_object_exists(key):
+            return key
+        stem = key.removesuffix('.json')
+        counter = 1
+        while True:
+            candidate = f'{stem}({counter}).json'
+            if not self._s3_object_exists(candidate):
+                return candidate
+            counter += 1
+
     def save_json(self, path, data):
         """
         Saves json file to Amazon S3 bucket
         Bucket Structure: /AGENCYID/path/to/item
+
+        If the canonical ``*.json`` key already exists, writes to the next free
+        ``*``(1).json``, ``(2).json``, … slot (existence only; no body compare).
 
         Parameters
         -------
@@ -81,22 +127,24 @@ class S3Saver():
         data : dict
             The json as a dict to save.
         """
-        path = path.replace("/data/", "")
+        key = _s3_object_key(path)
         if self.s3_client is False:
             raise SaveError(
                 "No AWS credentials provided; cannot write to S3."
             ) from None
         try:
+            write_key = self._resolve_json_write_key(key)
             response = self.s3_client.put_object(
                 Bucket=self.bucket_name,
-                Key=path,
+                Key=write_key,
                 Body=json.dumps(data["results"])
                 )
-            _log.debug('S3 wrote json key=%s bucket=%s', path, self.bucket_name)
+            _log.debug(
+                'S3 wrote json key=%s bucket=%s', write_key, self.bucket_name)
             return response
         except ClientError as exc:
             raise SaveError(
-                f"S3 put_object failed for s3://{self.bucket_name}/{path}"
+                f"S3 put_object failed for s3://{self.bucket_name}/{write_key}"
             ) from exc
 
     def save_binary(self, path, binary):
@@ -112,7 +160,7 @@ class S3Saver():
         binary : bytes
             The binary response.content returns
         """
-        path = path.replace("/data/", "")
+        path = _s3_object_key(path)
         if self.s3_client is False:
             raise SaveError(
                 "No AWS credentials provided; cannot write to S3."
@@ -129,6 +177,31 @@ class S3Saver():
                 f"S3 put_object failed for s3://{self.bucket_name}/{path}"
             ) from exc
 
+    def save_tombstone(self, path, status_code):
+        """Store ``HTTP {status_code}`` as UTF-8 bytes with
+           ``ContentType: text/plain``.
+        """
+        key = _s3_object_key(path)
+        if self.s3_client is False:
+            raise SaveError(
+                "No AWS credentials provided; cannot write to S3."
+            ) from None
+        body = f'HTTP {status_code}'.encode('utf-8')
+        try:
+            response = self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=key,
+                Body=body,
+                ContentType='text/plain',
+            )
+            _log.debug(
+                'S3 wrote tombstone key=%s bucket=%s', key, self.bucket_name)
+            return response
+        except ClientError as exc:
+            raise SaveError(
+                f"S3 put_object failed for s3://{self.bucket_name}/{key}"
+            ) from exc
+
     def save_text(self, path, text):
         """
         Saves extracted text to Amazon S3 bucket
@@ -142,7 +215,7 @@ class S3Saver():
         text : str
             Extracted text to be saved
         """
-        path = path.replace("/data/", "")
+        path = _s3_object_key(path)
         if self.s3_client is False:
             raise SaveError(
                 "No AWS credentials provided; cannot write to S3."

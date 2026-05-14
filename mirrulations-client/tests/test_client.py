@@ -1,12 +1,14 @@
 # pylint: disable=W0212
 import logging
 import os
-import responses
-from pytest import fixture
+from unittest.mock import MagicMock
+
+import boto3
 import pytest
 import requests_mock
+import responses
+from pytest import fixture
 from requests.exceptions import ReadTimeout
-import boto3
 from mirrcore.comment_attachments import comment_attachment_file_format_count
 from mirrcore.path_generator import PathGenerator
 from mirrclient.client import Client, _build_savers, \
@@ -17,6 +19,11 @@ from mirrclient.exceptions import RedisPingFailedError, APITimeoutException
 from mirrclient.key_manager import KeyManager
 from mirrmock.mock_redis import ReadyRedis, InactiveRedis, MockRedisWithStorage
 from mirrmock.mock_job_queue import MockJobQueue
+from mirrmock.regulations_api_fixtures import (
+    get_test_comment,
+    get_test_docket,
+    get_test_document,
+)
 
 
 TEST_API_KEY = 'TESTINGKEY123'
@@ -49,7 +56,7 @@ def mock_disk_writing(mocker):
     """
     Mock tests that would be writing to disk
     """
-    # patch _write_results and AttachmentSaver.save
+    ok_download = MagicMock(ok=True, status_code=200, content=b'')
     mocker.patch.object(
         Client,
         '_put_results',
@@ -58,7 +65,7 @@ def mock_disk_writing(mocker):
     mocker.patch.object(
         Client,
         '_download_single_attachment',
-        return_value=None
+        return_value=ok_download
     )
 
 
@@ -299,6 +306,8 @@ def test_client_downloads_attachment_results(mocker, caplog, key_manager):
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
                  return_value=None)
+    mocker.patch('mirrclient.s3_saver.S3Saver.save_binary',
+                 return_value=None)
     mock_redis = ReadyRedis()
     client = Client(mock_redis, MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
@@ -379,6 +388,8 @@ def test_two_attachments_in_comment(mocker, key_manager):
     mocker.patch('mirrclient.disk_saver.DiskSaver.make_path',
                  return_value=None)
     mocker.patch('mirrclient.disk_saver.DiskSaver.save_binary',
+                 return_value=None)
+    mocker.patch('mirrclient.s3_saver.S3Saver.save_binary',
                  return_value=None)
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
     client.job_queue.add_job({'job_id': 1,
@@ -519,16 +530,7 @@ def test_client_downloads_document_html(caplog, mocker, key_manager):
 
 def test_primary_json_corpus_path_docket(key_manager):
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
-    job_result = {
-        'data': {
-            'id': 'USTR-2015-0010',
-            'type': 'dockets',
-            'attributes': {
-                'agencyId': 'USTR',
-                'docketId': 'USTR-2015-0010',
-            },
-        },
-    }
+    job_result = get_test_docket()
     assert client._primary_json_corpus_path(job_result) == (
         '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/docket/USTR-2015-0010.json'
     )
@@ -536,30 +538,12 @@ def test_primary_json_corpus_path_docket(key_manager):
 
 def test_primary_json_corpus_path_comment_and_document(key_manager):
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
-    comment = {
-        'data': {
-            'id': 'USTR-2015-0010-0002',
-            'type': 'comments',
-            'attributes': {
-                'agencyId': 'USTR',
-                'docketId': 'USTR-2015-0010',
-            },
-        },
-    }
+    comment = get_test_comment()
     assert client._primary_json_corpus_path(comment) == (
         '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/comments/'
         'USTR-2015-0010-0002.json'
     )
-    document = {
-        'data': {
-            'id': 'USTR-2015-0010-0015',
-            'type': 'documents',
-            'attributes': {
-                'agencyId': 'USTR',
-                'docketId': 'USTR-2015-0010',
-            },
-        },
-    }
+    document = get_test_document()
     assert client._primary_json_corpus_path(document) == (
         '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
         'USTR-2015-0010-0015.json'
