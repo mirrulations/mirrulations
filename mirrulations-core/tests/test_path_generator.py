@@ -5,36 +5,17 @@ from mirrcore.comment_attachments import (
     iter_comment_attachment_file_formats,
 )
 from mirrcore.path_generator import PathGenerator
+from mirrmock.regulations_api_fixtures import (
+    get_test_comment,
+    get_test_docket,
+    get_test_document,
+)
 from pytest import fixture
 
 
 @fixture(name='generator')
 def path_generator():
     return PathGenerator()
-
-
-def get_test_docket():
-    return {
-        "data": {
-            "id": "USTR-2015-0010",
-            "type": "dockets",
-            "attributes": {
-                "agencyId": "USTR",
-                "docketId": "USTR-2015-0010"
-            }
-        }}
-
-
-def get_test_document():
-    return {
-        "data": {
-            "id": "USTR-2015-0010-0015",
-            "type": "documents",
-            "attributes": {
-                "agencyId": "USTR",
-                "docketId": "USTR-2015-0010"
-            }
-        }}
 
 
 def get_test_document_htm():
@@ -89,18 +70,6 @@ def get_test_document_html():
             }
         }
         }
-
-
-def get_test_comment():
-    return {
-        "data": {
-            "id": "USTR-2015-0010-0002",
-            "type": "comments",
-            "attributes": {
-                "agencyId": "USTR",
-                "docketId": "USTR-2015-0010"
-            }
-        }}
 
 
 def get_attachment_and_comment():
@@ -513,6 +482,27 @@ def test_document_json_tombstone_path(generator):
     )
     assert generator.get_document_json_tombstone_path(
         _document_job()) == expected
+
+
+def test_comment_json_path_from_job_matches_json_path(generator):
+    job = _comment_job()
+    comment_json = get_test_comment()
+    assert generator.get_comment_json_path_from_job(job) == (
+        generator.get_comment_json_path(comment_json))
+
+
+def test_docket_json_path_from_job_matches_json_path(generator):
+    job = _docket_job()
+    docket_json = get_test_docket()
+    assert generator.get_docket_json_path_from_job(job) == (
+        generator.get_docket_json_path(docket_json))
+
+
+def test_document_json_path_from_job_matches_json_path(generator):
+    job = _document_job()
+    doc_json = get_test_document()
+    assert generator.get_document_json_path_from_job(job) == (
+        generator.get_document_json_path(doc_json))
 
 
 def test_comment_attachment_tombstone_path(generator):

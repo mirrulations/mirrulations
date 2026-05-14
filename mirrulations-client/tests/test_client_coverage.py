@@ -234,22 +234,60 @@ def test_job_operation_logs_request_exception(caplog, key_manager, mocker):
     assert 'unavailable' in messages
 
 
-def test_job_operation_logs_valueerror_on_bad_json(caplog, key_manager, mocker):
+def test_job_operation_saves_binary_when_ok_but_body_not_json(
+        caplog, key_manager, mocker):
+    # pylint: disable=too-many-locals
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
-    client.job_queue.add_job({
+    job = {
         'job_id': 1,
-        'url': 'http://regulations.gov/dockets/X',
+        'url': 'https://api.regulations.gov/v4/dockets/USTR-2015-0010',
         'job_type': 'dockets',
-    })
+    }
+    client.job_queue.add_job(job)
     response = MagicMock()
-    response.raise_for_status = MagicMock()
+    response.ok = True
+    response.status_code = 200
+    response.content = b'not valid json'
     response.json.side_effect = ValueError('not json')
     mocker.patch.object(client, '_perform_job', return_value=response)
-    with caplog.at_level(logging.ERROR, logger='mirrclient.client'):
-        with pytest.raises(ValueError):
-            client.job_operation(key_manager.get_next())
-    messages = ' '.join(r.message for r in caplog.records)
-    assert 'invalid_response' in messages
+    mock_save_binary = mocker.patch.object(client.saver, 'save_binary')
+    mock_inc = mocker.patch.object(client.cache, 'increase_jobs_done')
+    with caplog.at_level(logging.INFO, logger='mirrclient.client'):
+        client.job_operation(key_manager.get_next())
+    expected_path = PathGenerator().get_docket_json_path_from_job(job)
+    mock_save_binary.assert_called_once_with(expected_path, b'not valid json')
+    mock_inc.assert_called_once_with('dockets')
+    assert any(
+        'wrote unparseable api body' in r.message for r in caplog.records)
+
+
+def test_job_operation_saves_tombstone_when_primary_api_http_not_ok(
+        caplog, key_manager, mocker):
+    # pylint: disable=too-many-locals
+    client = Client(ReadyRedis(), MockJobQueue(), key_manager)
+    job = {
+        'job_id': 1,
+        'url': 'https://api.regulations.gov/v4/dockets/USTR-2015-0010',
+        'job_type': 'dockets',
+    }
+    client.job_queue.add_job(job)
+    response = MagicMock()
+    response.ok = False
+    response.status_code = 503
+    response.content = b'upstream down'
+    mocker.patch.object(client, '_perform_job', return_value=response)
+    mock_tomb = mocker.patch.object(client.saver, 'save_tombstone')
+    mock_bin = mocker.patch.object(client.saver, 'save_binary')
+    mock_inc = mocker.patch.object(client.cache, 'increase_jobs_done')
+    with caplog.at_level(logging.INFO, logger='mirrclient.client'):
+        client.job_operation(key_manager.get_next())
+    expected = PathGenerator().get_docket_json_tombstone_path(job)
+    mock_tomb.assert_called_once_with(expected, 503)
+    mock_bin.assert_not_called()
+    mock_inc.assert_called_once_with('dockets')
+    assert any(
+        'wrote tombstone' in r.message and 'http_status=503' in r.message
+        for r in caplog.records)
 
 
 def _http_error_with_response(status_code, body=b'', headers=None):

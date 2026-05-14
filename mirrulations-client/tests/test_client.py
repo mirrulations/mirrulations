@@ -19,6 +19,11 @@ from mirrclient.exceptions import RedisPingFailedError, APITimeoutException
 from mirrclient.key_manager import KeyManager
 from mirrmock.mock_redis import ReadyRedis, InactiveRedis, MockRedisWithStorage
 from mirrmock.mock_job_queue import MockJobQueue
+from mirrmock.regulations_api_fixtures import (
+    get_test_comment,
+    get_test_docket,
+    get_test_document,
+)
 
 
 TEST_API_KEY = 'TESTINGKEY123'
@@ -525,16 +530,7 @@ def test_client_downloads_document_html(caplog, mocker, key_manager):
 
 def test_primary_json_corpus_path_docket(key_manager):
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
-    job_result = {
-        'data': {
-            'id': 'USTR-2015-0010',
-            'type': 'dockets',
-            'attributes': {
-                'agencyId': 'USTR',
-                'docketId': 'USTR-2015-0010',
-            },
-        },
-    }
+    job_result = get_test_docket()
     assert client._primary_json_corpus_path(job_result) == (
         '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/docket/USTR-2015-0010.json'
     )
@@ -542,30 +538,12 @@ def test_primary_json_corpus_path_docket(key_manager):
 
 def test_primary_json_corpus_path_comment_and_document(key_manager):
     client = Client(ReadyRedis(), MockJobQueue(), key_manager)
-    comment = {
-        'data': {
-            'id': 'USTR-2015-0010-0002',
-            'type': 'comments',
-            'attributes': {
-                'agencyId': 'USTR',
-                'docketId': 'USTR-2015-0010',
-            },
-        },
-    }
+    comment = get_test_comment()
     assert client._primary_json_corpus_path(comment) == (
         '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/comments/'
         'USTR-2015-0010-0002.json'
     )
-    document = {
-        'data': {
-            'id': 'USTR-2015-0010-0015',
-            'type': 'documents',
-            'attributes': {
-                'agencyId': 'USTR',
-                'docketId': 'USTR-2015-0010',
-            },
-        },
-    }
+    document = get_test_document()
     assert client._primary_json_corpus_path(document) == (
         '/raw-data/USTR/USTR-2015-0010/text-USTR-2015-0010/documents/'
         'USTR-2015-0010-0015.json'

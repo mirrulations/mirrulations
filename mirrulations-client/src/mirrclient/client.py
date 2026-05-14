@@ -259,6 +259,59 @@ class Client:
             return handler(job_result)
         return '/raw-data/unknown/unknown.json'
 
+    def _primary_json_corpus_path_from_job(self, job):
+        """Canonical primary ``.json`` path from ``job`` when the body is not parsed."""
+        pg = self.path_generator
+        handler = {
+            'comments': pg.get_comment_json_path_from_job,
+            'dockets': pg.get_docket_json_path_from_job,
+            'documents': pg.get_document_json_path_from_job,
+        }.get(job.get('job_type'))
+        if handler is not None:
+            return handler(job)
+        return '/raw-data/unknown/unknown.json'
+
+    def _primary_json_tombstone_path_for_job(self, job):
+        """Primary API JSON tombstone path from ``job`` (HTTP error responses)."""
+        pg = self.path_generator
+        if job.get('job_type') == 'comments':
+            return pg.get_comment_json_tombstone_path(job)
+        if job.get('job_type') == 'dockets':
+            return pg.get_docket_json_tombstone_path(job)
+        if job.get('job_type') == 'documents':
+            return pg.get_document_json_tombstone_path(job)
+        return '/raw-data/unknown/unknown_UNAVAILABLE'
+
+    def _persist_primary_api_tombstone(self, job, response, key_id):
+        """Write primary JSON tombstone for non-OK API response; log and count."""
+        path = self._primary_json_tombstone_path_for_job(job)
+        self.saver.save_tombstone(path, response.status_code)
+        _, fname = path.rsplit('/', 1)
+        self._log_artifact_info(
+            kind=kind_singular(job['job_type']),
+            entity=entity_from_job_url(job['url']),
+            key_id=key_id,
+            artifact='json',
+            filename=fname,
+            http_status=response.status_code,
+        )
+        self.cache.increase_jobs_done(job['job_type'])
+
+    def _persist_primary_api_unparseable_body(self, job, response, key_id):
+        """Save raw response bytes at canonical ``.json`` path when JSON parse fails."""
+        path = self._primary_json_corpus_path_from_job(job)
+        self.saver.save_binary(path, response.content)
+        _, fname = path.rsplit('/', 1)
+        logger.info(
+            'wrote unparseable api body kind=%s type=json entity=%s file=%s '
+            'key_id=%s',
+            kind_singular(job['job_type']),
+            entity_from_job_url(job['url']),
+            fname,
+            key_id,
+        )
+        self.cache.increase_jobs_done(job['job_type'])
+
     def _download_job(self, job, job_result, key_id):
         """
         Downloads the current job and saves the data using the Saver.
@@ -286,10 +339,10 @@ class Client:
             key_id,
         )
         data['directory'] = self._primary_json_corpus_path(job_result)
-        self.cache.increase_jobs_done(data['job_type'])
 
         self._save_primary_json_and_log(job, data, key_id)
         self._maybe_download_followups(job_result, data['job_type'], key_id)
+        self.cache.increase_jobs_done(data['job_type'])
 
     def _save_primary_json_and_log(self, job, data, key_id):
         """Persist API JSON for this job and emit the artifact INFO line."""
@@ -520,11 +573,18 @@ class Client:
         return True
 
     def _run_fetched_job_pipeline(self, job, api_cred):
-        """HTTP GET job URL, validate status, parse JSON, persist artifacts."""
+        """HTTP GET job URL; persist primary JSON, tombstone, or raw body."""
         response = self._perform_job(job['url'], api_cred)
-        response.raise_for_status()
-        result = response.json()
-        self._download_job(job, result, api_cred.id)
+        key_id = api_cred.id
+        if not response.ok:
+            self._persist_primary_api_tombstone(job, response, key_id)
+            return
+        try:
+            result = response.json()
+        except ValueError:
+            self._persist_primary_api_unparseable_body(job, response, key_id)
+            return
+        self._download_job(job, result, key_id)
 
     @staticmethod
     def _log_job_failed_timeout(kind, redacted_job_url, key_id):
@@ -566,15 +626,6 @@ class Client:
             err,
         )
 
-    @staticmethod
-    def _log_job_failed_invalid_json(kind, redacted_job_url, key_id):
-        logger.error(
-            'job failed kind=%s phase=api url=%s key_id=%s reason=invalid_response',
-            kind,
-            redacted_job_url,
-            key_id,
-        )
-
     def _handle_job_api_and_storage(self, job, api_cred, failure_log):
         """Run HTTP fetch + persist; map failures to structured ERROR logs."""
         try:
@@ -586,27 +637,12 @@ class Client:
                 failure_log.key_id,
             )
             raise
-        except requests.exceptions.HTTPError as err:
-            self._log_job_failed_http(
-                failure_log.kind,
-                failure_log.redacted_job_url,
-                failure_log.key_id,
-                err,
-            )
-            raise
         except requests.exceptions.RequestException as err:
             self._log_job_failed_request(
                 failure_log.kind,
                 failure_log.redacted_job_url,
                 failure_log.key_id,
                 err,
-            )
-            raise
-        except ValueError:
-            self._log_job_failed_invalid_json(
-                failure_log.kind,
-                failure_log.redacted_job_url,
-                failure_log.key_id,
             )
             raise
 
@@ -682,8 +718,8 @@ if __name__ == '__main__':
                 redis_is_healthy = False
         except APITimeoutException:
             pass
-        except requests.exceptions.HTTPError:
-            pass
+        except requests.exceptions.HTTPError as exc:
+            logger.debug('Unexpected HTTPError after job: %s', exc)
         except (JobQueueException, AMQPConnectionError):
             if rabbit_is_healthy:
                 logger.warning(_RABBITMQ_DOWN_MSG)

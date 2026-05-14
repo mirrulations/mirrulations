@@ -138,6 +138,32 @@ class PathGenerator:
             f'/raw-data/{agency}/{docket_id}/text-{docket_id}/documents/'
             f'{document_id}_UNAVAILABLE')
 
+    def get_comment_json_path_from_job(self, job):
+        """Canonical comment JSON path from ``job['url']`` (no API body)."""
+        comment_id = urlparse(job['url']).path.rstrip('/').split('/')[-1]
+        agency = comment_id.split('-')[0]
+        docket_id = comment_id.rsplit('-', 1)[0]
+        return (
+            f'/raw-data/{agency}/{docket_id}/text-{docket_id}/comments/'
+            f'{comment_id}.json')
+
+    def get_docket_json_path_from_job(self, job):
+        """Canonical docket JSON path from ``job['url']`` (no API body)."""
+        docket_id = urlparse(job['url']).path.rstrip('/').split('/')[-1]
+        agency = docket_id.split('-')[0]
+        return (
+            f'/raw-data/{agency}/{docket_id}/text-{docket_id}/docket/'
+            f'{docket_id}.json')
+
+    def get_document_json_path_from_job(self, job):
+        """Canonical document JSON path from ``job['url']`` (no API body)."""
+        document_id = urlparse(job['url']).path.rstrip('/').split('/')[-1]
+        agency = document_id.split('-')[0]
+        docket_id = document_id.rsplit('-', 1)[0]
+        return (
+            f'/raw-data/{agency}/{docket_id}/text-{docket_id}/documents/'
+            f'{document_id}.json')
+
     def _tombstone_path_from_success_path(self, success_path):
         p = Path(success_path)
         return str(p.with_name(f'{p.stem}_UNAVAILABLE'))
