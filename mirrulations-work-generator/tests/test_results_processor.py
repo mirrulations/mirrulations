@@ -1,7 +1,11 @@
 import json
 import os
 from fakeredis import FakeRedis
-from mirrgen.results_processor import ResultsProcessor, print_report
+from mirrgen.results_processor import (
+    ResultsProcessor,
+    job_url_from_listing_item,
+    print_report,
+)
 from mirrcore.job_queue import JobQueue
 from mirrmock.mock_dataset import MockDataSet
 from mirrmock.mock_rabbitmq import MockRabbit
@@ -39,3 +43,55 @@ def test_print_counts(capsys):
     print_report({'docket': 250})
     captured = capsys.readouterr()
     assert captured.out == 'Added docket: 250\n'
+
+
+def test_job_url_from_listing_item_comment():
+    item = {
+        'id': 'FMCSA-2026-0958-0393',
+        'type': 'comments',
+        'attributes': {},
+    }
+    assert job_url_from_listing_item(item) == (
+        'https://api.regulations.gov/v4/comments/FMCSA-2026-0958-0393'
+        '?include=attachments')
+
+
+def test_job_url_from_listing_item_docket():
+    item = {'id': 'ED-2021-SCC-0032', 'type': 'dockets', 'attributes': {}}
+    assert job_url_from_listing_item(item) == (
+        'https://api.regulations.gov/v4/dockets/ED-2021-SCC-0032')
+
+
+def test_process_results_without_links():
+    database = FakeRedis()
+    queue = JobQueue(database)
+    queue.rabbitmq = MockRabbit()
+    processor = ResultsProcessor(queue)
+    listing = {
+        'data': [
+            {
+                'id': 'FMCSA-2026-0958-0393',
+                'type': 'comments',
+                'attributes': {
+                    'lastModifiedDate': '2026-05-15T22:07:38Z',
+                },
+            },
+            {
+                'id': 'ED-2021-SCC-0032',
+                'type': 'dockets',
+                'attributes': {
+                    'lastModifiedDate': '2021-05-10T07:48:24Z',
+                },
+            },
+        ],
+    }
+    processor.process_results(listing)
+
+    assert queue.get_num_jobs() == 2
+    assert queue.rabbitmq.jobs[0]['url'] == (
+        'https://api.regulations.gov/v4/comments/FMCSA-2026-0958-0393'
+        '?include=attachments')
+    assert queue.rabbitmq.jobs[0]['job_type'] == 'comments'
+    assert queue.rabbitmq.jobs[1]['url'] == (
+        'https://api.regulations.gov/v4/dockets/ED-2021-SCC-0032')
+    assert queue.rabbitmq.jobs[1]['job_type'] == 'dockets'
