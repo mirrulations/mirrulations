@@ -729,4 +729,4 @@ if __name__ == '__main__':
             if exc.__cause__ is not None:
                 logger.error('Cause: %r', exc.__cause__)
 
-        time.sleep(key_manager.seconds_between_api_calls())
+        time.sleep(key_manager.seconds_to_sleep())

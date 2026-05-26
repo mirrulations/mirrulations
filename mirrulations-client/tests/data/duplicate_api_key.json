@@ -1,4 +1,6 @@
-[
-  {"id": "first", "api_key": "aaCCxJMe0WPEM2g3Lwcy1yk583WlTakuAKlamQXp"},
-  {"id": "second", "api_key": "aaCCxJMe0WPEM2g3Lwcy1yk583WlTakuAKlamQXp"}
-]
+{
+  "keys": [
+    {"id": "first", "api_key": "aaCCxJMe0WPEM2g3Lwcy1yk583WlTakuAKlamQXp"},
+    {"id": "second", "api_key": "aaCCxJMe0WPEM2g3Lwcy1yk583WlTakuAKlamQXp"}
+  ]
+}

@@ -17,7 +17,7 @@ def create_env_folder():
 def write_files(env_path, credentials, aws_access_key, aws_secret_access_key):
     keys_path = os.path.join(env_path, "client_keys.json")
     with open(keys_path, "w", encoding="utf-8") as file:
-        json.dump(credentials, file, indent=2)
+        json.dump({"keys": credentials}, file, indent=2)
         file.write("\n")
 
     client_env = os.path.join(env_path, "client.env")

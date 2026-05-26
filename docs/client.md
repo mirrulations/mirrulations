@@ -8,7 +8,7 @@ The **client** service downloads data from Regulations.gov. Unless stopped it re
 2. Get work from the job queue (RabbitMQ).
 3. Call the Regulations.gov API using that key, then save results (disk and S3).
 
-Internally it uses Redis for job statistics and RabbitMQ for jobs. Keys and pacing come from **`mirrclient.key_manager.KeyManager`**; sleep duration between iterations is **`seconds_between_api_calls()`** (shared 1000/hour budget across keys).
+Internally it uses Redis for job statistics and RabbitMQ for jobs. Keys and pacing come from **`mirrclient.key_manager.KeyManager`**. Each loop iteration calls **`get_next()`** then, after work, **`seconds_to_sleep()`**, which returns any remaining time needed to stay under the configured per-key hourly rate (default **999** calls/hour per key, overridable via **`calls_per_hour_per_key`** in `client_keys.json`). Elapsed job time reduces the sleep so pacing tracks wall clock.
 
 ## Details
 
