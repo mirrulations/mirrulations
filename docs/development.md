@@ -1,96 +1,90 @@
+# Local development
 
-## Developer Setup
+## Python environment and packages
 
-* Run `python dev_setup.py` to create a virtual environment and install all neccessary packages.
+Run `python dev_setup.py`. It prompts for one or more Regulations.gov API credentials (`id` + `api_key` pairs), AWS access keys, recreates `env_files/`, and runs `install_packages.sh`, which creates a **`.venv`** in the repo root (if missing) and installs the main packages in editable mode.
 
-## Run Static Analysis and Tests
+Activate the venv when running tests or tools locally:
 
-Type `make` to run all. 
-
-Type `make static` for only static tests.
-
-Type `make test` for only pytest.  Alternatively, run `pytest` in the root of
-the project to run all tests.  You can run `pytest` in any of module folders
-(e.g. in `mirrulations-client`) to run tests for just that module.  Note that
-there are `pytest.ini` files in each module as well as a global `pytest.ini`.
-
-* Static analysis uses `flake8`, `pycodestyle`, and `pylint`
-* `pytest` uses a coverage metric of 95%.
-* NOTE: Sometimes if `pytest` is installed globally, the virtual environment will use that instead. Simply exit and reenter the virtual environment to resolve this.
-  Alternatively, uninstall `pytest` from the global packages (`pip3 uninstall pytest` in new terminal).
-
-## Checking Test Coverage
-
-### To check the test coverage of your code using Pytest, follow these steps:
-
-* Open a terminal or file explorer window and navigate to your project directory.
-* Find the htmlcov folder and open it.
-* Inside the htmlcov folder, locate the index.html file and open it on your browser typing `open index.html`.
-
-#### The index.html file will display the test coverage report, showing you which lines of code were executed during the test run and which were not.
-
-## Setup for Local Launch
-
-The system is made up of a number of Docker containers.  See the `docker-compose.yml` file for details.
-
-* **Work Generator** - Uses an API key to query regulations.gov in order to determine what data needs to be downloaded
-* **Work Server** - Provides jobs to clients and saves results returned by clients
-* **Redis** - Database used to maintain work queues
-* **Mongo** - Database used to hold results
-* **Dashboard** - Provides a status page for the system
-* **NGINX** - Routes web traffic to appropriate host (currently only the dashboard)
-* **Clients** - There are multiple instances of the clients.  Each gets jobs from the work server, downloads the requested information from regulations.gov (using an API key), and returns the data to the work server.
-
-### Docker Setup
-
-To run the system locally, you have to specify the API key for each client and for the work generator.  It is important that you **DO NOT** use any of the API keys used in production.
-
-Because a local instance of the system should only run for a short period of time, we use a single API key for the work generator and all the clients:
-
-To get an api key, visit [here](https://open.gsa.gov/api/regulationsgov/). 
-
-To make all neccessary files for the clients, dashboard, and the work generator, run `python dev_setup.py`.
-
-## Launch Locally
-
-* Build the Docker containers
-
-  ```
-  docker-compose build
-  ```
-  
-* Launch all the containers
-
-  ```
-  docker-compose up -d
-  ```
-  
-  If you forget the `-d`, it will launch in the foreground, and you will see the log output for all containers. Press ctlr-c to exit all containers
-
-* Using devup to Build and Launch Docker Containers
-
-  ```
-  bash devup [-b]
-  ```
-
-  Running devup will launch the docker containers for you. Along with the optional `-b` you can build and launch the containers simaltaniously. 
-  
-* Kill all containers
-
-  ```
-  docker-compose down
-  ```
-
-  or you could do
-
-  ```
-  bash devdown
-  ```
-  
-* To see the last 25 log messages of the download client:
-
+```bash
+source .venv/bin/activate   # Unix
 ```
-  docker-compose logs --tail=25 client
-  ```
-  
-  If you forget `--tail=25`, it will show **all** log messages.
+
+On Windows, use `.venv\Scripts\activate`.
+
+## Static analysis and tests
+
+- `make` — static checks and tests.
+- `make static` — `flake8`, `pycodestyle`, and `pylint` only.
+- `make test` — `pytest` only.
+
+You can also run `pytest` from the repository root or inside a package directory (for example `mirrulations-client`). There is a root `pytest.ini` and per-package `pytest.ini` files where relevant.
+
+Coverage is enforced at **95%** for the test run configured in the project.
+
+If the wrong `pytest` runs (for example a global install shadowing the venv), reactivate `.venv` or remove the global `pytest`.
+
+## Test coverage (HTML)
+
+After a coverage run, open `htmlcov/index.html` in a browser (for example `open htmlcov/index.html` on macOS) to see line-by-line coverage.
+
+## Docker stack (local)
+
+`docker-compose.yml` defines the runtime stack:
+
+| Service | Role |
+|---------|------|
+| **nginx** | Reverse proxy to the dashboard. |
+| **redis** | Counters, Regulations.gov crawl checkpoints, and aggregate totals (see [database.md](database.md)). |
+| **rabbitmq** | Durable FIFO queue for download jobs (`jobs_waiting_queue`). |
+| **work_generator** | Queries Regulations.gov, enqueues jobs, refreshes Redis totals and S3 bucket size. |
+| **dashboard** | Web UI and JSON endpoints for queue depth and progress. |
+| **client** | Pulls jobs from RabbitMQ, calls the API using keys from `client_keys.json`, writes under **`/raw-data`** in the container (host path `~/data/data/raw-data` in the default compose file). Uses Redis for statistics; optional S3 uploads per [env_files.md](env_files.md). |
+
+## Configuration before you run Docker
+
+Use **dedicated** Regulations.gov API keys for local work, not production keys.
+
+`dev_setup.py` writes:
+
+- `env_files/client.env` and **`env_files/client_keys.json`** for the client (multiple keys are supported; one client process rotates through them).
+- `env_files/work_gen.env` with **`API_KEY`** set from the **first** entry in `client_keys.json` for the work generator.
+- `env_files/dashboard.env` for Redis hostname and logging.
+
+Details and optional variables: **[env_files.md](env_files.md)**.
+
+Client behavior, logging, persistence outcomes (JSON, tombstones, unparseable bodies), and scaling guidance: **[client.md](client.md)**, **[client_logging.md](client_logging.md)**, and **[structure.md](structure.md)**.
+
+## Build and run
+
+Build images:
+
+```bash
+docker compose build
+```
+
+Start all services in the background:
+
+```bash
+docker compose up -d
+```
+
+Omit `-d` to run attached to the terminal; use **Ctrl+C** to stop.
+
+Stop and remove containers:
+
+```bash
+docker compose down
+```
+
+Recent logs for the download client:
+
+```bash
+docker compose logs --tail=25 client
+```
+
+Omit `--tail=25` only if you need the full history.
+
+## Helper scripts
+
+`devup` (optional `-b` to build first) and `devdown` in the repository root call Docker Compose to start or stop the full stack defined in `docker-compose.yml`.

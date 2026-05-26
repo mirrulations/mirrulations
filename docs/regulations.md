@@ -1,5 +1,7 @@
 # Regulations Storage on Disk
 
+For the **canonical path layout** used by the mirror today (`raw-data/…`, `text-…`, `binary-…`, tombstones), see **[structure.md](structure.md)**.
+
 ## General Description
   The format of the Regulations API is split up into `agencies`, `dockets`, `documents`, `comments`
 

@@ -10,7 +10,9 @@ The download **client** container loads AWS credentials from `client.env` and lo
 
 `PYTHONUNBUFFERED=TRUE` keeps stderr unbuffered for Docker logs.
 
-**`LOG_LEVEL`** — optional (`INFO`, `DEBUG`, `WARNING`, …). Defaults to **`INFO`** in `mirrulations.client`.
+**`LOG_LEVEL`** — optional (`INFO`, `DEBUG`, `WARNING`, …). Defaults to **`INFO`** for the **`mirrclient`** logger (see `mirrclient.logutil.configure_client_logging`).
+
+Persistence behavior (tombstones, unparseable bodies, paths) does **not** depend on `LOG_LEVEL`; see **[structure.md](structure.md)** and **[client.md](client.md)**.
 
 ## Work generator (`work_gen.env`)
 

@@ -18,7 +18,7 @@ Jobs can have **multiple saved parts**:
 
 The system is supposed to **download and persist everything** for that job. The client **does not** re-queue failed jobs. If a job does not fully complete, **logs are the only place** operators can see that; there is no separate “incomplete job” record to query.
 
-**Operational goal:** From ERROR (and enough context on INFO when useful), you must be able to **identify which artifact** did not complete so you can re-download or fix the pipeline. If a failure is recurring, fix the systemic issue; if rare, **manually download** the data and place it on disk/S3.
+**Operational goal:** From **ERROR** lines (transport, persistence failures) and enough **INFO** context (artifacts, tombstones, unparseable bodies), you must be able to **identify which artifact** did not complete—or what non-success artifact was recorded—so you can re-download or fix the pipeline. If a failure is recurring, fix the systemic issue; if rare, **manually download** the data and place it on disk/S3.
 
 **Identifying artifacts in messages (no internal `job_id`):**
 
@@ -33,7 +33,7 @@ The client receives the **same Redis connection** used as `JobQueue`’s Redis `
 
 1. **Per-type “waiting” counters** — Keys like `num_jobs_dockets_waiting` / `documents` / `comments` are **decremented in Redis** when a job of that type is **dequeued** (`decrement_count`), so the dashboard can show backlog by type. This happens **before** the job is fully downloaded; if the process dies mid-job, the counter already dropped.
 
-2. **“Done” statistics (`JobStatistics`)** — Keys like `num_dockets_done`, `num_documents_done`, `num_comments_done`, `num_attachments_done` (and PDF attachment count) are **incremented** when `increase_jobs_done` runs. Today, for the **main JSON** of a docket/document/comment, that increment runs **immediately before** `save_json` in `_download_job`—so the counter can be **ahead of disk/S3** if the save then fails. For **attachments** and **document HTM/HTML**, increments run **after** the corresponding `save_binary` path completes. Wrong counts are **annoying for the dashboard** but **do not mean data was written**; the filesystem and bucket are the source of truth for persistence.
+2. **“Done” statistics (`JobStatistics`)** — Keys like `num_dockets_done`, `num_documents_done`, `num_comments_done`, `num_attachments_done` (and PDF attachment count) are **incremented** when `increase_jobs_done` runs. For the **main JSON** of a docket/document/comment, that increment runs **after** the job’s persistence for that branch finishes: on the success path, **after** `save_json` **and** any follow-up downloads (comment attachments, document HTM/HTML when applicable); on **non-OK** primary responses, after the **tombstone** is written; on **unparseable** primary bodies (HTTP success, invalid JSON), after **`save_binary`** at the canonical `.json` path. For **attachments** and **document HTM/HTML** sub-fetches, increments run **after** each attachment/body branch completes (`save_binary` or tombstone). If the process dies **after** `increase_jobs_done` but before the fact is durable elsewhere, the dashboard can briefly look **ahead** of external reality; if it dies **before** the increment after a successful save, the dashboard can look **behind**. Wrong counts are **annoying for the dashboard** but **do not replace** disk/S3 as the source of truth for persistence.
 
 3. **Connectivity check** — `_can_connect_to_database()` **pings** Redis before dequeue. If the ping fails, the client raises **`RedisPingFailedError`** (distinct from an empty queue). The main loop logs **WARNING** once per outage (see **Goals**).
 
@@ -53,11 +53,15 @@ RabbitMQ unavailability is separate: **no jobs can be consumed** even if Redis i
 
 **Persistence failures (`SaveError`).** Disk and S3 **`save_*`** methods raise **`SaveError`** with an operator-readable message (underlying cause chained). **`SaveError`** is not logged inside savers; the **main loop** logs **ERROR** from the exception string (include cause when present).
 
-**HTTP status.** **4xx and 5xx** are treated the same for logging: a failed request logs **ERROR** (include status in the message for triage).
+**HTTP status vs transport.** Distinguish:
 
-**Failure propagation (initial scope).** **One failed step fails the whole job**: raise to the **main client loop**. INFO lines for artifacts already written **before** the failure remain valid; later parts are missing—ERROR must identify **which artifact** was in progress (entity id from URL, or comment id + attachment index).
+- **Primary Regulations.gov JSON URL** (`job`’s API URL): if the response is **not OK** (`requests.Response.ok` is false), the client writes a **tombstone** (see [structure.md](structure.md)), logs **INFO** (`wrote tombstone` with `http_status=…`), increments **done** counters for that job type, and **does not** treat this as a **`job_operation`** ERROR. If the response **is OK** but **`response.json()`** fails, the client writes **raw bytes** at the canonical `.json` path, logs **INFO** (`wrote unparseable api body …`), increments **done** counters, and again **does not** raise for that outcome.
+- **Attachment and document-body URLs**: non-OK responses similarly produce **tombstones** and **INFO** lines (with `http_status`), with counters updated per attachment/body rules.
+- **Transport failures** (timeouts, connection errors, and other **`requests.RequestException`** subclasses that prevent a normal response handling path): these still surface as structured **ERROR** logs from **`_handle_job_api_and_storage`** / the main loop as implemented, and **propagate** so the job does not appear “cleanly finished” the same way.
 
-**Saver modules.** **`DiskSaver`** / **`S3Saver`** emit **DEBUG** only (paths, keys). **`INFO`** artifact lines come from **`Client`**, immediately **`after`** each successful `self.saver.save_json` / `save_binary`.
+**Failure propagation.** **Transport** errors fail the **`job_operation`** path (raise after logging). **Handled HTTP outcomes** (primary non-OK, unparseable success body, attachment/body non-OK with tombstone) **complete** that branch without raising—**INFO** lines record what was written. If a **later** step raises (for example **`SaveError`** during a follow-up save), earlier INFO lines for artifacts already written remain valid; **ERROR** should identify what was in progress.
+
+**Saver modules.** **`DiskSaver`** / **`S3Saver`** emit **DEBUG** only (paths, keys). **`INFO`** outcome lines come from **`Client`**, immediately **`after`** each successful `self.saver.save_json` / `save_binary`, and after **`save_tombstone`** for the tombstone paths above.
 
 **Duplicate JSON (`DiskSaver`).** When payload matches existing on-disk JSON and no new file is written, **`DiskSaver`** logs **DEBUG** only (skipped write). Duplicate detection does **not** raise **`SaveError`**.
 
@@ -69,9 +73,9 @@ RabbitMQ unavailability is separate: **no jobs can be consumed** even if Redis i
 
 ### INFO
 
-- **One line per artifact** successfully persisted (after **`Saver`** returns from fan-out to disk and/or S3).
-- **`Client`** emits the line immediately after **`self.saver.save_json`** / **`self.saver.save_binary`** succeed.
-- **Purpose:** Confirm what landed. Human-readable prose is fine.
+- **One line per persisted outcome** for the main job and follow-ups: normal JSON (`wrote artifact …`), binary body (`wrote artifact` after **`save_binary`**), **tombstone** (`wrote tombstone … http_status=…`), or **unparseable primary body** (`wrote unparseable api body …`)—each emitted after the corresponding **`Saver`** call returns from fan-out to disk and/or S3.
+- **`Client`** emits the line immediately after **`self.saver.save_json`**, **`save_binary`**, or **`save_tombstone`** for those branches.
+- **Purpose:** Confirm what landed (or that a deliberate tombstone/raw capture was written). Human-readable prose is fine.
 
 ### WARNING
 
@@ -79,8 +83,8 @@ RabbitMQ unavailability is separate: **no jobs can be consumed** even if Redis i
 
 ### ERROR
 
-- **job_operation** failures: API timeout, **`HTTPError`**, and similar (see code).
-- **Main loop:** **`SaveError`** (disk/S3 **`put_object`** / **`open`** / permission / etc.)—message text carries context.
+- **`job_operation` / API phase (transport):** API **read timeout** (`APITimeoutException`), and other **`requests.RequestException`** cases that escape the normal per-response handling (see **`mirrclient.client`**). Primary HTTP status failures are **not** logged here as ERROR when they are handled as tombstones.
+- **Main loop:** **`SaveError`** (disk/S3 **`put_object`** / **`open`** / permission / etc.)—message text carries context. **`__main__`** may log an unexpected **`HTTPError`** at **DEBUG** if one surfaces outside the normal pipeline.
 - **Identity:** **Artifact** identity as in the table above where applicable. Include **redacted URL**, **`key_id`** when a credential was in use.
 
 ### DEBUG
@@ -103,7 +107,7 @@ RabbitMQ unavailability is separate: **no jobs can be consumed** even if Redis i
 |------|------|---------|-------|-------|
 | **`Saver`** | — | — | — | Raises only |
 | **`DiskSaver` / `S3Saver`** | — | — | Paths / keys / duplicate skip | Raise **`SaveError`** (no logging) |
-| **`Client`** | After each **`save_*`** success | — | Flow / job lifecycle | API timeout / **`HTTPError`** |
+| **`Client`** | After **`save_json`** / **`save_binary`** / **`save_tombstone`** for handled outcomes | — | Flow / job lifecycle | API timeout / **`RequestException`** (transport) |
 | **`__main__`** | — | Rabbit / Redis ping | Recovery (optional) | **`SaveError`**, Redis **`ConnectionError`** during loop |
 
 Print statements for **enqueue** / **producer** Rabbit paths in **`mirrcore`** (shared with work generator) are **intentionally unchanged** until that package migrates separately.
@@ -118,6 +122,18 @@ Timestamps omitted; formatter uses UTC ISO-like `asctime`.
 
 ```text
 2026-05-09T14:22:01Z INFO wrote artifact kind=docket type=json entity=DOE-HQ-2026-0001 file=DOE-HQ-2026-0001.json key_id=key4
+```
+
+**INFO — primary JSON tombstone (non-OK HTTP):**
+
+```text
+2026-05-09T14:25:00Z INFO wrote tombstone kind=document type=json entity=USTR-2015-0010-0015 file=USTR-2015-0010-0015_UNAVAILABLE key_id=key2 http_status=502
+```
+
+**INFO — HTTP 200 but body not JSON (raw bytes at canonical `.json` path):**
+
+```text
+2026-05-09T14:26:10Z INFO wrote unparseable api body kind=docket type=json entity=USTR-2015-0010 file=USTR-2015-0010.json key_id=key4
 ```
 
 **DEBUG — unchanged JSON on disk:**
@@ -152,4 +168,5 @@ Timestamps omitted; formatter uses UTC ISO-like `asctime`.
 ## Related
 
 - Client overview: [client.md](client.md)
+- Data layout and tombstones: [structure.md](structure.md)
 - Environment variables: [env_files.md](env_files.md)

@@ -46,6 +46,8 @@ Here is the body of a sample response
 }
 ```
 
+The **`num_*_done`** fields mirror **`JobStatistics`** in Redis: they advance when the client finishes a persistence branch for that category (including jobs that ended in a **tombstone** or **unparseable-body** write for the main JSON). They are **not** a guarantee that every object is valid JSON on disk; see **[client_logging.md](client_logging.md)** and **[structure.md](structure.md)**.
+
 ### System Status
 
 ```

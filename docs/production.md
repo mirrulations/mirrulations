@@ -7,7 +7,7 @@ The system is Dockerized into a number of components:
 * `work_generator` - Finds new data and generates jobs to download from regulations.gov
 * `rabbitmq` - Job Queue Management
 * `dashboard` - Web-based user interface to observe progress and system status
-* `client` - Downloads data from regulations.gov (uses `env_files/client_keys.json`)
+* `client` - Pulls jobs from RabbitMQ, downloads from Regulations.gov (see `env_files/client_keys.json`), writes **`raw-data`** with tombstones / unparseable-body handling as in **[structure.md](structure.md)** and **[client.md](client.md)**
 
 ## Docker Compose commands
 
