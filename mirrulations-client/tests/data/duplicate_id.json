@@ -1,4 +1,6 @@
-[
-  {"id": "dup", "api_key": "a1"},
-  {"id": "dup", "api_key": "a2"}
-]
+{
+  "keys": [
+    {"id": "dup", "api_key": "a1"},
+    {"id": "dup", "api_key": "a2"}
+  ]
+}

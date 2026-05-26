@@ -1,12 +1,14 @@
 """Scenario tests for mirrclient.key_manager.KeyManager."""
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from pydantic import ValidationError
 
 from mirrclient.key_manager import (
+    DEFAULT_CALLS_PER_HOUR_PER_KEY,
     KeyCredential,
     KeyManager,
     KeyManagerFileError,
@@ -50,8 +52,22 @@ def test_invalid_json():
     assert isinstance(exc.value.__cause__, ValidationError)
 
 
-def test_wrong_root_not_array():
+def test_wrong_root_array_rejected():
+    p = data_file('wrong_root_array.json')
+    with pytest.raises(KeyManagerJsonError) as exc:
+        KeyManager(p)
+    assert 'invalid json' in str(exc.value).lower()
+
+
+def test_wrong_root_object_missing_keys():
     p = data_file('wrong_root_object.json')
+    with pytest.raises(KeyManagerJsonError) as exc:
+        KeyManager(p)
+    assert 'invalid json' in str(exc.value).lower()
+
+
+def test_missing_keys_field():
+    p = data_file('missing_keys_field.json')
     with pytest.raises(KeyManagerJsonError) as exc:
         KeyManager(p)
     assert 'invalid json' in str(exc.value).lower()
@@ -132,19 +148,32 @@ def test_duplicate_api_key():
     assert 'duplicate api_key' in msg
 
 
-def test_valid_one_key_loads_and_paces():
+def test_seconds_to_sleep_without_get_next_is_conservative():
+    km = KeyManager(data_file('valid_one.json'))
+    assert km.seconds_to_sleep() == pytest.approx(3.6)
+
+
+def test_valid_one_key_loads_and_round_robin():
     km = KeyManager(data_file('valid_one.json'))
     assert km.key_count == 1
+    assert km.calls_per_hour_per_key == DEFAULT_CALLS_PER_HOUR_PER_KEY
     cred = km.get_next()
     assert cred == KeyCredential(
         id='only',
         api_key='VuyuxjcxoIuIAJkP7JuIOh7sQWTNkugxKzuYSdGu',
     )
     assert km.get_next().id == 'only'
-    assert km.seconds_between_api_calls() == pytest.approx(3.6)
 
 
-def test_valid_multiple_keys_round_robin_and_pacing():
+def test_valid_one_key_pacing():
+    km = KeyManager(data_file('valid_one.json'))
+    expected = 3600 / DEFAULT_CALLS_PER_HOUR_PER_KEY / 1
+    with patch('mirrclient.key_manager.time.monotonic', return_value=0.0):
+        km.get_next()
+        assert km.seconds_to_sleep() == pytest.approx(expected)
+
+
+def test_valid_multiple_keys_round_robin():
     km = KeyManager(data_file('valid_multiple.json'))
     assert km.key_count == 3
     order = [km.get_next().id for _ in range(7)]
@@ -157,4 +186,34 @@ def test_valid_multiple_keys_round_robin_and_pacing():
         'gamma',
         'alpha',
     ]
-    assert km.seconds_between_api_calls() == pytest.approx(1.2)
+
+
+def test_valid_multiple_keys_pacing():
+    km = KeyManager(data_file('valid_multiple.json'))
+    expected = 3600 / DEFAULT_CALLS_PER_HOUR_PER_KEY / 3
+    with patch('mirrclient.key_manager.time.monotonic', return_value=0.0):
+        km.get_next()
+        assert km.seconds_to_sleep() == pytest.approx(expected)
+
+
+def test_calls_per_hour_per_key_from_file():
+    km = KeyManager(data_file('valid_calls_per_hour.json'))
+    assert km.calls_per_hour_per_key == 500
+    with patch('mirrclient.key_manager.time.monotonic', return_value=0.0):
+        km.get_next()
+        assert km.seconds_to_sleep() == pytest.approx(7.2)
+
+
+def test_seconds_to_sleep_accounts_for_elapsed_wall_clock():
+    km = KeyManager(data_file('valid_one.json'))
+    target = 3600 / DEFAULT_CALLS_PER_HOUR_PER_KEY
+    with patch('mirrclient.key_manager.time.monotonic', side_effect=[0.0, 2.5]):
+        km.get_next()
+        assert km.seconds_to_sleep() == pytest.approx(target - 2.5)
+
+
+def test_seconds_to_sleep_never_negative():
+    km = KeyManager(data_file('valid_one.json'))
+    with patch('mirrclient.key_manager.time.monotonic', side_effect=[0.0, 100.0]):
+        km.get_next()
+        assert km.seconds_to_sleep() == 0.0

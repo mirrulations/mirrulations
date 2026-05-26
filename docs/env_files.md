@@ -4,7 +4,7 @@ The `env_files/` directory holds secrets and local configuration for Docker Comp
 
 ## Client (`client.env` + `client_keys.json`)
 
-The download **client** container loads AWS credentials from `client.env` and loads one or more Regulations.gov API keys from **`client_keys.json`** (JSON array of `{"id": "...", "api_key": "..."}` objects). Set **`CLIENT_KEYS_PATH`** in `client.env` to the path where **`client_keys.json`** is mounted inside the container (see `docker-compose.yml`; the default layout uses `/config/client_keys.json`).
+The download **client** container loads AWS credentials from `client.env` and loads one or more Regulations.gov API keys from **`client_keys.json`**. The file is a JSON object with a required **`keys`** array of `{"id": "...", "api_key": "..."}` objects and an optional **`calls_per_hour_per_key`** integer (default **999**) used by the client to pace API calls. Set **`CLIENT_KEYS_PATH`** in `client.env` to the path where **`client_keys.json`** is mounted inside the container (see `docker-compose.yml`; the default layout uses `/config/client_keys.json`).
 
 **`S3_BUCKET`** controls S3 uploads: omit it or leave it unset to use the default bucket name `mirrulations`; set it to a non-empty string to use that bucket; set it to an empty value (`S3_BUCKET=` with nothing after `=`) or whitespace-only to disable S3 and write only to disk.
 
