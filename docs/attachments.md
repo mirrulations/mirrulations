@@ -1,5 +1,7 @@
 # Attachments
 
+> **Note:** This page mixes historical notes with older path and storage ideas. For the **current** on-disk and S3 layout (including **comment attachments** and **`_UNAVAILABLE` tombstones** when a download is non-OK), use **[structure.md](structure.md)** and the download **client** docs (**[client.md](client.md)**).
+
 ## Downloading Attachments
 
 1. Attachments are found in a single comments json data

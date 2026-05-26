@@ -24,14 +24,32 @@ A client pulls a job from the queue when work is available.
 
 ### Data download
 
-After receiving a job, the client requests the API URL with the current key. Comments may trigger attachment downloads (no API key on those HTTP requests). Completed work increments Redis counters via `JobStatistics`.
+After receiving a job, the client **GET**s the Regulations.gov **`url`** from the job with the current API key. Comments may trigger **attachment** downloads and documents may trigger **HTM/HTML body** downloads (those follow-up URLs typically **do not** include an API key).
 
-If an unrecoverable error occurs, the client prints the failing job id and URL, then continues the loop.
+The client branches on **`requests.Response.ok`**:
+
+| Outcome | Primary JSON (docket / document / comment) |
+|--------|---------------------------------------------|
+| **Not OK** | Writes a **tombstone** next to the canonical JSON location; path comes from **`job_type`** and **`url`** (no parsed API body required). See [structure.md](structure.md) § Tombstone files. |
+| **OK**, valid JSON | **`save_json`** at the path implied by the payload, then any follow-ups (attachments / document body) per job type. |
+| **OK**, body not JSON | **`save_binary`** at the **canonical** `.json` path derived from the job (rare; see [structure.md](structure.md) § Unparseable API responses). |
+
+Attachment and document-body fetches use the same **`response.ok`** idea: success **`save_binary`**, non-success **tombstone** on the corresponding path.
+
+**Redis `JobStatistics`:** “done” counters for the main job type are incremented **after** that job’s persistence branch completes (including follow-ups on the happy path, or after tombstone / unparseable handling). Transport failures still prevent a clean finish and are logged at **ERROR**; see **[client_logging.md](client_logging.md)**.
+
+If an unrecoverable error occurs in the main loop (for example **`SaveError`**), the client logs it and continues the polling loop.
 
 ### Saving data
 
-Results are saved under `/data` and to the `mirrulations` S3 bucket when configured.
+Results are saved under **`/data`** (and in Docker, the mounted **`raw-data`** tree) and to the **`mirrulations`** S3 bucket when **`S3_BUCKET`** is set; see **[env_files.md](env_files.md)**. On-disk layout and tombstone naming match **[structure.md](structure.md)**.
 
 ### Scaling
 
 Run a **single** client replica per shared `client_keys.json`, or split keys across processes; multiple replicas using the same key file will overshoot API rate limits.
+
+## Related
+
+- [structure.md](structure.md) — `raw-data/` layout, tombstones, unparseable primary bodies  
+- [client_logging.md](client_logging.md) — log levels, Redis counters, ERROR vs INFO  
+- [env_files.md](env_files.md) — `S3_BUCKET`, `LOG_LEVEL`, keys paths

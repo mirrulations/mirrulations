@@ -1,4 +1,7 @@
 # JSON Example
+
+> **Note:** These examples reflect an older **MongoDB**-oriented shape. The live mirror stores API payloads on disk/S3 (see **[structure.md](structure.md)** and **[client.md](client.md)**).
+
 Example of how data is saved for the following: Dockets, Documents, and Comments.
 
 ## Dockets

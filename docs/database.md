@@ -1,98 +1,77 @@
-# Redis Database Documentation
+# Redis and job queue
 
-## Database Format
+Mirrulations uses **RabbitMQ** for the FIFO job list and **Redis** for numeric counters, Regulations.gov crawl checkpoints, and aggregate totals. The dashboard and work generator read both through `JobQueue` and `JobStatistics` in `mirrcore`.
 
-We use [Redis](https://redis.io/) to store jobs as well as key values 
+## RabbitMQ: download jobs
 
-## Database Structure 
+Jobs are published to a durable queue named **`jobs_waiting_queue`**. Each message body is JSON with at least:
 
-The Redis database is structured with the following keys: 
+- **`job_id`** — integer, unique per assignment (`last_job_id` in Redis is incremented to produce the next id).
+- **`url`** — Regulations.gov API URL for the client to request.
+- **`job_type`** — from the Regulations.gov payload (`dockets`, `documents`, or `comments` for work the generator enqueues). Attachment files are downloaded inside a comment job, not as separate queued jobs.
+- **`reg_id`**, **`agency`** — optional metadata carried with the job.
 
-regulations_total_comments
-num_dockets_done
-num_documents_done
-num_attachments_done
-last_job_id
-jobs_in_progress
-num_pdf_attachments_done
-num_jobs_documents_waiting
-num_jobs_comments_waiting
-dockets_last_timestamp
-regulations_total_dockets
-client_jobs
-regulations_total_documents
-mirrulations_bucket_size
-num_comments_done
-documents_last_timestamp
-num_jobs_dockets_waiting
-comments_last_timestamp
+The work generator enqueues jobs; clients consume them with `basic_get`, acknowledge after read, and deserialize the JSON into a dict.
 
+## Redis: keys in use
 
-## Job Management
+All of the following are string values in Redis unless noted. Application code treats counts as integers when reading.
 
-The REDIS database has three "queues", with the names:
+### Job id sequence
 
-`jobs_waiting_queue`, `jobs_in_progress`, and `jobs_done`.
+| Key | Role |
+|-----|------|
+| **`last_job_id`** | Monotonic counter (`INCR`) used when assigning **`job_id`** to newly created jobs. |
 
-The keys serve the following functions: 
+### Per-type “waiting” counters (dashboard backlog)
 
-jobs_waiting_queue: A list holding JSON strings representing each job.
+These track how many jobs of each type were **added** to the pipeline versus **dequeued** for work. The work generator **`INCR`**s the matching key when it enqueues a job with that `job_type`. The client **`DECR`**s the matching key when it takes a job of that type from RabbitMQ (before the download finishes).
 
-jobs_in_progress: A hash storing jobs currently being processed.
+| Key |
+|-----|
+| **`num_jobs_dockets_waiting`** |
+| **`num_jobs_documents_waiting`** |
+| **`num_jobs_comments_waiting`** |
 
-jobs_done: A hash storing completed jobs.
+`JobQueue.get_job_stats()` exposes RabbitMQ depth as **`num_jobs_waiting`** (message count on `jobs_waiting_queue`) together with these three Redis integers as **`num_jobs_dockets_queued`**, **`num_jobs_documents_queued`**, and **`num_jobs_comments_queued`**.
 
-The keys client_jobs and total_num_client_ids are used for sotring client information.
+### Completed work (`JobStatistics`)
 
-client_jobs: A hash mapping job IDs to client IDs.
+| Key | Meaning |
+|-----|---------|
+| **`num_dockets_done`** | Count of completed docket jobs. |
+| **`num_documents_done`** | Count of completed document jobs. |
+| **`num_comments_done`** | Count of completed comment jobs. |
+| **`num_attachments_done`** | Count of completed attachment downloads. |
+| **`num_pdf_attachments_done`** | Subset of attachments that were PDFs. |
 
-total_num_client_ids: An integer value storing the number of clients.
+### Regulations.gov totals (snapshot from the API)
 
-## Redis Format
-## `jobs_waiting_queue`
+| Key | Meaning |
+|-----|---------|
+| **`regulations_total_dockets`** | Total dockets reported by Regulations.gov when the work generator last refreshed counts. |
+| **`regulations_total_documents`** | Total documents. |
+| **`regulations_total_comments`** | Total comments. |
 
-This list holds JSON strings representing each job (a job_id and a url) 
+### S3 mirror size
 
->['{"job_id" :[value], "url": [value] }',  '{"job_id" :[value], "url": [value] }', ... ]
+| Key | Meaning |
+|-----|---------|
+| **`mirrulations_bucket_size`** | Approximate S3 bucket size in **binary gigabytes** (1024³ bytes), updated by the work generator from CloudWatch metrics. |
 
-## `jobs_in_progress`
-> { [job_id] : [value] } 
+### Work generator crawl checkpoints
 
-## `jobs_done`
-> { [job_id] : [result_value] }
+The work generator stores the last processed **`lastModifiedDate`** boundary per endpoint so incremental runs can resume. Keys are built as `{endpoint}_last_timestamp` with **`endpoint`** in `dockets`, `documents`, or `comments`:
 
-## `client_jobs`
-> { [job_id] : [client_id] } 
+| Key |
+|-----|
+| **`dockets_last_timestamp`** |
+| **`documents_last_timestamp`** |
+| **`comments_last_timestamp`** |
 
+Values are stored without the `T` / `Z` ISO-8601 suffixes (normalized to a space-separated form in `JobQueue.set_last_timestamp_string`). If a key is missing, readers use a default epoch string for “start from the beginning” behavior.
 
-## Last timestamps
+## Operational notes
 
-These three variables are used by the work generator to remember the last 
-timestamp seen when querying regulations.gov.
-
-* `docket_last_timestamp` - The timestamp (in UTC) of the last docket discovered
-  by the work generator.
-* `document_last_timestamp` - The timestamp (in UTC) of the last document 
-  discovered by the work generator.
-* `comment_last_timestamp` - The timestamp (in UTC) of the last comment 
-  discovered by the work generator.
-  
-## Job IDs
-
-The `last_job_id` variable is used by the work generator to ensure it generates
-unique ids for each job.
-
-
-## Job Statistics Keys 
-
-DOCKETS_DONE: Tracks the number of completed dockets.
-
-DOCUMENTS_DONE: Tracks the number of completed documents.
-
-COMMENTS_DONE: Tracks the number of completed comments.
-
-ATTACHMENTS_DONE: Tracks the number of completed attachments.
-
-PDF_ATTACHMENTS_DONE: Tracks the number of completed PDF attachments.
-
-MIRRULATION_BUCKET_SIZE: Stores the size of the mirrulations bucket.
+- **Authoritative persistence** for downloaded payloads is disk and S3, not Redis. Counters are updated **after** each completed persistence branch for a job (see **[client_logging.md](client_logging.md)**); a crash can still leave Redis briefly out of sync with storage.
+- **Redis connectivity** is checked before the client dequeues work; **RabbitMQ** availability is separate and determines whether jobs can be fetched at all.

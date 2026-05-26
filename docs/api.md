@@ -2,11 +2,11 @@
 
 ### **What a Job is**
 
-A job is: {`job_id`, `call_url`}
+A job is: {`job_id`, `url`} (historical docs may say `call_url`; the queue and client use **`url`**).
 
 `job_id` is an integer, mostly for the work server to use to manage jobs.
 
-`call_url` is a URL for the client to call. This will generally be in the format of:
+`url` is a URL for the client to call. This will generally be in the format of:
 `https://api.regulations.gov/v4/END_POINT/ITEM_ID`
 
 Where `END_POINT` would be either "dockets", "documents", or "comments", specifying which endpoint to retrieve an item from.
@@ -37,11 +37,10 @@ https://api.regulations.gov/v4/END_POINT?filter[lastModifiedDate][ge]=2020-08-10
 ```
 
 ### **What the client should do**
-While the above section describes how to generate all jobs, the client will do the actual work for each job. 
 
-The client will get a job from regulations.gov, process the job URL, and finally downloads the job.
+While the above section describes how to generate all jobs, the client consumes each job from the queue, **GET**s the job’s Regulations.gov **`url`**, and persists the outcome. Layout, tombstones, and rare **unparseable JSON** handling are documented in **[structure.md](structure.md)** and **[client.md](client.md)**.
 
-Additionally, if a document/comment is being retrieved, the client will get their respective attachments alongside the document/comment. These can be identified in the JSON given under data/attributes/fileFormats.
+The client will get a job from regulations.gov, process the job URL, and download the primary JSON (docket, document, or comment). If a document or comment payload includes attachment or document-body URLs, the client may perform **follow-up HTTP** fetches (typically without an API key). Those fetches use the same success vs non-OK rules as the primary request: **binary save** on success, **tombstone** on non-OK for that artifact. File-format metadata appears under `data` / `attributes` / `fileFormats` in the JSON.
 
 ### **Job Generator Endpoints**
 ***Three job generating endpoints***
