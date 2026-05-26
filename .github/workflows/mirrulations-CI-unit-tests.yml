@@ -7,7 +7,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2 # Checkout the repository content to github runner.
+        uses: actions/checkout@v5 # Checkout the repository content to github runner.
     
       - name: Setup Repo & Environment
         uses: ./.github/actions/setup_environment
